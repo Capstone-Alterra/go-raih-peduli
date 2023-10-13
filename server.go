@@ -7,7 +7,7 @@ import (
 
 
 func main() {
-	config.ConnectDatabase()
+	config.InitDB()
 
 	route.RunServer()
 }

@@ -8,10 +8,10 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 
-	model "raihpeduli/models"
+	"raihpeduli/features/fundraise"
 )
 
-func ConnectDatabase() *gorm.DB {
+func InitDB() *gorm.DB {
 	godotenv.Load()
 
 	dbUser := os.Getenv("DB_USER")
@@ -26,6 +26,6 @@ func ConnectDatabase() *gorm.DB {
 		panic(err)
 	}
 
-	db.AutoMigrate(&model.User{})
+	db.AutoMigrate(&fundraise.Fundraise{})
 	return db
 }
