@@ -1,10 +1,10 @@
-package fundraise
+package customer
 
 import (
 	"gorm.io/gorm"
 )
 
-type Fundraise struct {
+type Customer struct {
 	gorm.Model
 
 	ID int `gorm:"type:int(11)"`

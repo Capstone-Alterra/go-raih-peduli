@@ -1,5 +1,5 @@
 package dtos
 
-type ResFundraise struct {
+type ResPlaceholder struct {
 	Name string `json:"name"`
 }

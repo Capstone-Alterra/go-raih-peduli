@@ -1,13 +1,21 @@
 package main
 
 import (
-	config "raihpeduli/configs"
-	route "raihpeduli/routes"
+	"raihpeduli/features"
+	"raihpeduli/routes"
+
+	"github.com/labstack/echo/v4"
 )
 
+var (
+	fundraiseHandler = features.FundraiseHandler()
+)
 
 func main() {
-	config.InitDB()
 
-	route.RunServer()
+	e := echo.New()
+
+	routes.Fundraises(e, fundraiseHandler)
+
+	e.Start(":8000")
 }

@@ -1,6 +1,6 @@
 package dtos
 
-type InputFundraise struct {
+type InputPlaceholder struct {
 	Name string `json:"name" form:"name" validate:"required"`
 }
 

@@ -1,5 +1,5 @@
 package dtos
 
-type ResFundraise struct {
+type ResCustomer struct {
 	Name string `json:"name"`
 }

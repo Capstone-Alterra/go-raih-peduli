@@ -1,10 +1,10 @@
-package fundraise
+package _blueprint
 
 import (
 	"gorm.io/gorm"
 )
 
-type Fundraise struct {
+type Placeholder struct {
 	gorm.Model
 
 	ID int `gorm:"type:int(11)"`
