@@ -1,9 +1,9 @@
 package dtos
 
-type ResCustomer struct {
+type ResAdmin struct {
 	ID          int            `json:"id"`
-	RoleID      int            `json:"role_id"`
 	Fullname    string         `json:"fullname"`
+	NIK         string         `json:"nik"`
 	Address     string         `json:"address"`
 	PhoneNumber string         `json:"phone_number"`
 	Gender      string         `json:"gender"`

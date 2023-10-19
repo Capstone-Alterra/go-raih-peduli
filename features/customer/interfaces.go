@@ -8,7 +8,7 @@ import (
 
 type Repository interface {
 	Paginate(page, size int) []Customer
-	Insert(newCustomer Customer) int64
+	Insert(newCustomer *Customer) *Customer
 	SelectByID(customerID int) *Customer
 	Update(customer Customer) int64
 	DeleteByID(customerID int) int64

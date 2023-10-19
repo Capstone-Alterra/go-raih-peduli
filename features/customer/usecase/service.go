@@ -3,6 +3,8 @@ package usecase
 import (
 	"raihpeduli/features/customer"
 	"raihpeduli/features/customer/dtos"
+	"raihpeduli/helpers"
+	"strconv"
 
 	"github.com/labstack/gommon/log"
 	"github.com/mashingan/smapping"
@@ -10,11 +12,13 @@ import (
 
 type service struct {
 	model customer.Repository
+	jwt   helpers.JWTInterface
 }
 
-func New(model customer.Repository) customer.Usecase {
-	return &service {
+func New(model customer.Repository, jwt helpers.JWTInterface) customer.Usecase {
+	return &service{
 		model: model,
+		jwt:   jwt,
 	}
 }
 
@@ -28,8 +32,8 @@ func (svc *service) FindAll(page, size int) []dtos.ResCustomer {
 
 		if err := smapping.FillStruct(&data, smapping.MapFields(customer)); err != nil {
 			log.Error(err.Error())
-		} 
-		
+		}
+
 		customers = append(customers, data)
 	}
 
@@ -55,25 +59,36 @@ func (svc *service) FindByID(customerID int) *dtos.ResCustomer {
 
 func (svc *service) Create(newCustomer dtos.InputCustomer) *dtos.ResCustomer {
 	customer := customer.Customer{}
-	
+
 	err := smapping.FillStruct(&customer, smapping.MapFields(newCustomer))
 	if err != nil {
 		log.Error(err)
 		return nil
 	}
 
-	customerID := svc.model.Insert(customer)
+	customer.Password = helpers.HashPassword(customer.Password)
 
-	if customerID == -1 {
+	customerID := svc.model.Insert(&customer)
+
+	if customerID == nil {
 		return nil
 	}
 
 	resCustomer := dtos.ResCustomer{}
-	errRes := smapping.FillStruct(&resCustomer, smapping.MapFields(newCustomer))
+	errRes := smapping.FillStruct(&resCustomer, smapping.MapFields(customer))
 	if errRes != nil {
 		log.Error(errRes)
 		return nil
 	}
+
+	ID := strconv.Itoa(resCustomer.ID)
+	tokenData := svc.jwt.GenerateJWT(ID)
+
+	if tokenData == nil {
+		log.Error("Token process failed")
+	}
+
+	resCustomer.Token = tokenData
 
 	return &resCustomer
 }
@@ -94,7 +109,7 @@ func (svc *service) Modify(customerData dtos.InputCustomer, customerID int) bool
 		log.Error("There is No Customer Updated!")
 		return false
 	}
-	
+
 	return true
 }
 

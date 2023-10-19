@@ -12,7 +12,7 @@ type model struct {
 }
 
 func New(db *gorm.DB) customer.Repository {
-	return &model {
+	return &model{
 		db: db,
 	}
 }
@@ -23,7 +23,7 @@ func (mdl *model) Paginate(page, size int) []customer.Customer {
 	offset := (page - 1) * size
 
 	result := mdl.db.Offset(offset).Limit(size).Find(&customers)
-	
+
 	if result.Error != nil {
 		log.Error(result.Error)
 		return nil
@@ -32,15 +32,15 @@ func (mdl *model) Paginate(page, size int) []customer.Customer {
 	return customers
 }
 
-func (mdl *model) Insert(newCustomer customer.Customer) int64 {
-	result := mdl.db.Create(&newCustomer)
+func (mdl *model) Insert(newCustomer *customer.Customer) *customer.Customer {
+	result := mdl.db.Create(newCustomer)
 
 	if result.Error != nil {
 		log.Error(result.Error)
-		return -1
+		return nil
 	}
 
-	return int64(newCustomer.ID)
+	return newCustomer
 }
 
 func (mdl *model) SelectByID(customerID int) *customer.Customer {
@@ -67,7 +67,7 @@ func (mdl *model) Update(customer customer.Customer) int64 {
 
 func (mdl *model) DeleteByID(customerID int) int64 {
 	result := mdl.db.Delete(&customer.Customer{}, customerID)
-	
+
 	if result.Error != nil {
 		log.Error(result.Error)
 		return 0

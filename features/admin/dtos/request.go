@@ -1,7 +1,8 @@
 package dtos
 
-type InputCustomer struct {
+type InputAdmin struct {
 	Fullname    string `json:"fullname" form:"fullname"`
+	NIK         string `json:"nik" form:"nik"`
 	Address     string `json:"address" form:"address"`
 	PhoneNumber string `json:"phone_number" form:"phone_number"`
 	Gender      string `json:"gender" form:"gender"`

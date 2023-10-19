@@ -2,6 +2,8 @@ package utils
 
 import (
 	"raihpeduli/config"
+	"raihpeduli/features/admin"
+	"raihpeduli/features/customer"
 	"raihpeduli/features/fundraise"
 
 	"fmt"
@@ -12,7 +14,7 @@ import (
 
 func InitDB() *gorm.DB {
 	config := config.LoadDBConfig()
-	
+
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local", config.DB_USER, config.DB_PASS, config.DB_HOST, config.DB_PORT, config.DB_NAME)
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
@@ -26,5 +28,5 @@ func InitDB() *gorm.DB {
 }
 
 func migrate(db *gorm.DB) {
-	db.AutoMigrate(fundraise.Fundraise{})
+	db.AutoMigrate(fundraise.Fundraise{}, &admin.Admin{}, &customer.Customer{})
 }

@@ -31,10 +31,12 @@ func New(signKey string, refreshKey string) JWTInterface {
 func (j *JWT) GenerateJWT(userID string) map[string]any {
 	var result = map[string]any{}
 	var accessToken = j.GenerateToken(userID)
+	var refeshToken = j.generateRefreshToken(userID)
 	if accessToken == "" {
 		return nil
 	}
 	result["access_token"] = accessToken
+	result["refresh_token"] = refeshToken
 	return result
 }
 
@@ -91,8 +93,10 @@ func (j JWT) RefereshJWT(accessToken string, refreshToken *jwt.Token) map[string
 	return nil
 }
 
-func (j *JWT) generateRefreshToken(accessToken string) string {
+func (j *JWT) generateRefreshToken(id string) string {
 	var claims = jwt.MapClaims{}
+	claims["id"] = id
+	claims["iat"] = time.Now().Unix()
 	claims["exp"] = time.Now().Add(time.Hour * 24).Unix()
 
 	var sign = jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
