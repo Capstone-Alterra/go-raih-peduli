@@ -11,6 +11,7 @@ func Admins(e *echo.Echo, handler admin.Handler) {
 
 	admins.GET("", handler.GetAdmins())
 	admins.POST("", handler.CreateAdmin())
+	admins.POST("/login", handler.LoginAdmin())
 	
 	admins.GET("/:id", handler.AdminDetails())
 	admins.PUT("/:id", handler.UpdateAdmin())

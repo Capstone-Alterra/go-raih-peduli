@@ -12,6 +12,7 @@ type Repository interface {
 	SelectByID(customerID int) *Customer
 	Update(customer Customer) int64
 	DeleteByID(customerID int) int64
+	Login(email string, password string) (*Customer, error)
 }
 
 type Usecase interface {
@@ -20,6 +21,7 @@ type Usecase interface {
 	Create(newCustomer dtos.InputCustomer) *dtos.ResCustomer
 	Modify(customerData dtos.InputCustomer, customerID int) bool
 	Remove(customerID int) bool
+	Login(email, password string) (*dtos.ResLogin, error)
 }
 
 type Handler interface {
@@ -28,4 +30,5 @@ type Handler interface {
 	CreateCustomer() echo.HandlerFunc
 	UpdateCustomer() echo.HandlerFunc
 	DeleteCustomer() echo.HandlerFunc
+	LoginCustomer() echo.HandlerFunc
 }

@@ -14,3 +14,8 @@ type Pagination struct {
 	Page int `query:"page"`
 	Size int `query:"size"`
 }
+
+type LoginAdmin struct {
+	Email    string `json:"email" form:"email"`
+	Password string `json:"password" form:"password"`
+}

@@ -159,3 +159,22 @@ func (ctl *controller) DeleteCustomer() echo.HandlerFunc {
 		return ctx.JSON(200, helper.Response("Customer Success Deleted!", nil))
 	}
 }
+
+func (ctl *controller) LoginCustomer() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		loginData := dtos.LoginCustomer{}
+
+		if err := ctx.Bind(&loginData); err != nil {
+			return ctx.JSON(400, helper.Response("Invalid request body!"))
+		}
+
+		loginRes, err := ctl.service.Login(loginData.Email, loginData.Password)
+		if err != nil {
+			return ctx.JSON(401, helper.Response("Invalid credentials!"))
+		}
+
+		return ctx.JSON(200, helper.Response("Success!", map[string]any{
+			"data": loginRes,
+		}))
+	}
+}

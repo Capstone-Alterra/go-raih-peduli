@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"errors"
 	"raihpeduli/features/admin"
 	"raihpeduli/features/admin/dtos"
 	"raihpeduli/helpers"
@@ -123,3 +124,24 @@ func (svc *service) Remove(adminID int) bool {
 
 	return true
 }
+
+func (svc *service) Login(email, password string) (*dtos.ResLogin, error) {
+	admin, err := svc.model.Login(email, password)
+	if err != nil {
+		return nil, err
+	}
+
+	if !helpers.CompareHash(password, admin.Password) {
+		return nil, errors.New("invalid password")
+	}
+
+	tokenData := svc.jwt.GenerateJWT(strconv.Itoa(admin.ID))
+	return &dtos.ResLogin{
+		Name:  admin.Fullname,
+		Email: admin.Email,
+		Role:  "2",
+		Token: tokenData,
+	}, nil
+}
+
+

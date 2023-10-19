@@ -75,3 +75,16 @@ func (mdl *model) DeleteByID(adminID int) int64 {
 
 	return result.RowsAffected
 }
+
+func (mdl *model) Login(email string, password string) (*admin.Admin, error) {
+	var admin admin.Admin
+	result := mdl.db.Where("email = ?", email).First(&admin)
+	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		log.Error(result.Error)
+		return nil, result.Error
+	}
+	return &admin, nil
+}
