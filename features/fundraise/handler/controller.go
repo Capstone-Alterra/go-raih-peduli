@@ -17,7 +17,7 @@ type controller struct {
 }
 
 func New(service fundraise.Usecase) fundraise.Handler {
-	return &controller {
+	return &controller{
 		service: service,
 	}
 }
@@ -25,10 +25,10 @@ func New(service fundraise.Usecase) fundraise.Handler {
 var validate *validator.Validate
 
 func (ctl *controller) GetFundraises() echo.HandlerFunc {
-	return func (ctx echo.Context) error  {
+	return func(ctx echo.Context) error {
 		pagination := dtos.Pagination{}
 		ctx.Bind(&pagination)
-		
+
 		page := pagination.Page
 		size := pagination.Size
 
@@ -42,15 +42,14 @@ func (ctl *controller) GetFundraises() echo.HandlerFunc {
 			return ctx.JSON(404, helper.Response("There is No Fundraises!"))
 		}
 
-		return ctx.JSON(200, helper.Response("Success!", map[string]any {
+		return ctx.JSON(200, helper.Response("Success!", map[string]any{
 			"data": fundraises,
 		}))
 	}
 }
 
-
 func (ctl *controller) FundraiseDetails() echo.HandlerFunc {
-	return func (ctx echo.Context) error  {
+	return func(ctx echo.Context) error {
 		fundraiseID, err := strconv.Atoi(ctx.Param("id"))
 
 		if err != nil {
@@ -58,19 +57,18 @@ func (ctl *controller) FundraiseDetails() echo.HandlerFunc {
 		}
 
 		fundraise := ctl.service.FindByID(fundraiseID)
-
 		if fundraise == nil {
 			return ctx.JSON(404, helper.Response("Fundraise Not Found!"))
 		}
 
-		return ctx.JSON(200, helper.Response("Success!", map[string]any {
+		return ctx.JSON(200, helper.Response("Success!", map[string]any{
 			"data": fundraise,
 		}))
 	}
 }
 
 func (ctl *controller) CreateFundraise() echo.HandlerFunc {
-	return func (ctx echo.Context) error  {
+	return func(ctx echo.Context) error {
 		input := dtos.InputFundraise{}
 
 		ctx.Bind(&input)
@@ -81,7 +79,7 @@ func (ctl *controller) CreateFundraise() echo.HandlerFunc {
 
 		if err != nil {
 			errMap := helpers.ErrorMapValidation(err)
-			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any {
+			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any{
 				"error": errMap,
 			}))
 		}
@@ -92,14 +90,14 @@ func (ctl *controller) CreateFundraise() echo.HandlerFunc {
 			return ctx.JSON(500, helper.Response("Something went Wrong!", nil))
 		}
 
-		return ctx.JSON(200, helper.Response("Success!", map[string]any {
+		return ctx.JSON(200, helper.Response("Success!", map[string]any{
 			"data": fundraise,
 		}))
 	}
 }
 
 func (ctl *controller) UpdateFundraise() echo.HandlerFunc {
-	return func (ctx echo.Context) error {
+	return func(ctx echo.Context) error {
 		input := dtos.InputFundraise{}
 
 		fundraiseID, errParam := strconv.Atoi(ctx.Param("id"))
@@ -113,7 +111,7 @@ func (ctl *controller) UpdateFundraise() echo.HandlerFunc {
 		if fundraise == nil {
 			return ctx.JSON(404, helper.Response("Fundraise Not Found!"))
 		}
-		
+
 		ctx.Bind(&input)
 
 		validate = validator.New(validator.WithRequiredStructEnabled())
@@ -121,7 +119,7 @@ func (ctl *controller) UpdateFundraise() echo.HandlerFunc {
 
 		if err != nil {
 			errMap := helpers.ErrorMapValidation(err)
-			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any {
+			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any{
 				"error": errMap,
 			}))
 		}
@@ -137,7 +135,7 @@ func (ctl *controller) UpdateFundraise() echo.HandlerFunc {
 }
 
 func (ctl *controller) DeleteFundraise() echo.HandlerFunc {
-	return func (ctx echo.Context) error  {
+	return func(ctx echo.Context) error {
 		fundraiseID, err := strconv.Atoi(ctx.Param("id"))
 
 		if err != nil {

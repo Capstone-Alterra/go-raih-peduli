@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"fmt"
 	"raihpeduli/features/fundraise"
 
 	"github.com/labstack/gommon/log"
@@ -12,7 +13,7 @@ type model struct {
 }
 
 func New(db *gorm.DB) fundraise.Repository {
-	return &model {
+	return &model{
 		db: db,
 	}
 }
@@ -23,7 +24,7 @@ func (mdl *model) Paginate(page, size int) []fundraise.Fundraise {
 	offset := (page - 1) * size
 
 	result := mdl.db.Offset(offset).Limit(size).Find(&fundraises)
-	
+
 	if result.Error != nil {
 		log.Error(result.Error)
 		return nil
@@ -34,7 +35,7 @@ func (mdl *model) Paginate(page, size int) []fundraise.Fundraise {
 
 func (mdl *model) Insert(newFundraise fundraise.Fundraise) int64 {
 	result := mdl.db.Create(&newFundraise)
-
+	fmt.Println(newFundraise.ID)
 	if result.Error != nil {
 		log.Error(result.Error)
 		return -1
@@ -67,7 +68,7 @@ func (mdl *model) Update(fundraise fundraise.Fundraise) int64 {
 
 func (mdl *model) DeleteByID(fundraiseID int) int64 {
 	result := mdl.db.Delete(&fundraise.Fundraise{}, fundraiseID)
-	
+
 	if result.Error != nil {
 		log.Error(result.Error)
 		return 0

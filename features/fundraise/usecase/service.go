@@ -13,7 +13,7 @@ type service struct {
 }
 
 func New(model fundraise.Repository) fundraise.Usecase {
-	return &service {
+	return &service{
 		model: model,
 	}
 }
@@ -28,8 +28,8 @@ func (svc *service) FindAll(page, size int) []dtos.ResFundraise {
 
 		if err := smapping.FillStruct(&data, smapping.MapFields(fundraise)); err != nil {
 			log.Error(err.Error())
-		} 
-		
+		}
+
 		fundraises = append(fundraises, data)
 	}
 
@@ -39,7 +39,6 @@ func (svc *service) FindAll(page, size int) []dtos.ResFundraise {
 func (svc *service) FindByID(fundraiseID int) *dtos.ResFundraise {
 	res := dtos.ResFundraise{}
 	fundraise := svc.model.SelectByID(fundraiseID)
-
 	if fundraise == nil {
 		return nil
 	}
@@ -55,13 +54,12 @@ func (svc *service) FindByID(fundraiseID int) *dtos.ResFundraise {
 
 func (svc *service) Create(newFundraise dtos.InputFundraise) *dtos.ResFundraise {
 	fundraise := fundraise.Fundraise{}
-	
+
 	err := smapping.FillStruct(&fundraise, smapping.MapFields(newFundraise))
 	if err != nil {
 		log.Error(err)
 		return nil
 	}
-
 	fundraiseID := svc.model.Insert(fundraise)
 
 	if fundraiseID == -1 {
@@ -69,6 +67,7 @@ func (svc *service) Create(newFundraise dtos.InputFundraise) *dtos.ResFundraise 
 	}
 
 	resFundraise := dtos.ResFundraise{}
+	resFundraise.ID = uint(fundraiseID)
 	errRes := smapping.FillStruct(&resFundraise, smapping.MapFields(newFundraise))
 	if errRes != nil {
 		log.Error(errRes)
@@ -87,14 +86,14 @@ func (svc *service) Modify(fundraiseData dtos.InputFundraise, fundraiseID int) b
 		return false
 	}
 
-	newFundraise.ID = fundraiseID
+	newFundraise.ID = uint(fundraiseID)
 	rowsAffected := svc.model.Update(newFundraise)
 
 	if rowsAffected <= 0 {
 		log.Error("There is No Fundraise Updated!")
 		return false
 	}
-	
+
 	return true
 }
 
