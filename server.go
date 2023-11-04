@@ -10,6 +10,7 @@ import (
 var (
 	adminHandler    = features.AdminHandler()
 	customerHandler = features.CustomerHandler()
+	authHandler     = features.AuthHandler()
 )
 
 func main() {
@@ -22,6 +23,7 @@ func main() {
 
 	routes.Admins(e, adminHandler)
 	routes.Customers(e, customerHandler)
+	routes.Auth(e, authHandler)
 
 	e.Start(":8000")
 }

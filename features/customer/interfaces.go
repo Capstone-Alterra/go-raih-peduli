@@ -8,20 +8,19 @@ import (
 
 type Repository interface {
 	Paginate(page, size int) []Customer
-	Insert(newCustomer *Customer) *Customer
+	InsertCustomer(newCustomer *Customer) (*Customer, error)
+	InsertUser(newUser *User) (*User, error)
 	SelectByID(customerID int) *Customer
 	Update(customer Customer) int64
 	DeleteByID(customerID int) int64
-	Login(email string, password string) (*Customer, error)
 }
 
 type Usecase interface {
 	FindAll(page, size int) []dtos.ResCustomer
 	FindByID(customerID int) *dtos.ResCustomer
-	Create(newCustomer dtos.InputCustomer) *dtos.ResCustomer
+	Create(newCustomer dtos.InputCustomer) (*dtos.ResCustomer, error)
 	Modify(customerData dtos.InputCustomer, customerID int) bool
 	Remove(customerID int) bool
-	Login(email, password string) (*dtos.ResLogin, error)
 }
 
 type Handler interface {
@@ -30,5 +29,4 @@ type Handler interface {
 	CreateCustomer() echo.HandlerFunc
 	UpdateCustomer() echo.HandlerFunc
 	DeleteCustomer() echo.HandlerFunc
-	LoginCustomer() echo.HandlerFunc
 }

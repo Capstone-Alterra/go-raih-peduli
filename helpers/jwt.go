@@ -10,8 +10,8 @@ import (
 )
 
 type JWTInterface interface {
-	GenerateJWT(userID string) map[string]any
-	GenerateToken(id string) string
+	GenerateJWT(userID string, roleID string) map[string]any
+	GenerateToken(userID string, roleID string) string
 	ExtractToken(token *jwt.Token) any
 	ValidateToken(token string) (*jwt.Token, error)
 }
@@ -28,10 +28,10 @@ func New(signKey string, refreshKey string) JWTInterface {
 	}
 }
 
-func (j *JWT) GenerateJWT(userID string) map[string]any {
+func (j *JWT) GenerateJWT(userID string, roleID string) map[string]any {
 	var result = map[string]any{}
-	var accessToken = j.GenerateToken(userID)
-	var refeshToken = j.generateRefreshToken(userID)
+	var accessToken = j.GenerateToken(userID, roleID)
+	var refeshToken = j.generateRefreshToken(userID, roleID)
 	if accessToken == "" {
 		return nil
 	}
@@ -40,9 +40,10 @@ func (j *JWT) GenerateJWT(userID string) map[string]any {
 	return result
 }
 
-func (j *JWT) GenerateToken(id string) string {
+func (j *JWT) GenerateToken(userID string, roleID string) string {
 	var claims = jwt.MapClaims{}
-	claims["id"] = id
+	claims["user_id"] = userID
+	claims["role_id"] = roleID
 	claims["iat"] = time.Now().Unix()
 	claims["exp"] = time.Now().Add(time.Minute * 10).Unix()
 
@@ -93,9 +94,10 @@ func (j JWT) RefereshJWT(accessToken string, refreshToken *jwt.Token) map[string
 	return nil
 }
 
-func (j *JWT) generateRefreshToken(id string) string {
+func (j *JWT) generateRefreshToken(userID string, roleID string) string {
 	var claims = jwt.MapClaims{}
-	claims["id"] = id
+	claims["user_id"] = userID
+	claims["role_id"] = userID
 	claims["iat"] = time.Now().Unix()
 	claims["exp"] = time.Now().Add(time.Hour * 24).Unix()
 
