@@ -1,10 +1,9 @@
 package repository
 
 import (
-	"fmt"
 	"raihpeduli/features/fundraise"
+	"raihpeduli/features/fundraise/dtos"
 
-	"github.com/labstack/gommon/log"
 	"gorm.io/gorm"
 )
 
@@ -18,61 +17,38 @@ func New(db *gorm.DB) fundraise.Repository {
 	}
 }
 
-func (mdl *model) Paginate(page, size int) []fundraise.Fundraise {
-	var fundraises []fundraise.Fundraise
+func (mdl *model) Paginate(page int, size int, title string) ([]dtos.ResFundraise, error) {
+	var res []dtos.ResFundraise
 
 	offset := (page - 1) * size
+	titleName := "%" + title + "%"	
 
-	result := mdl.db.Offset(offset).Limit(size).Find(&fundraises)
-
-	if result.Error != nil {
-		log.Error(result.Error)
-		return nil
+	if err := mdl.db.Table("fundraises").
+	Joins("LEFT JOIN contents ON fundraises.id = contents.fundraise_id").
+	Where("contents.title = ?", titleName).
+	Offset(offset).Limit(size).Find(&res).Error; err != nil {
+		return nil, err
 	}
 
-	return fundraises
+	return res, nil
 }
 
-func (mdl *model) Insert(newFundraise fundraise.Fundraise) int64 {
-	result := mdl.db.Create(&newFundraise)
-	fmt.Println(newFundraise.ID)
-	if result.Error != nil {
-		log.Error(result.Error)
-		return -1
+func (mdl *model) SelectByID(fundraiseID int) (*dtos.ResFundraise, error) {
+	var fundraise dtos.ResFundraise
+
+	if err := mdl.db.First(&fundraise, fundraiseID).Error; err != nil {
+		return nil, err
 	}
 
-	return int64(newFundraise.ID)
+	return &fundraise, nil
 }
 
-func (mdl *model) SelectByID(fundraiseID int) *fundraise.Fundraise {
-	var fundraise fundraise.Fundraise
-	result := mdl.db.First(&fundraise, fundraiseID)
-
-	if result.Error != nil {
-		log.Error(result.Error)
-		return nil
-	}
-
-	return &fundraise
-}
-
-func (mdl *model) Update(fundraise fundraise.Fundraise) int64 {
-	result := mdl.db.Save(&fundraise)
-
-	if result.Error != nil {
-		log.Error(result.Error)
-	}
-
-	return result.RowsAffected
-}
-
-func (mdl *model) DeleteByID(fundraiseID int) int64 {
+func (mdl *model) DeleteByID(fundraiseID int) (int, error) {
 	result := mdl.db.Delete(&fundraise.Fundraise{}, fundraiseID)
 
 	if result.Error != nil {
-		log.Error(result.Error)
-		return 0
+		return 0, result.Error
 	}
 
-	return result.RowsAffected
+	return int(result.RowsAffected), nil
 }

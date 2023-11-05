@@ -7,25 +7,19 @@ import (
 )
 
 type Repository interface {
-	Paginate(page, size int) []Fundraise
-	Insert(newFundraise Fundraise) int64
-	SelectByID(fundraiseID int) *Fundraise
-	Update(fundraise Fundraise) int64
-	DeleteByID(fundraiseID int) int64
+	Paginate(page int, size int, title string) ([]dtos.ResFundraise, error)
+	SelectByID(fundraiseID int) (*dtos.ResFundraise, error)
+	DeleteByID(fundraiseID int) (int, error)
 }
 
 type Usecase interface {
-	FindAll(page, size int) []dtos.ResFundraise
+	FindAll(page int, size int, title string) []dtos.ResFundraise
 	FindByID(fundraiseID int) *dtos.ResFundraise
-	Create(newFundraise dtos.InputFundraise) *dtos.ResFundraise
-	Modify(fundraiseData dtos.InputFundraise, fundraiseID int) bool
 	Remove(fundraiseID int) bool
 }
 
 type Handler interface {
 	GetFundraises() echo.HandlerFunc
 	FundraiseDetails() echo.HandlerFunc
-	CreateFundraise() echo.HandlerFunc
-	UpdateFundraise() echo.HandlerFunc
 	DeleteFundraise() echo.HandlerFunc
 }

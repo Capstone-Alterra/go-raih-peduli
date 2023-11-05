@@ -1,14 +1,20 @@
 package fundraise
 
 import (
-	"gorm.io/gorm"
+	"raihpeduli/features/user"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type Fundraise struct {
 	gorm.Model
-	User_id    int       `gorm:"type:int(11)"`
-	Target     string    `gorm:"type:varchar(255)"`
-	Start_date time.Time `gorm:"type:DATETIME(3)"`
-	End_date   time.Time `gorm:"type:DATETIME(3)"`
+
+	ID		  int		`gorm:"type:int(11)"`
+	Target    string    `gorm:"type:varchar(255)"`
+	StartDate time.Time `gorm:"type:DATETIME(3)"`
+	EndDate   time.Time `gorm:"type:DATETIME(3)"`
+	UserID    int       `gorm:"type:int(11)"`
+
+	User user.User
 }
