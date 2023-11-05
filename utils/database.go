@@ -2,7 +2,9 @@ package utils
 
 import (
 	"raihpeduli/config"
+	"raihpeduli/features/content"
 	"raihpeduli/features/fundraise"
+	"raihpeduli/features/user"
 
 	"fmt"
 
@@ -26,5 +28,6 @@ func InitDB() *gorm.DB {
 }
 
 func migrate(db *gorm.DB) {
-	db.AutoMigrate(fundraise.Fundraise{})
+	db.AutoMigrate(user.User{})
+	db.AutoMigrate(fundraise.Fundraise{}, content.Content{})
 }
