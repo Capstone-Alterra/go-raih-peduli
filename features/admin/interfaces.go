@@ -8,20 +8,19 @@ import (
 
 type Repository interface {
 	Paginate(page, size int) []Admin
-	Insert(newAdmin *Admin) *Admin
+	InsertAdmin(newAdmin *Admin) (*Admin, error)
+	InsertUser(newUser *User) (*User, error)
 	SelectByID(adminID int) *Admin
 	Update(admin Admin) int64
 	DeleteByID(adminID int) int64
-	Login(email string, password string) (*Admin, error)
 }
 
 type Usecase interface {
 	FindAll(page, size int) []dtos.ResAdmin
 	FindByID(adminID int) *dtos.ResAdmin
-	Create(newAdmin dtos.InputAdmin) *dtos.ResAdmin
+	Create(newAdmin dtos.InputAdmin) (*dtos.ResAdmin, error)
 	Modify(adminData dtos.InputAdmin, adminID int) bool
 	Remove(adminID int) bool
-	Login(email, password string) (*dtos.ResLogin, error)
 }
 
 type Handler interface {
@@ -30,5 +29,4 @@ type Handler interface {
 	CreateAdmin() echo.HandlerFunc
 	UpdateAdmin() echo.HandlerFunc
 	DeleteAdmin() echo.HandlerFunc
-	LoginAdmin() echo.HandlerFunc
 }

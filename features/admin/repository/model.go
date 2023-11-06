@@ -32,15 +32,26 @@ func (mdl *model) Paginate(page, size int) []admin.Admin {
 	return admins
 }
 
-func (mdl *model) Insert(newAdmin *admin.Admin) *admin.Admin {
-	result := mdl.db.Create(newAdmin)
+func (mdl *model) InsertAdmin(newAdmin *admin.Admin) (*admin.Admin, error) {
+	result := mdl.db.Table("admins").Create(newAdmin)
 
 	if result.Error != nil {
 		log.Error(result.Error)
-		return nil
+		return nil, result.Error
 	}
 
-	return newAdmin
+	return newAdmin, nil
+}
+
+func (mdl *model) InsertUser(newUser *admin.User) (*admin.User, error) {
+	result := mdl.db.Table("users").Create(newUser)
+
+	if result.Error != nil {
+		log.Error(result.Error)
+		return nil, result.Error
+	}
+
+	return newUser, nil
 }
 
 func (mdl *model) SelectByID(adminID int) *admin.Admin {
@@ -74,17 +85,4 @@ func (mdl *model) DeleteByID(adminID int) int64 {
 	}
 
 	return result.RowsAffected
-}
-
-func (mdl *model) Login(email string, password string) (*admin.Admin, error) {
-	var admin admin.Admin
-	result := mdl.db.Where("email = ?", email).First(&admin)
-	if result.Error != nil {
-		if result.Error == gorm.ErrRecordNotFound {
-			return nil, nil
-		}
-		log.Error(result.Error)
-		return nil, result.Error
-	}
-	return &admin, nil
 }

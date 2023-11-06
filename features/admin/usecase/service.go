@@ -1,7 +1,6 @@
 package usecase
 
 import (
-	"errors"
 	"raihpeduli/features/admin"
 	"raihpeduli/features/admin/dtos"
 	"raihpeduli/helpers"
@@ -14,12 +13,14 @@ import (
 type service struct {
 	model admin.Repository
 	jwt   helpers.JWTInterface
+	hash  helpers.HashInterface
 }
 
-func New(model admin.Repository, jwt helpers.JWTInterface) admin.Usecase {
+func New(model admin.Repository, jwt helpers.JWTInterface, hash helpers.HashInterface) admin.Usecase {
 	return &service{
 		model: model,
 		jwt:   jwt,
+		hash:  hash,
 	}
 }
 
@@ -58,40 +59,55 @@ func (svc *service) FindByID(adminID int) *dtos.ResAdmin {
 	return &res
 }
 
-func (svc *service) Create(newAdmin dtos.InputAdmin) *dtos.ResAdmin {
-	admin := admin.Admin{}
+func (svc *service) Create(newData dtos.InputAdmin) (*dtos.ResAdmin, error) {
+	newUser := admin.User{}
+	newAdmin := admin.Admin{}
 
-	err := smapping.FillStruct(&admin, smapping.MapFields(newAdmin))
+	err := smapping.FillStruct(&newUser, smapping.MapFields(newData))
 	if err != nil {
 		log.Error(err)
-		return nil
+		return nil, err
 	}
 
-	admin.Password = helpers.HashPassword(admin.Password)
+	err = smapping.FillStruct(&newAdmin, smapping.MapFields(newData))
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
 
-	adminID := svc.model.Insert(&admin)
+	newUser.Password = svc.hash.HashPassword(newUser.Password)
+	user, err := svc.model.InsertUser(&newUser)
+	if err != nil {
+		return nil, err
+	}
 
-	if adminID == nil {
-		return nil
+	newAdmin.UserID = user.ID
+	admin, err := svc.model.InsertAdmin(&newAdmin)
+	if err != nil {
+		return nil, err
 	}
 
 	resAdmin := dtos.ResAdmin{}
+	resAdmin.RoleID = user.RoleID
+	resAdmin.Email = user.Email
 	errRes := smapping.FillStruct(&resAdmin, smapping.MapFields(admin))
 	if errRes != nil {
 		log.Error(errRes)
-		return nil
+		return nil, err
 	}
 
-	ID := strconv.Itoa(resAdmin.ID)
-	tokenData := svc.jwt.GenerateJWT(ID)
+	userID := strconv.Itoa(resAdmin.UserID)
+	roleID := strconv.Itoa(resAdmin.RoleID)
+	tokenData := svc.jwt.GenerateJWT(userID, roleID)
 
 	if tokenData == nil {
 		log.Error("Token process failed")
 	}
 
-	resAdmin.Token = tokenData
+	resAdmin.AccessToken = tokenData["access_token"].(string)
+	resAdmin.RefreshToken = tokenData["refresh_token"].(string)
 
-	return &resAdmin
+	return &resAdmin, nil
 }
 
 func (svc *service) Modify(adminData dtos.InputAdmin, adminID int) bool {
@@ -124,24 +140,3 @@ func (svc *service) Remove(adminID int) bool {
 
 	return true
 }
-
-func (svc *service) Login(email, password string) (*dtos.ResLogin, error) {
-	admin, err := svc.model.Login(email, password)
-	if err != nil {
-		return nil, err
-	}
-
-	if !helpers.CompareHash(password, admin.Password) {
-		return nil, errors.New("invalid password")
-	}
-
-	tokenData := svc.jwt.GenerateJWT(strconv.Itoa(admin.ID))
-	return &dtos.ResLogin{
-		Name:  admin.Fullname,
-		Email: admin.Email,
-		Role:  "2",
-		Token: tokenData,
-	}, nil
-}
-
-

@@ -32,15 +32,26 @@ func (mdl *model) Paginate(page, size int) []customer.Customer {
 	return customers
 }
 
-func (mdl *model) Insert(newCustomer *customer.Customer) *customer.Customer {
-	result := mdl.db.Create(newCustomer)
+func (mdl *model) InsertCustomer(newCustomer *customer.Customer) (*customer.Customer, error) {
+	result := mdl.db.Table("customers").Create(newCustomer)
 
 	if result.Error != nil {
 		log.Error(result.Error)
-		return nil
+		return nil, result.Error
 	}
 
-	return newCustomer
+	return newCustomer, nil
+}
+
+func (mdl *model) InsertUser(newUser *customer.User) (*customer.User, error) {
+	result := mdl.db.Table("users").Create(newUser)
+
+	if result.Error != nil {
+		log.Error(result.Error)
+		return nil, result.Error
+	}
+
+	return newUser, nil
 }
 
 func (mdl *model) SelectByID(customerID int) *customer.Customer {
@@ -74,17 +85,4 @@ func (mdl *model) DeleteByID(customerID int) int64 {
 	}
 
 	return result.RowsAffected
-}
-
-func (mdl *model) Login(email string, password string) (*customer.Customer, error) {
-	var customer customer.Customer
-	result := mdl.db.Where("email = ?", email).First(&customer)
-	if result.Error != nil {
-		if result.Error == gorm.ErrRecordNotFound {
-			return nil, nil
-		}
-		log.Error(result.Error)
-		return nil, result.Error
-	}
-	return &customer, nil
 }

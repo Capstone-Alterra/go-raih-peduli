@@ -1,7 +1,6 @@
 package usecase
 
 import (
-	"errors"
 	"raihpeduli/features/customer"
 	"raihpeduli/features/customer/dtos"
 	"raihpeduli/helpers"
@@ -14,12 +13,14 @@ import (
 type service struct {
 	model customer.Repository
 	jwt   helpers.JWTInterface
+	hash  helpers.HashInterface
 }
 
-func New(model customer.Repository, jwt helpers.JWTInterface) customer.Usecase {
+func New(model customer.Repository, jwt helpers.JWTInterface, hash helpers.HashInterface) customer.Usecase {
 	return &service{
 		model: model,
 		jwt:   jwt,
+		hash:  hash,
 	}
 }
 
@@ -58,40 +59,55 @@ func (svc *service) FindByID(customerID int) *dtos.ResCustomer {
 	return &res
 }
 
-func (svc *service) Create(newCustomer dtos.InputCustomer) *dtos.ResCustomer {
-	customer := customer.Customer{}
+func (svc *service) Create(newData dtos.InputCustomer) (*dtos.ResCustomer, error) {
+	newUser := customer.User{}
+	newCustomer := customer.Customer{}
 
-	err := smapping.FillStruct(&customer, smapping.MapFields(newCustomer))
+	err := smapping.FillStruct(&newUser, smapping.MapFields(newData))
 	if err != nil {
 		log.Error(err)
-		return nil
+		return nil, err
 	}
 
-	customer.Password = helpers.HashPassword(customer.Password)
+	err = smapping.FillStruct(&newCustomer, smapping.MapFields(newData))
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
 
-	customerID := svc.model.Insert(&customer)
+	newUser.Password = svc.hash.HashPassword(newUser.Password)
+	user, err := svc.model.InsertUser(&newUser)
+	if user == nil {
+		return nil, err
+	}
 
-	if customerID == nil {
-		return nil
+	newCustomer.UserID = user.ID
+	customer, err := svc.model.InsertCustomer(&newCustomer)
+	if customer == nil {
+		return nil, err
 	}
 
 	resCustomer := dtos.ResCustomer{}
 	errRes := smapping.FillStruct(&resCustomer, smapping.MapFields(customer))
 	if errRes != nil {
 		log.Error(errRes)
-		return nil
+		return nil, err
 	}
+	resCustomer.RoleID = user.RoleID
+	resCustomer.Email = user.Email
 
-	ID := strconv.Itoa(resCustomer.ID)
-	tokenData := svc.jwt.GenerateJWT(ID)
+	userID := strconv.Itoa(resCustomer.UserID)
+	roleID := strconv.Itoa(resCustomer.RoleID)
+	tokenData := svc.jwt.GenerateJWT(userID, roleID)
 
 	if tokenData == nil {
 		log.Error("Token process failed")
 	}
 
-	resCustomer.Token = tokenData
+	resCustomer.AccessToken = tokenData["access_token"].(string)
+	resCustomer.RefreshToken = tokenData["refresh_token"].(string)
 
-	return &resCustomer
+	return &resCustomer, nil
 }
 
 func (svc *service) Modify(customerData dtos.InputCustomer, customerID int) bool {
@@ -123,24 +139,4 @@ func (svc *service) Remove(customerID int) bool {
 	}
 
 	return true
-}
-
-
-func (svc *service) Login(email, password string) (*dtos.ResLogin, error) {
-	admin, err := svc.model.Login(email, password)
-	if err != nil {
-		return nil, err
-	}
-
-	if !helpers.CompareHash(password, admin.Password) {
-		return nil, errors.New("invalid password")
-	}
-
-	tokenData := svc.jwt.GenerateJWT(strconv.Itoa(admin.ID))
-	return &dtos.ResLogin{
-		Name:  admin.Fullname,
-		Email: admin.Email,
-		Role:  "1",
-		Token: tokenData,
-	}, nil
 }

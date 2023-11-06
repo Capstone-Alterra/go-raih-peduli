@@ -17,7 +17,7 @@ type controller struct {
 }
 
 func New(service customer.Usecase) customer.Handler {
-	return &controller {
+	return &controller{
 		service: service,
 	}
 }
@@ -25,10 +25,10 @@ func New(service customer.Usecase) customer.Handler {
 var validate *validator.Validate
 
 func (ctl *controller) GetCustomers() echo.HandlerFunc {
-	return func (ctx echo.Context) error  {
+	return func(ctx echo.Context) error {
 		pagination := dtos.Pagination{}
 		ctx.Bind(&pagination)
-		
+
 		page := pagination.Page
 		size := pagination.Size
 
@@ -42,15 +42,14 @@ func (ctl *controller) GetCustomers() echo.HandlerFunc {
 			return ctx.JSON(404, helper.Response("There is No Customers!"))
 		}
 
-		return ctx.JSON(200, helper.Response("Success!", map[string]any {
+		return ctx.JSON(200, helper.Response("Success!", map[string]any{
 			"data": customers,
 		}))
 	}
 }
 
-
 func (ctl *controller) CustomerDetails() echo.HandlerFunc {
-	return func (ctx echo.Context) error  {
+	return func(ctx echo.Context) error {
 		customerID, err := strconv.Atoi(ctx.Param("id"))
 
 		if err != nil {
@@ -63,14 +62,14 @@ func (ctl *controller) CustomerDetails() echo.HandlerFunc {
 			return ctx.JSON(404, helper.Response("Customer Not Found!"))
 		}
 
-		return ctx.JSON(200, helper.Response("Success!", map[string]any {
+		return ctx.JSON(200, helper.Response("Success!", map[string]any{
 			"data": customer,
 		}))
 	}
 }
 
 func (ctl *controller) CreateCustomer() echo.HandlerFunc {
-	return func (ctx echo.Context) error  {
+	return func(ctx echo.Context) error {
 		input := dtos.InputCustomer{}
 
 		ctx.Bind(&input)
@@ -81,25 +80,25 @@ func (ctl *controller) CreateCustomer() echo.HandlerFunc {
 
 		if err != nil {
 			errMap := helpers.ErrorMapValidation(err)
-			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any {
+			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any{
 				"error": errMap,
 			}))
 		}
 
-		customer := ctl.service.Create(input)
+		customer, err := ctl.service.Create(input)
 
-		if customer == nil {
+		if err != nil {
 			return ctx.JSON(500, helper.Response("Something went Wrong!", nil))
 		}
 
-		return ctx.JSON(200, helper.Response("Success!", map[string]any {
+		return ctx.JSON(200, helper.Response("Success!", map[string]any{
 			"data": customer,
 		}))
 	}
 }
 
 func (ctl *controller) UpdateCustomer() echo.HandlerFunc {
-	return func (ctx echo.Context) error {
+	return func(ctx echo.Context) error {
 		input := dtos.InputCustomer{}
 
 		customerID, errParam := strconv.Atoi(ctx.Param("id"))
@@ -113,7 +112,7 @@ func (ctl *controller) UpdateCustomer() echo.HandlerFunc {
 		if customer == nil {
 			return ctx.JSON(404, helper.Response("Customer Not Found!"))
 		}
-		
+
 		ctx.Bind(&input)
 
 		validate = validator.New(validator.WithRequiredStructEnabled())
@@ -121,7 +120,7 @@ func (ctl *controller) UpdateCustomer() echo.HandlerFunc {
 
 		if err != nil {
 			errMap := helpers.ErrorMapValidation(err)
-			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any {
+			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any{
 				"error": errMap,
 			}))
 		}
@@ -137,7 +136,7 @@ func (ctl *controller) UpdateCustomer() echo.HandlerFunc {
 }
 
 func (ctl *controller) DeleteCustomer() echo.HandlerFunc {
-	return func (ctx echo.Context) error  {
+	return func(ctx echo.Context) error {
 		customerID, err := strconv.Atoi(ctx.Param("id"))
 
 		if err != nil {
@@ -157,24 +156,5 @@ func (ctl *controller) DeleteCustomer() echo.HandlerFunc {
 		}
 
 		return ctx.JSON(200, helper.Response("Customer Success Deleted!", nil))
-	}
-}
-
-func (ctl *controller) LoginCustomer() echo.HandlerFunc {
-	return func(ctx echo.Context) error {
-		loginData := dtos.LoginCustomer{}
-
-		if err := ctx.Bind(&loginData); err != nil {
-			return ctx.JSON(400, helper.Response("Invalid request body!"))
-		}
-
-		loginRes, err := ctl.service.Login(loginData.Email, loginData.Password)
-		if err != nil {
-			return ctx.JSON(401, helper.Response("Invalid credentials!"))
-		}
-
-		return ctx.JSON(200, helper.Response("Success!", map[string]any{
-			"data": loginRes,
-		}))
 	}
 }
