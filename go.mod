@@ -13,6 +13,8 @@ require (
 	gorm.io/gorm v1.25.4
 )
 
+require github.com/wneessen/go-mail v0.4.0 // indirect
+
 require (
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect

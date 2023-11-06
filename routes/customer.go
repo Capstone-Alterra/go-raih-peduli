@@ -11,6 +11,7 @@ func Customers(e *echo.Echo, handler customer.Handler) {
 
 	customers.GET("", handler.GetCustomers())
 	customers.POST("", handler.CreateCustomer())
+	customers.POST("/verify", handler.VerifyEmail())
 
 	customers.GET("/:id", handler.CustomerDetails())
 	customers.PUT("/:id", handler.UpdateCustomer())

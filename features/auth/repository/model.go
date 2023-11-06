@@ -19,10 +19,10 @@ func New(db *gorm.DB) auth.Repository {
 
 func (mdl *model) Login(email string) (*auth.User, error) {
 	var customer auth.User
-	result := mdl.db.Table("users").Where("email = ?", email).First(&customer)
+	result := mdl.db.Table("users").Where("email = ? AND verified = ?", email, 1).First(&customer)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
-			return nil, nil
+			return nil, result.Error
 		}
 		log.Error(result.Error)
 		return nil, result.Error

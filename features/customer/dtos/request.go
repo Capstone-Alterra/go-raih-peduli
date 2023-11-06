@@ -14,7 +14,7 @@ type Pagination struct {
 	Size int `query:"size"`
 }
 
-type LoginCustomer struct {
-	Email    string `json:"email" form:"email"`
-	Password string `json:"password" form:"password"`
+type VerifyOTP struct {
+	Email string `json:"email" form:"email"`
+	OTP   string `json:"otp" form:"otp"`
 }

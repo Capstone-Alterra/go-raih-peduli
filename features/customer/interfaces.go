@@ -10,9 +10,15 @@ type Repository interface {
 	Paginate(page, size int) []Customer
 	InsertCustomer(newCustomer *Customer) (*Customer, error)
 	InsertUser(newUser *User) (*User, error)
+	InsertOTP(otp *OTP) error
 	SelectByID(customerID int) *Customer
-	Update(customer Customer) int64
+	SelectByEmail(email string) (*User, error)
+	SelectOTP(userID int, otp string) (*OTP, error)
+	UpdateCustomer(customer Customer) int64
+	UpdateUser(user User) error
 	DeleteByID(customerID int) int64
+	DeleteOTP(OTP) error
+	SendOTPByEmail(email string, otp string) error
 }
 
 type Usecase interface {
@@ -21,6 +27,7 @@ type Usecase interface {
 	Create(newCustomer dtos.InputCustomer) (*dtos.ResCustomer, error)
 	Modify(customerData dtos.InputCustomer, customerID int) bool
 	Remove(customerID int) bool
+	VerifyEmail(verify dtos.VerifyOTP) error
 }
 
 type Handler interface {
@@ -29,4 +36,5 @@ type Handler interface {
 	CreateCustomer() echo.HandlerFunc
 	UpdateCustomer() echo.HandlerFunc
 	DeleteCustomer() echo.HandlerFunc
+	VerifyEmail() echo.HandlerFunc
 }

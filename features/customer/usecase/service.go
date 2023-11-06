@@ -5,6 +5,7 @@ import (
 	"raihpeduli/features/customer/dtos"
 	"raihpeduli/helpers"
 	"strconv"
+	"time"
 
 	"github.com/labstack/gommon/log"
 	"github.com/mashingan/smapping"
@@ -76,25 +77,43 @@ func (svc *service) Create(newData dtos.InputCustomer) (*dtos.ResCustomer, error
 	}
 
 	newUser.Password = svc.hash.HashPassword(newUser.Password)
-	user, err := svc.model.InsertUser(&newUser)
-	if user == nil {
+	userModel, err := svc.model.InsertUser(&newUser)
+	if userModel == nil {
 		return nil, err
 	}
 
-	newCustomer.UserID = user.ID
-	customer, err := svc.model.InsertCustomer(&newCustomer)
-	if customer == nil {
+	newCustomer.UserID = userModel.ID
+	customerModel, err := svc.model.InsertCustomer(&newCustomer)
+	if customerModel == nil {
+		return nil, err
+	}
+
+	otp := helpers.GenerateRandomOTP()
+
+	otpModel := customer.OTP{
+		UserID:  userModel.ID,
+		OTP:     otp,
+		Expired: time.Now().Add(2 * time.Minute).Unix(),
+	}
+
+	err = svc.model.InsertOTP(&otpModel)
+	if err != nil {
+		return nil, err
+	}
+
+	err = svc.model.SendOTPByEmail(userModel.Email, otp)
+	if err != nil {
 		return nil, err
 	}
 
 	resCustomer := dtos.ResCustomer{}
-	errRes := smapping.FillStruct(&resCustomer, smapping.MapFields(customer))
+	errRes := smapping.FillStruct(&resCustomer, smapping.MapFields(customerModel))
 	if errRes != nil {
 		log.Error(errRes)
 		return nil, err
 	}
-	resCustomer.RoleID = user.RoleID
-	resCustomer.Email = user.Email
+	resCustomer.RoleID = userModel.RoleID
+	resCustomer.Email = userModel.Email
 
 	userID := strconv.Itoa(resCustomer.UserID)
 	roleID := strconv.Itoa(resCustomer.RoleID)
@@ -120,7 +139,7 @@ func (svc *service) Modify(customerData dtos.InputCustomer, customerID int) bool
 	}
 
 	newCustomer.ID = customerID
-	rowsAffected := svc.model.Update(newCustomer)
+	rowsAffected := svc.model.UpdateCustomer(newCustomer)
 
 	if rowsAffected <= 0 {
 		log.Error("There is No Customer Updated!")
@@ -139,4 +158,29 @@ func (svc *service) Remove(customerID int) bool {
 	}
 
 	return true
+}
+
+func (svc *service) VerifyEmail(verify dtos.VerifyOTP) error {
+	userModel, err := svc.model.SelectByEmail(verify.Email)
+	if err != nil {
+		return err
+	}
+
+	otpModel, err := svc.model.SelectOTP(userModel.ID, verify.OTP)
+	if err != nil {
+		return err
+	}
+
+	userModel.Verified = true
+	err = svc.model.UpdateUser(*userModel)
+	if err != nil {
+		return err
+	}
+
+	err = svc.model.DeleteOTP(*otpModel)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

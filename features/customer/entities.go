@@ -23,8 +23,18 @@ type User struct {
 	RoleID         int    `gorm:"type:int(1);default:1"`
 	Email          string `gorm:"type:varchar(255);uniqueIndex;not null"`
 	Password       string `gorm:"type:varchar(255);not null"`
+	Verified       bool   `gorm:"default:false"`
 	ProfilePicture string `gorm:"type:varchar(255)"`
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 	DeletedAt      gorm.DeletedAt `gorm:"index"`
+}
+
+type OTP struct {
+	ID        int    `gorm:"primaryKey;type:int(11)"`
+	UserID    int    `gorm:"type:int(11)"`
+	OTP       string `gorm:"type:varchar(255)"`
+	Expired   int64  `gorm:"type:int"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }

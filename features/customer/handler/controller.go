@@ -158,3 +158,30 @@ func (ctl *controller) DeleteCustomer() echo.HandlerFunc {
 		return ctx.JSON(200, helper.Response("Customer Success Deleted!", nil))
 	}
 }
+
+func (ctl *controller) VerifyEmail() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		input := dtos.VerifyOTP{}
+
+		ctx.Bind(&input)
+
+		validate = validator.New(validator.WithRequiredStructEnabled())
+
+		err := validate.Struct(input)
+
+		if err != nil {
+			errMap := helpers.ErrorMapValidation(err)
+			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any{
+				"error": errMap,
+			}))
+		}
+
+		err = ctl.service.VerifyEmail(input)
+
+		if err != nil {
+			return ctx.JSON(500, helper.Response("Something went Wrong!", nil))
+		}
+
+		return ctx.JSON(200, helper.Response("Success verify email!"))
+	}
+}
