@@ -11,6 +11,7 @@ var (
 	adminHandler    = features.AdminHandler()
 	customerHandler = features.CustomerHandler()
 	authHandler     = features.AuthHandler()
+	volunteerHandler = features.VolunteerHandler()
 )
 
 func main() {
@@ -24,6 +25,7 @@ func main() {
 	routes.Admins(e, adminHandler)
 	routes.Customers(e, customerHandler)
 	routes.Auth(e, authHandler)
+	routes.Volunteers(e, volunteerHandler)
 
 	e.Start(":8000")
 }

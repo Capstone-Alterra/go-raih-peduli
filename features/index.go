@@ -5,6 +5,7 @@ import (
 	"raihpeduli/features/admin"
 	"raihpeduli/features/auth"
 	"raihpeduli/features/customer"
+	"raihpeduli/features/volunteer"
 
 	adminHandler "raihpeduli/features/admin/handler"
 	adminRepo "raihpeduli/features/admin/repository"
@@ -17,6 +18,10 @@ import (
 	authHandler "raihpeduli/features/auth/handler"
 	authRepo "raihpeduli/features/auth/repository"
 	authUsecase "raihpeduli/features/auth/usecase"
+
+	volunteerHandler "raihpeduli/features/volunteer/handler"
+	volunteerRepo "raihpeduli/features/volunteer/repository"
+	volunteerUsecase "raihpeduli/features/volunteer/usecase"
 
 	"raihpeduli/helpers"
 	"raihpeduli/utils"
@@ -56,4 +61,13 @@ func AuthHandler() auth.Handler {
 	repo := authRepo.New(db)
 	uc := authUsecase.New(repo, jwt, hash)
 	return authHandler.New(uc)
+}
+
+
+func VolunteerHandler() volunteer.Handler{
+	db := utils.InitDB()
+
+	repo := volunteerRepo.New(db)
+	uc := volunteerUsecase.New(repo)
+	return volunteerHandler.New(uc)
 }
