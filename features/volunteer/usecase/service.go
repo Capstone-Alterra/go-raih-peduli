@@ -13,23 +13,23 @@ type service struct {
 }
 
 func New(model volunteer.Repository) volunteer.Usecase {
-	return &service {
+	return &service{
 		model: model,
 	}
 }
 
-func (svc *service) FindAll(page, size int) []dtos.ResVolunteer {
+func (svc *service) FindAll(page, size int, skill string) []dtos.ResVolunteer {
 	var volunteers []dtos.ResVolunteer
 
-	volunteersEnt := svc.model.Paginate(page, size)
+	volunteersEnt := svc.model.Paginate(page, size, skill)
 
 	for _, volunteer := range volunteersEnt {
 		var data dtos.ResVolunteer
 
 		if err := smapping.FillStruct(&data, smapping.MapFields(volunteer)); err != nil {
 			log.Error(err.Error())
-		} 
-		
+		}
+
 		volunteers = append(volunteers, data)
 	}
 
@@ -69,7 +69,7 @@ func (svc *service) Modify(volunteerData dtos.InputVolunteer, volunteerID int) b
 		log.Error("There is No Volunteer Updated!")
 		return false
 	}
-	
+
 	return true
 }
 

@@ -12,18 +12,18 @@ type model struct {
 }
 
 func New(db *gorm.DB) volunteer.Repository {
-	return &model {
+	return &model{
 		db: db,
 	}
 }
 
-func (mdl *model) Paginate(page, size int) []volunteer.VolunteerVacancies {
+func (mdl *model) Paginate(page, size int, skill string) []volunteer.VolunteerVacancies {
 	var volunteers []volunteer.VolunteerVacancies
 
 	offset := (page - 1) * size
 
-	result := mdl.db.Offset(offset).Limit(size).Find(&volunteers)
-	
+	result := mdl.db.Where("skills_required LIKE ?", "%"+skill+"%").Offset(offset).Limit(size).Find(&volunteers)
+
 	if result.Error != nil {
 		log.Error(result.Error)
 		return nil
@@ -56,7 +56,7 @@ func (mdl *model) Update(volunteer volunteer.VolunteerVacancies) int64 {
 
 func (mdl *model) DeleteByID(volunteerID int) int64 {
 	result := mdl.db.Delete(&volunteer.VolunteerVacancies{}, volunteerID)
-	
+
 	if result.Error != nil {
 		log.Error(result.Error)
 		return 0
