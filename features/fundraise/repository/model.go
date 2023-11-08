@@ -2,8 +2,8 @@ package repository
 
 import (
 	"raihpeduli/features/fundraise"
-	"raihpeduli/features/fundraise/dtos"
 
+	"github.com/labstack/gommon/log"
 	"gorm.io/gorm"
 )
 
@@ -12,43 +12,66 @@ type model struct {
 }
 
 func New(db *gorm.DB) fundraise.Repository {
-	return &model{
+	return &model {
 		db: db,
 	}
 }
 
-func (mdl *model) Paginate(page int, size int, title string) ([]dtos.ResFundraise, error) {
-	var res []dtos.ResFundraise
+func (mdl *model) Paginate(page, size int) []fundraise.Fundraise {
+	var fundraises []fundraise.Fundraise
 
 	offset := (page - 1) * size
-	titleName := "%" + title + "%"	
 
-	if err := mdl.db.Table("fundraises").
-	Joins("LEFT JOIN contents ON fundraises.id = contents.fundraise_id").
-	Where("contents.title = ?", titleName).
-	Offset(offset).Limit(size).Find(&res).Error; err != nil {
-		return nil, err
+	result := mdl.db.Offset(offset).Limit(size).Find(&fundraises)
+	
+	if result.Error != nil {
+		log.Error(result.Error)
+		return nil
 	}
 
-	return res, nil
+	return fundraises
 }
 
-func (mdl *model) SelectByID(fundraiseID int) (*dtos.ResFundraise, error) {
-	var fundraise dtos.ResFundraise
-
-	if err := mdl.db.First(&fundraise, fundraiseID).Error; err != nil {
-		return nil, err
-	}
-
-	return &fundraise, nil
-}
-
-func (mdl *model) DeleteByID(fundraiseID int) (int, error) {
-	result := mdl.db.Delete(&fundraise.Fundraise{}, fundraiseID)
+func (mdl *model) Insert(newFundraise fundraise.Fundraise) int64 {
+	result := mdl.db.Create(&newFundraise)
 
 	if result.Error != nil {
-		return 0, result.Error
+		log.Error(result.Error)
+		return -1
 	}
 
-	return int(result.RowsAffected), nil
+	return int64(newFundraise.ID)
+}
+
+func (mdl *model) SelectByID(fundraiseID int) *fundraise.Fundraise {
+	var fundraise fundraise.Fundraise
+	result := mdl.db.First(&fundraise, fundraiseID)
+
+	if result.Error != nil {
+		log.Error(result.Error)
+		return nil
+	}
+
+	return &fundraise
+}
+
+func (mdl *model) Update(fundraise fundraise.Fundraise) int64 {
+	result := mdl.db.Save(&fundraise)
+
+	if result.Error != nil {
+		log.Error(result.Error)
+	}
+
+	return result.RowsAffected
+}
+
+func (mdl *model) DeleteByID(fundraiseID int) int64 {
+	result := mdl.db.Delete(&fundraise.Fundraise{}, fundraiseID)
+	
+	if result.Error != nil {
+		log.Error(result.Error)
+		return 0
+	}
+
+	return result.RowsAffected
 }

@@ -3,6 +3,9 @@ package usecase
 import (
 	"raihpeduli/features/fundraise"
 	"raihpeduli/features/fundraise/dtos"
+
+	"github.com/labstack/gommon/log"
+	"github.com/mashingan/smapping"
 )
 
 type service struct {
@@ -10,35 +13,96 @@ type service struct {
 }
 
 func New(model fundraise.Repository) fundraise.Usecase {
-	return &service{
+	return &service {
 		model: model,
 	}
 }
 
-func (svc *service) FindAll(page int, size int, title string) []dtos.ResFundraise {
-	fundraises, err := svc.model.Paginate(page, size, title)
+func (svc *service) FindAll(page, size int) []dtos.ResFundraise {
+	var fundraises []dtos.ResFundraise
 
-	if err != nil {
-		return nil
+	fundraisesEnt := svc.model.Paginate(page, size)
+
+	for _, fundraise := range fundraisesEnt {
+		var data dtos.ResFundraise
+
+		if err := smapping.FillStruct(&data, smapping.MapFields(fundraise)); err != nil {
+			log.Error(err.Error())
+		} 
+		
+		fundraises = append(fundraises, data)
 	}
 
 	return fundraises
 }
 
 func (svc *service) FindByID(fundraiseID int) *dtos.ResFundraise {
-	res, err := svc.model.SelectByID(fundraiseID)
-	
-	if err != nil {
+	res := dtos.ResFundraise{}
+	fundraise := svc.model.SelectByID(fundraiseID)
+
+	if fundraise == nil {
 		return nil
 	}
 
-	return res
+	err := smapping.FillStruct(&res, smapping.MapFields(fundraise))
+	if err != nil {
+		log.Error(err)
+		return nil
+	}
+
+	return &res
+}
+
+func (svc *service) Create(newFundraise dtos.InputFundraise) *dtos.ResFundraise {
+	fundraise := fundraise.Fundraise{}
+	
+	err := smapping.FillStruct(&fundraise, smapping.MapFields(newFundraise))
+	if err != nil {
+		log.Error(err)
+		return nil
+	}
+
+	fundraiseID := svc.model.Insert(fundraise)
+
+	if fundraiseID == -1 {
+		return nil
+	}
+
+	resFundraise := dtos.ResFundraise{}
+	errRes := smapping.FillStruct(&resFundraise, smapping.MapFields(newFundraise))
+	if errRes != nil {
+		log.Error(errRes)
+		return nil
+	}
+
+	return &resFundraise
+}
+
+func (svc *service) Modify(fundraiseData dtos.InputFundraise, fundraiseID int) bool {
+	newFundraise := fundraise.Fundraise{}
+
+	err := smapping.FillStruct(&newFundraise, smapping.MapFields(fundraiseData))
+	if err != nil {
+		log.Error(err)
+		return false
+	}
+
+	newFundraise.ID = fundraiseID
+	rowsAffected := svc.model.Update(newFundraise)
+
+	if rowsAffected <= 0 {
+		log.Error("There is No Fundraise Updated!")
+		return false
+	}
+	
+	return true
 }
 
 func (svc *service) Remove(fundraiseID int) bool {
-	_, err := svc.model.DeleteByID(fundraiseID)
+	rowsAffected := svc.model.DeleteByID(fundraiseID)
 
-	if err != nil {
+	if rowsAffected <= 0 {
+		log.Error("There is No Fundraise Deleted!")
 		return false
 	}
 
