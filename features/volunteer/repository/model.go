@@ -45,7 +45,7 @@ func (mdl *model) SelectByID(volunteerID int) *volunteer.VolunteerVacancies {
 }
 
 func (mdl *model) Update(volunteer volunteer.VolunteerVacancies) int64 {
-	result := mdl.db.Save(&volunteer)
+	result := mdl.db.Updates(&volunteer)
 
 	if result.Error != nil {
 		log.Error(result.Error)
