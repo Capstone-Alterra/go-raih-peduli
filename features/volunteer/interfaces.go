@@ -7,8 +7,9 @@ import (
 )
 
 type Repository interface {
-	Paginate(page, size int, skill string) []VolunteerVacancies
+	Paginate(page, size int) []VolunteerVacancies
 	SelectByTitle(page, size int, title string) []VolunteerVacancies
+	SelectBySkill(page, size int, skill string) []VolunteerVacancies
 	SelectByID(volunteerID int) *VolunteerVacancies
 	Update(volunteer VolunteerVacancies) int64
 	DeleteByID(volunteerID int) int64

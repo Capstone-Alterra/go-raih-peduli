@@ -17,12 +17,12 @@ func New(db *gorm.DB) volunteer.Repository {
 	}
 }
 
-func (mdl *model) Paginate(page, size int, skill string) []volunteer.VolunteerVacancies {
+func (mdl *model) Paginate(page, size int) []volunteer.VolunteerVacancies {
 	var volunteers []volunteer.VolunteerVacancies
 
 	offset := (page - 1) * size
 
-	result := mdl.db.Where("skills_required LIKE ?", "%"+skill+"%").Offset(offset).Limit(size).Find(&volunteers)
+	result := mdl.db.Offset(offset).Limit(size).Find(&volunteers)
 
 	if result.Error != nil {
 		log.Error(result.Error)
@@ -38,6 +38,21 @@ func (mdl *model) SelectByTitle(page, size int, title string) []volunteer.Volunt
 	offset := (page - 1) * size
 
 	result := mdl.db.Where("title LIKE ?", "%"+title+"%").Offset(offset).Limit(size).Find(&volunteers)
+
+	if result.Error != nil {
+		log.Error(result.Error)
+		return nil
+	}
+
+	return volunteers
+}
+
+func (mdl *model) SelectBySkill(page, size int, title string) []volunteer.VolunteerVacancies {
+	var volunteers []volunteer.VolunteerVacancies
+
+	offset := (page - 1) * size
+
+	result := mdl.db.Where("skills_required LIKE ?", "%"+title+"%").Offset(offset).Limit(size).Find(&volunteers)
 
 	if result.Error != nil {
 		log.Error(result.Error)

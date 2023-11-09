@@ -25,8 +25,10 @@ func (svc *service) FindAll(page, size int, title, skill string) []dtos.ResVolun
 
 	if title != "" {
 		volunteersEnt = svc.model.SelectByTitle(page, size, title)
+	} else if skill != "" {
+		volunteersEnt = svc.model.SelectBySkill(page, size, skill)
 	} else {
-		volunteersEnt = svc.model.Paginate(page, size, skill)
+		volunteersEnt = svc.model.Paginate(page, size)
 	}
 
 	for _, volunteer := range volunteersEnt {
