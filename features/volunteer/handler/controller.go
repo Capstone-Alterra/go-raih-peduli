@@ -31,13 +31,14 @@ func (ctl *controller) GetVolunteers() echo.HandlerFunc {
 
 		page := pagination.Page
 		size := pagination.Size
+		title := ctx.QueryParam("title")
 		skill := ctx.QueryParam("skill")
 
 		if page <= 0 || size <= 0 {
 			return ctx.JSON(400, helper.Response("Please provide query `page` and `size` in number!"))
 		}
 
-		volunteers := ctl.service.FindAll(page, size, skill)
+		volunteers := ctl.service.FindAll(page, size, title, skill)
 
 		if volunteers == nil {
 			return ctx.JSON(404, helper.Response("There is No Volunteers!"))

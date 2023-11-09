@@ -32,6 +32,21 @@ func (mdl *model) Paginate(page, size int, skill string) []volunteer.VolunteerVa
 	return volunteers
 }
 
+func (mdl *model) SelectByTitle(page, size int, title string) []volunteer.VolunteerVacancies {
+	var volunteers []volunteer.VolunteerVacancies
+
+	offset := (page - 1) * size
+
+	result := mdl.db.Where("title LIKE ?", "%"+title+"%").Offset(offset).Limit(size).Find(&volunteers)
+
+	if result.Error != nil {
+		log.Error(result.Error)
+		return nil
+	}
+
+	return volunteers
+}
+
 func (mdl *model) SelectByID(volunteerID int) *volunteer.VolunteerVacancies {
 	var volunteer volunteer.VolunteerVacancies
 	result := mdl.db.First(&volunteer, volunteerID)

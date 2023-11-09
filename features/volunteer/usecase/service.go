@@ -18,10 +18,16 @@ func New(model volunteer.Repository) volunteer.Usecase {
 	}
 }
 
-func (svc *service) FindAll(page, size int, skill string) []dtos.ResVolunteer {
+func (svc *service) FindAll(page, size int, title, skill string) []dtos.ResVolunteer {
 	var volunteers []dtos.ResVolunteer
 
-	volunteersEnt := svc.model.Paginate(page, size, skill)
+	var volunteersEnt []volunteer.VolunteerVacancies
+
+	if title != "" {
+		volunteersEnt = svc.model.SelectByTitle(page, size, title)
+	} else {
+		volunteersEnt = svc.model.Paginate(page, size, skill)
+	}
 
 	for _, volunteer := range volunteersEnt {
 		var data dtos.ResVolunteer
