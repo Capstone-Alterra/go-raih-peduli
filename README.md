@@ -5,7 +5,7 @@
 
 # Cara Berkontribusi di Project Ini
 
-# Di Mohon jangan PUSH Langsung ke Branch "development"
+# Di Mohon jangan PUSH Langsung ke Branch "develop"
 
 ## Cara Branching
 
@@ -43,7 +43,7 @@
 
 - 2 Setelah itu kamu perlu pull perubahan dari branch `development`
 
-> `git pull origin develop`
+> `git pull origin development`
 
 - 3 Setelah kamu berhasil melakukan pembaruan dari branch `development` selanjutnya kamu perlu mengembalikan pekerjaan mu sebelum nya yang ter-_stash_
 
@@ -59,7 +59,7 @@
 
 > `git checkout development`
 
-- 2 Kemudian pull perubahan terbaru dari branch `develop`
+- 2 Kemudian pull perubahan terbaru dari branch `development`
 
 > `git pull`
 
@@ -69,7 +69,13 @@
 
 - 4 Selanjutnya kita perlu merge perubahan terbaru dari `development`
 
-> `git merge origin develop`
-## Setup Env
+> `git merge origin development`
 
-Masuk kedalam folder `root` Copy terlebih dahulu `.env.example` kemudian rename ke `.env`
+## Setup Project
+
+- Clone Project ini ( Direkomendasikan menggunakan SSH )
+
+  > `git clone git@github.com:Capstone-Alterra/go-raih-peduli.git`
+  
+## Setup Env
+Masuk kedalam folder `apps/nama-apps/` Copy terlebih dahulu `.env.example` kemudian rename ke `.env`
