@@ -16,7 +16,7 @@ type DatabaseConfig struct {
 }
 
 type ServerConfig struct {
-	SERVER_PORT string
+	SERVER_PORT int
 }
 
 func LoadDBConfig() DatabaseConfig {
@@ -25,7 +25,7 @@ func LoadDBConfig() DatabaseConfig {
 	DB_PORT, err := strconv.Atoi(os.Getenv("DB_PORT"))
 	
 	if err != nil {
-		panic(err)
+		DB_PORT = 3306
 	}
 
 	return DatabaseConfig {
@@ -34,5 +34,17 @@ func LoadDBConfig() DatabaseConfig {
 		DB_HOST: os.Getenv("DB_HOST"),
 		DB_PORT: DB_PORT,
 		DB_NAME: os.Getenv("DB_NAME"),
+	}
+}
+
+func LoadServerConfig() ServerConfig {
+	SERVER_PORT, err := strconv.Atoi(os.Getenv("DB_PORT"))
+
+	if err != nil {
+		SERVER_PORT = 8000
+	}
+
+	return ServerConfig {
+		SERVER_PORT: SERVER_PORT,
 	}
 }
