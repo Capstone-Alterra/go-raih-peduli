@@ -1,21 +1,32 @@
 package main
 
 import (
-	"raihpeduli/features"
+	"fmt"
+	"raihpeduli/config"
 	"raihpeduli/routes"
+	"raihpeduli/utils"
+
+	"raihpeduli/features/fundraise"
+	fh "raihpeduli/features/fundraise/handler"
+	fr "raihpeduli/features/fundraise/repository"
+	fu "raihpeduli/features/fundraise/usecase"
 
 	"github.com/labstack/echo/v4"
 )
 
-var (
-	fundraiseHandler = features.FundraiseHandler()
-)
 
 func main() {
-
+	cfg := config.LoadServerConfig()
 	e := echo.New()
 
-	routes.Fundraises(e, fundraiseHandler)
+	routes.Fundraises(e, FundraiseHandler())
 
-	e.Start(":8000")
+	e.Start(fmt.Sprintf(":%d", cfg.SERVER_PORT))
+}
+
+func FundraiseHandler() fundraise.Handler {
+	db := utils.InitDB()
+	repo := fr.New(db)
+	uc := fu.New(repo)
+	return fh.New(uc)
 }
