@@ -6,6 +6,7 @@ import (
 	"raihpeduli/features/auth"
 	"raihpeduli/features/customer"
 	"raihpeduli/features/fundraise"
+	"raihpeduli/features/volunteer"
 
 	"fmt"
 
@@ -29,5 +30,5 @@ func InitDB() *gorm.DB {
 }
 
 func migrate(db *gorm.DB) {
-	db.AutoMigrate(fundraise.Fundraise{}, &auth.User{}, &admin.Admin{}, &customer.Customer{})
+	db.AutoMigrate(fundraise.Fundraise{}, &auth.User{}, &admin.Admin{}, &customer.Customer{}, &volunteer.VolunteerVacancies{})
 }

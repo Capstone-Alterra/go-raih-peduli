@@ -17,7 +17,7 @@ type controller struct {
 }
 
 func New(service volunteer.Usecase) volunteer.Handler {
-	return &controller {
+	return &controller{
 		service: service,
 	}
 }
@@ -25,32 +25,33 @@ func New(service volunteer.Usecase) volunteer.Handler {
 var validate *validator.Validate
 
 func (ctl *controller) GetVolunteers() echo.HandlerFunc {
-	return func (ctx echo.Context) error  {
+	return func(ctx echo.Context) error {
 		pagination := dtos.Pagination{}
 		ctx.Bind(&pagination)
-		
+
 		page := pagination.Page
 		size := pagination.Size
+		title := ctx.QueryParam("title")
+		skill := ctx.QueryParam("skill")
 
 		if page <= 0 || size <= 0 {
 			return ctx.JSON(400, helper.Response("Please provide query `page` and `size` in number!"))
 		}
 
-		volunteers := ctl.service.FindAll(page, size)
+		volunteers := ctl.service.FindAll(page, size, title, skill)
 
 		if volunteers == nil {
 			return ctx.JSON(404, helper.Response("There is No Volunteers!"))
 		}
 
-		return ctx.JSON(200, helper.Response("Success!", map[string]any {
+		return ctx.JSON(200, helper.Response("Success!", map[string]any{
 			"data": volunteers,
 		}))
 	}
 }
 
-
 func (ctl *controller) VolunteerDetails() echo.HandlerFunc {
-	return func (ctx echo.Context) error  {
+	return func(ctx echo.Context) error {
 		volunteerID, err := strconv.Atoi(ctx.Param("id"))
 
 		if err != nil {
@@ -63,14 +64,14 @@ func (ctl *controller) VolunteerDetails() echo.HandlerFunc {
 			return ctx.JSON(404, helper.Response("Volunteer Not Found!"))
 		}
 
-		return ctx.JSON(200, helper.Response("Success!", map[string]any {
+		return ctx.JSON(200, helper.Response("Success!", map[string]any{
 			"data": volunteer,
 		}))
 	}
 }
 
 func (ctl *controller) UpdateVolunteer() echo.HandlerFunc {
-	return func (ctx echo.Context) error {
+	return func(ctx echo.Context) error {
 		input := dtos.InputVolunteer{}
 
 		volunteerID, errParam := strconv.Atoi(ctx.Param("id"))
@@ -84,7 +85,7 @@ func (ctl *controller) UpdateVolunteer() echo.HandlerFunc {
 		if volunteer == nil {
 			return ctx.JSON(404, helper.Response("Volunteer Not Found!"))
 		}
-		
+
 		ctx.Bind(&input)
 
 		validate = validator.New(validator.WithRequiredStructEnabled())
@@ -92,7 +93,7 @@ func (ctl *controller) UpdateVolunteer() echo.HandlerFunc {
 
 		if err != nil {
 			errMap := helpers.ErrorMapValidation(err)
-			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any {
+			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any{
 				"error": errMap,
 			}))
 		}
@@ -108,7 +109,7 @@ func (ctl *controller) UpdateVolunteer() echo.HandlerFunc {
 }
 
 func (ctl *controller) DeleteVolunteer() echo.HandlerFunc {
-	return func (ctx echo.Context) error  {
+	return func(ctx echo.Context) error {
 		volunteerID, err := strconv.Atoi(ctx.Param("id"))
 
 		if err != nil {

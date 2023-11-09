@@ -8,13 +8,15 @@ import (
 
 type Repository interface {
 	Paginate(page, size int) []VolunteerVacancies
+	SelectByTitle(page, size int, title string) []VolunteerVacancies
+	SelectBySkill(page, size int, skill string) []VolunteerVacancies
 	SelectByID(volunteerID int) *VolunteerVacancies
 	Update(volunteer VolunteerVacancies) int64
 	DeleteByID(volunteerID int) int64
 }
 
 type Usecase interface {
-	FindAll(page, size int) []dtos.ResVolunteer
+	FindAll(page, size int, title, skill string) []dtos.ResVolunteer
 	FindByID(volunteerID int) *dtos.ResVolunteer
 	Modify(volunteerData dtos.InputVolunteer, volunteerID int) bool
 	Remove(volunteerID int) bool
