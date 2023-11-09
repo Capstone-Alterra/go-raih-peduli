@@ -131,3 +131,30 @@ func (ctl *controller) DeleteVolunteer() echo.HandlerFunc {
 		return ctx.JSON(200, helper.Response("Volunteer Success Deleted!", nil))
 	}
 }
+
+func (ctl *controller) CreateVolunteer() echo.HandlerFunc{
+	return func (ctx echo.Context) error {
+		input := dtos.InputVolunteer{}
+
+		ctx.Bind(&input)
+
+		// validate = validator.New(validator.WithRequiredStructEnabled())
+		
+		// err := validate.Struct(input)
+
+		// if err != nil {
+		// 	errMap := helpers.ErrorMapValidation(err)
+		// 	return ctx.JSON(400, helpers.Response("Controller : Bad Request", map[string]any{
+		// 		"error": errMap,
+		// 	}))
+		// }
+		volun, _ := ctl.service.Create(input)
+
+		if volun == nil {
+			return ctx.JSON(500, helpers.Response("Controller : Something when wrong!", nil))
+		}
+		return ctx.JSON(200, helpers.Response("Succes", map[string]any{
+			"data": volun,
+		}))
+	}
+}
