@@ -13,6 +13,7 @@ type Repository interface {
 	SelectByID(volunteerID int) *VolunteerVacancies
 	Update(volunteer VolunteerVacancies) int64
 	DeleteByID(volunteerID int) int64
+	Insert(*VolunteerVacancies) (*VolunteerVacancies, error)
 }
 
 type Usecase interface {
@@ -20,6 +21,7 @@ type Usecase interface {
 	FindByID(volunteerID int) *dtos.ResVolunteer
 	Modify(volunteerData dtos.InputVolunteer, volunteerID int) bool
 	Remove(volunteerID int) bool
+	Create(newVolunteer dtos.InputVolunteer) (*dtos.ResVolunteer, error)
 }
 
 type Handler interface {
@@ -27,4 +29,5 @@ type Handler interface {
 	VolunteerDetails() echo.HandlerFunc
 	UpdateVolunteer() echo.HandlerFunc
 	DeleteVolunteer() echo.HandlerFunc
+	CreateVolunteer() echo.HandlerFunc
 }

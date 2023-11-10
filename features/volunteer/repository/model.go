@@ -94,3 +94,13 @@ func (mdl *model) DeleteByID(volunteerID int) int64 {
 
 	return result.RowsAffected
 }
+
+func (mdl *model) Insert(newVolunteer *volunteer.VolunteerVacancies) (*volunteer.VolunteerVacancies, error){
+	result := mdl.db.Create(newVolunteer)
+	
+	if result.Error != nil {
+		log.Error(result.Error)
+		return nil, result.Error
+	}
+	return newVolunteer, nil
+}

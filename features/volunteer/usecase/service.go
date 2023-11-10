@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"errors"
 	"raihpeduli/features/volunteer"
 	"raihpeduli/features/volunteer/dtos"
 
@@ -90,4 +91,25 @@ func (svc *service) Remove(volunteerID int) bool {
 	}
 
 	return true
+}
+
+func (svc *service) Create(newVolunteer dtos.InputVolunteer) (*dtos.ResVolunteer, error){
+	volun := volunteer.VolunteerVacancies{}
+
+	err := smapping.FillStruct(&volun, smapping.MapFields(newVolunteer))
+
+	if err != nil {
+		log.Error(err)
+		return nil, errors.New("Use Case : failed to create volunteer")
+	}
+
+	resVolun := dtos.ResVolunteer{}
+	errRes := smapping.FillStruct(&resVolun, smapping.MapFields(volun))
+	
+	if errRes != nil {
+		log.Error(errRes)
+		return nil, errors.New("Use Case : failed to mapping response")
+	}
+
+	return &resVolun, nil
 }
