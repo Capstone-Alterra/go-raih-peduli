@@ -14,7 +14,7 @@ type Fundraise struct {
 	Title 	  	string 	  `gorm:"type:varchar(255)"`
 	Description string	  `gorm:"text"`
 	Photo	  	string 	  `gorm:"type:varchar(255)"`
-	Target    	string    `gorm:"type:varchar(255)"`
+	Target    	int32     `gorm:"type:int(11)"`
 	StartDate 	time.Time `gorm:"type:DATETIME(3)"`
 	EndDate   	time.Time `gorm:"type:DATETIME(3)"`
 	Status		string	  `gorm:"type:enum('pending','live','closed')"`

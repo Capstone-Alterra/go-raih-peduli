@@ -33,16 +33,17 @@ func (ctl *controller) GetFundraises() echo.HandlerFunc {
 		size := pagination.Size
 
 		if page <= 0 || size <= 0 {
-			return ctx.JSON(400, helper.Response("Please provide query `page` and `size` in number!"))
+			page = 1
+			size = 10
 		}
 
 		fundraises := ctl.service.FindAll(page, size)
 
 		if fundraises == nil {
-			return ctx.JSON(404, helper.Response("There is No Fundraises!"))
+			return ctx.JSON(404, helper.Response("fundraises not found"))
 		}
 
-		return ctx.JSON(200, helper.Response("Success!", map[string]any {
+		return ctx.JSON(200, helper.Response("success", map[string]any {
 			"data": fundraises,
 		}))
 	}
@@ -86,10 +87,10 @@ func (ctl *controller) CreateFundraise() echo.HandlerFunc {
 			}))
 		}
 
-		fundraise := ctl.service.Create(input)
+		fundraise, err := ctl.service.Create(input)
 
-		if fundraise == nil {
-			return ctx.JSON(500, helper.Response("Something went Wrong!", nil))
+		if err != nil {
+			return ctx.JSON(500, helper.Response(err.Error()))
 		}
 
 		return ctx.JSON(200, helper.Response("Success!", map[string]any {
