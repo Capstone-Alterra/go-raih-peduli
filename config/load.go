@@ -5,30 +5,45 @@ import (
 	"strconv"
 
 	"github.com/joho/godotenv"
+	"github.com/sirupsen/logrus"
 )
+
+func InitConfig() *ProgramConfig {
+	var res = new(ProgramConfig)
+	res = loadConfig()
+
+	if res == nil {
+		logrus.Fatal("Config : Cannot start program, failed to load configuration")
+		return nil
+	}
+
+	return res
+}
 
 type DatabaseConfig struct {
 	DB_USER string
 	DB_PASS string
-	DB_HOST	string
-	DB_PORT	int
+	DB_HOST string
+	DB_PORT int
 	DB_NAME string
 }
 
-type ServerConfig struct {
-	SERVER_PORT int
+type ProgramConfig struct {
+	Secret        string
+	RefreshSecret string
+	SERVER_PORT   int
 }
 
 func LoadDBConfig() DatabaseConfig {
 	godotenv.Load(".env")
 
 	DB_PORT, err := strconv.Atoi(os.Getenv("DB_PORT"))
-	
+
 	if err != nil {
 		DB_PORT = 3306
 	}
 
-	return DatabaseConfig {
+	return DatabaseConfig{
 		DB_USER: os.Getenv("DB_USER"),
 		DB_PASS: os.Getenv("DB_PASS"),
 		DB_HOST: os.Getenv("DB_HOST"),
@@ -37,14 +52,28 @@ func LoadDBConfig() DatabaseConfig {
 	}
 }
 
-func LoadServerConfig() ServerConfig {
-	SERVER_PORT, err := strconv.Atoi(os.Getenv("DB_PORT"))
+
+func loadConfig() *ProgramConfig {
+	var res = new(ProgramConfig)
+
+	err := godotenv.Load(".env")
 
 	if err != nil {
-		SERVER_PORT = 8000
+		logrus.Error("Config : Cannot load config file,", err.Error())
+		return nil
 	}
 
-	return ServerConfig {
-		SERVER_PORT: SERVER_PORT,
+	if val, found := os.LookupEnv("SECRET"); found {
+		res.Secret = val
 	}
+
+	if val, found := os.LookupEnv("REFSECRET"); found {
+		res.RefreshSecret = val
+	}
+
+	if val, found := os.LookupEnv("SERVER_PORT"); found {
+		res.RefreshSecret = val
+	}
+
+	return res
 }
