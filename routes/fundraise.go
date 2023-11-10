@@ -6,10 +6,8 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func Fundraises(e *echo.Echo, handler fundraise.Handler, jwtMiddleware echo.MiddlewareFunc) {
+func Fundraises(e *echo.Echo, handler fundraise.Handler) {
 	fundraises := e.Group("/fundraises")
-
-	fundraises.Use(jwtMiddleware)
 
 	fundraises.GET("", handler.GetFundraises())
 	fundraises.POST("", handler.CreateFundraise())

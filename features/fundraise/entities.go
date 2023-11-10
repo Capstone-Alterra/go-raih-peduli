@@ -1,7 +1,7 @@
 package fundraise
 
 import (
-	"raihpeduli/features/user"
+	"raihpeduli/features/auth"
 	"time"
 
 	"gorm.io/gorm"
@@ -20,5 +20,5 @@ type Fundraise struct {
 	Status		string	  `gorm:"type:enum('pending','live','closed')"`
 	UserID    	int       `gorm:"type:int(11)"`
 
-	User user.User
+	User auth.User
 }
