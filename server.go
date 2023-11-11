@@ -28,11 +28,13 @@ import (
 func main() {
 	e := echo.New()
 	cfg := config.InitConfig()
+	jwtService := helpers.New(cfg.Secret, cfg.RefreshSecret)
 
-	routes.Auth(e, AuthHandler())
-	routes.Fundraises(e, FundraiseHandler())
+	// routes.Auth(e, AuthHandler())
+	// routes.Users(e, UserHandler())
+	routes.Fundraises(e, FundraiseHandler(), jwtService)
 
-	e.Start(fmt.Sprintf(":%d", cfg.SERVER_PORT))
+	e.Start(fmt.Sprintf(":%s", cfg.SERVER_PORT))
 }
 
 func FundraiseHandler() fundraise.Handler {
