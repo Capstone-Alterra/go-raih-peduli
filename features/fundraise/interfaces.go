@@ -17,7 +17,7 @@ type Repository interface {
 type Usecase interface {
 	FindAll(page, size int) []dtos.ResFundraise
 	FindByID(fundraiseID int) *dtos.ResFundraise
-	Create(newFundraise dtos.InputFundraise) (*dtos.ResFundraise, error)
+	Create(newFundraise dtos.InputFundraise, userID int) (*dtos.ResFundraise, error)
 	Modify(fundraiseData dtos.InputFundraise, fundraiseID int) bool
 	Remove(fundraiseID int) bool
 }

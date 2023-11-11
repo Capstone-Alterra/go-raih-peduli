@@ -58,9 +58,11 @@ func (svc *service) FindByID(fundraiseID int) *dtos.ResFundraise {
 	return &res
 }
 
-func (svc *service) Create(newFundraise dtos.InputFundraise) (*dtos.ResFundraise, error) {
+func (svc *service) Create(newFundraise dtos.InputFundraise, userID int) (*dtos.ResFundraise, error) {
 	var fundraise fundraise.Fundraise
 	
+	fundraise.UserID = userID
+	fundraise.Status = "pending"
 	if err := smapping.FillStruct(&fundraise, smapping.MapFields(newFundraise)); err != nil {
 		log.Error(err)
 		return nil, err
@@ -74,6 +76,7 @@ func (svc *service) Create(newFundraise dtos.InputFundraise) (*dtos.ResFundraise
 
 	var res dtos.ResFundraise
 	
+	res.Status = "pending"
 	if err := smapping.FillStruct(&res, smapping.MapFields(newFundraise)); err != nil {
 		return nil, err
 	}

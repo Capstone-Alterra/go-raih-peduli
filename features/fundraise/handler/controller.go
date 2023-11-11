@@ -61,7 +61,7 @@ func (ctl *controller) FundraiseDetails() echo.HandlerFunc {
 		fundraise := ctl.service.FindByID(fundraiseID)
 
 		if fundraise == nil {
-			return ctx.JSON(404, helper.Response("Fundraise Not Found!"))
+			return ctx.JSON(404, helper.Response("fundraise not found"))
 		}
 
 		return ctx.JSON(200, helper.Response("Success!", map[string]any {
@@ -87,7 +87,9 @@ func (ctl *controller) CreateFundraise() echo.HandlerFunc {
 			}))
 		}
 
-		fundraise, err := ctl.service.Create(input)
+		userID := ctx.Get("user_id")
+
+		fundraise, err := ctl.service.Create(input, userID.(int))
 
 		if err != nil {
 			return ctx.JSON(500, helper.Response(err.Error()))
@@ -103,24 +105,24 @@ func (ctl *controller) UpdateFundraise() echo.HandlerFunc {
 	return func (ctx echo.Context) error {
 		input := dtos.InputFundraise{}
 
-		fundraiseID, errParam := strconv.Atoi(ctx.Param("id"))
+		fundraiseID, err := strconv.Atoi(ctx.Param("id"))
 
-		if errParam != nil {
-			return ctx.JSON(400, helper.Response(errParam.Error()))
+		if err != nil {
+			return ctx.JSON(400, helper.Response(err.Error()))
 		}
 
 		fundraise := ctl.service.FindByID(fundraiseID)
 
 		if fundraise == nil {
-			return ctx.JSON(404, helper.Response("Fundraise Not Found!"))
+			return ctx.JSON(404, helper.Response("fundraise not found"))
 		}
 		
 		ctx.Bind(&input)
 
 		validate = validator.New(validator.WithRequiredStructEnabled())
-		err := validate.Struct(input)
+		
 
-		if err != nil {
+		if err := validate.Struct(input); err != nil {
 			errMap := helpers.ErrorMapValidation(err)
 			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any {
 				"error": errMap,
@@ -130,7 +132,7 @@ func (ctl *controller) UpdateFundraise() echo.HandlerFunc {
 		update := ctl.service.Modify(input, fundraiseID)
 
 		if !update {
-			return ctx.JSON(500, helper.Response("Something Went Wrong!"))
+			return ctx.JSON(500, helper.Response("something went wrong"))
 		}
 
 		return ctx.JSON(200, helper.Response("Fundraise Success Updated!"))
@@ -148,7 +150,7 @@ func (ctl *controller) DeleteFundraise() echo.HandlerFunc {
 		fundraise := ctl.service.FindByID(fundraiseID)
 
 		if fundraise == nil {
-			return ctx.JSON(404, helper.Response("Fundraise Not Found!"))
+			return ctx.JSON(404, helper.Response("fundraise not found"))
 		}
 
 		delete := ctl.service.Remove(fundraiseID)
