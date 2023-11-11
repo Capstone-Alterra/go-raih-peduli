@@ -5,18 +5,18 @@ import (
 	helper "raihpeduli/helpers"
 	"strconv"
 
-	"raihpeduli/features/customer"
-	"raihpeduli/features/customer/dtos"
+	"raihpeduli/features/user"
+	"raihpeduli/features/user/dtos"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 )
 
 type controller struct {
-	service customer.Usecase
+	service user.Usecase
 }
 
-func New(service customer.Usecase) customer.Handler {
+func New(service user.Usecase) user.Handler {
 	return &controller{
 		service: service,
 	}
@@ -24,7 +24,7 @@ func New(service customer.Usecase) customer.Handler {
 
 var validate *validator.Validate
 
-func (ctl *controller) GetCustomers() echo.HandlerFunc {
+func (ctl *controller) GetUsers() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		pagination := dtos.Pagination{}
 		ctx.Bind(&pagination)
@@ -36,41 +36,41 @@ func (ctl *controller) GetCustomers() echo.HandlerFunc {
 			return ctx.JSON(400, helper.Response("Please provide query `page` and `size` in number!"))
 		}
 
-		customers := ctl.service.FindAll(page, size)
+		users := ctl.service.FindAll(page, size)
 
-		if customers == nil {
-			return ctx.JSON(404, helper.Response("There is No Customers!"))
+		if users == nil {
+			return ctx.JSON(404, helper.Response("There is No Users!"))
 		}
 
 		return ctx.JSON(200, helper.Response("Success!", map[string]any{
-			"data": customers,
+			"data": users,
 		}))
 	}
 }
 
-func (ctl *controller) CustomerDetails() echo.HandlerFunc {
+func (ctl *controller) UserDetails() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		customerID, err := strconv.Atoi(ctx.Param("id"))
+		userID, err := strconv.Atoi(ctx.Param("id"))
 
 		if err != nil {
 			return ctx.JSON(400, helper.Response(err.Error()))
 		}
 
-		customer := ctl.service.FindByID(customerID)
+		user := ctl.service.FindByID(userID)
 
-		if customer == nil {
-			return ctx.JSON(404, helper.Response("Customer Not Found!"))
+		if user == nil {
+			return ctx.JSON(404, helper.Response("User Not Found!"))
 		}
 
 		return ctx.JSON(200, helper.Response("Success!", map[string]any{
-			"data": customer,
+			"data": user,
 		}))
 	}
 }
 
-func (ctl *controller) CreateCustomer() echo.HandlerFunc {
+func (ctl *controller) CreateUser() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		input := dtos.InputCustomer{}
+		input := dtos.InputUser{}
 
 		ctx.Bind(&input)
 
@@ -85,32 +85,33 @@ func (ctl *controller) CreateCustomer() echo.HandlerFunc {
 			}))
 		}
 
-		customer, err := ctl.service.Create(input)
-
-		if err != nil {
-			return ctx.JSON(500, helper.Response("Something went Wrong!", nil))
+		user, errCreate := ctl.service.Create(input)
+		if errCreate != nil {
+			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any{
+				"error": errCreate.Error(),
+			}))
 		}
 
 		return ctx.JSON(200, helper.Response("Success!", map[string]any{
-			"data": customer,
+			"data": user,
 		}))
 	}
 }
 
-func (ctl *controller) UpdateCustomer() echo.HandlerFunc {
+func (ctl *controller) UpdateUser() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		input := dtos.InputCustomer{}
+		input := dtos.InputUser{}
 
-		customerID, errParam := strconv.Atoi(ctx.Param("id"))
+		userID, errParam := strconv.Atoi(ctx.Param("id"))
 
 		if errParam != nil {
 			return ctx.JSON(400, helper.Response(errParam.Error()))
 		}
 
-		customer := ctl.service.FindByID(customerID)
+		user := ctl.service.FindByID(userID)
 
-		if customer == nil {
-			return ctx.JSON(404, helper.Response("Customer Not Found!"))
+		if user == nil {
+			return ctx.JSON(404, helper.Response("User Not Found!"))
 		}
 
 		ctx.Bind(&input)
@@ -125,37 +126,37 @@ func (ctl *controller) UpdateCustomer() echo.HandlerFunc {
 			}))
 		}
 
-		update := ctl.service.Modify(input, customerID)
+		update := ctl.service.Modify(input, userID)
 
 		if !update {
 			return ctx.JSON(500, helper.Response("Something Went Wrong!"))
 		}
 
-		return ctx.JSON(200, helper.Response("Customer Success Updated!"))
+		return ctx.JSON(200, helper.Response("User Success Updated!"))
 	}
 }
 
-func (ctl *controller) DeleteCustomer() echo.HandlerFunc {
+func (ctl *controller) DeleteUser() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		customerID, err := strconv.Atoi(ctx.Param("id"))
+		userID, err := strconv.Atoi(ctx.Param("id"))
 
 		if err != nil {
 			return ctx.JSON(400, helper.Response(err.Error()))
 		}
 
-		customer := ctl.service.FindByID(customerID)
+		user := ctl.service.FindByID(userID)
 
-		if customer == nil {
-			return ctx.JSON(404, helper.Response("Customer Not Found!"))
+		if user == nil {
+			return ctx.JSON(404, helper.Response("User Not Found!"))
 		}
 
-		delete := ctl.service.Remove(customerID)
+		delete := ctl.service.Remove(userID)
 
 		if !delete {
 			return ctx.JSON(500, helper.Response("Something Went Wrong!"))
 		}
 
-		return ctx.JSON(200, helper.Response("Customer Success Deleted!", nil))
+		return ctx.JSON(200, helper.Response("User Success Deleted!", nil))
 	}
 }
 
@@ -176,10 +177,9 @@ func (ctl *controller) VerifyEmail() echo.HandlerFunc {
 			}))
 		}
 
-		err = ctl.service.VerifyEmail(input)
-
-		if err != nil {
-			return ctx.JSON(500, helper.Response("Something went Wrong!", nil))
+		verifyOTP := ctl.service.ValidateVerification(input.OTP)
+		if verifyOTP != true {
+			return ctx.JSON(500, helper.Response("Incorrect / Expired OTP"))
 		}
 
 		return ctx.JSON(200, helper.Response("Success verify email!"))

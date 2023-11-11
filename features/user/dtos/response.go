@@ -1,8 +1,7 @@
 package dtos
 
-type ResCustomer struct {
+type ResUser struct {
 	ID           int    `json:"id"`
-	UserID       int    `json:"user_id"`
 	RoleID       int    `json:"role_id"`
 	Fullname     string `json:"fullname"`
 	Address      string `json:"address"`
