@@ -28,6 +28,11 @@ type DatabaseConfig struct {
 	DB_NAME string
 }
 
+type RedisConfig struct {
+	REDIS_HOST string
+	REDIS_PORT string
+}
+
 type ProgramConfig struct {
 	Secret        string
 	RefreshSecret string
@@ -53,6 +58,27 @@ func LoadDBConfig() DatabaseConfig {
 		DB_PORT: DB_PORT,
 		DB_NAME: os.Getenv("DB_NAME"),
 	}
+}
+
+func LoadRedisConfig() *RedisConfig {
+	var res = new(RedisConfig)
+
+	err := godotenv.Load(".env")
+
+	if err != nil {
+		logrus.Error("Config : Cannot load config file,", err.Error())
+		return nil
+	}
+
+	if val, found := os.LookupEnv("REDIS_HOST"); found {
+		res.REDIS_HOST = val
+	}
+
+	if val, found := os.LookupEnv("REDIS_PORT"); found {
+		res.REDIS_PORT = val
+	}
+
+	return res
 }
 
 func loadConfig() *ProgramConfig {

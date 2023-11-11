@@ -2,8 +2,8 @@ package usecase
 
 import (
 	"errors"
-	"raihpeduli/features/auth"
-	"raihpeduli/features/auth/dtos"
+	user "raihpeduli/features/user"
+	"raihpeduli/features/user/dtos"
 	"raihpeduli/helpers"
 	"strconv"
 
@@ -13,12 +13,12 @@ import (
 )
 
 type service struct {
-	model auth.Repository
+	model user.Repository
 	jwt   helpers.JWTInterface
 	hash  helpers.HashInterface
 }
 
-func New(model auth.Repository, jwt helpers.JWTInterface, hash helpers.HashInterface) auth.Usecase {
+func New(model user.Repository, jwt helpers.JWTInterface, hash helpers.HashInterface) user.Usecase {
 	return &service{
 		model: model,
 		jwt:   jwt,
@@ -26,8 +26,43 @@ func New(model auth.Repository, jwt helpers.JWTInterface, hash helpers.HashInter
 	}
 }
 
-func (svc *service) Register(newData dtos.InputUser) (*dtos.ResUser, error) {
-	newUser := auth.User{}
+func (svc *service) FindAll(page, size int) []dtos.ResUser {
+	var users []dtos.ResUser
+
+	usersEnt := svc.model.Paginate(page, size)
+
+	for _, user := range usersEnt {
+		var data dtos.ResUser
+
+		if err := smapping.FillStruct(&data, smapping.MapFields(user)); err != nil {
+			log.Error(err.Error())
+		}
+
+		users = append(users, data)
+	}
+
+	return users
+}
+
+func (svc *service) FindByID(userID int) *dtos.ResUser {
+	res := dtos.ResUser{}
+	user := svc.model.SelectByID(userID)
+
+	if user == nil {
+		return nil
+	}
+
+	err := smapping.FillStruct(&res, smapping.MapFields(user))
+	if err != nil {
+		log.Error(err)
+		return nil
+	}
+
+	return &res
+}
+
+func (svc *service) Create(newData dtos.InputUser) (*dtos.ResUser, error) {
+	newUser := user.User{}
 
 	err := smapping.FillStruct(&newUser, smapping.MapFields(newData))
 	if err != nil {
@@ -42,7 +77,7 @@ func (svc *service) Register(newData dtos.InputUser) (*dtos.ResUser, error) {
 	}
 
 	newUser.Password = svc.hash.HashPassword(newUser.Password)
-	userModel, err := svc.model.Register(&newUser)
+	userModel, err := svc.model.InsertUser(&newUser)
 	if userModel == nil {
 		return nil, err
 	}
@@ -78,24 +113,38 @@ func (svc *service) Register(newData dtos.InputUser) (*dtos.ResUser, error) {
 	return &resCustomer, nil
 }
 
-func (svc *service) Login(data dtos.RequestLogin) (*dtos.LoginResponse, error) {
-	user, err := svc.model.Login(data.Email)
+func (svc *service) Modify(userData dtos.InputUser, userID int) bool {
+	newUser := user.User{}
+
+	err := smapping.FillStruct(&newUser, smapping.MapFields(userData))
 	if err != nil {
-		return nil, err
+		log.Error(err)
+		return false
 	}
 
-	if !svc.hash.CompareHash(data.Password, user.Password) {
-		return nil, errors.New("invalid password")
+	rowsAffected := svc.model.UpdateUser(newUser)
+
+	if rowsAffected == 0 {
+		log.Error("There is No Customer Updated!")
+		return false
 	}
 
-	tokenData := svc.jwt.GenerateJWT(strconv.Itoa(user.ID), strconv.Itoa(user.RoleID))
-	return &dtos.LoginResponse{
-		Name:         user.Fullname,
-		Email:        user.Email,
-		Role:         user.RoleID,
-		AccessToken:  tokenData["access_token"].(string),
-		RefreshToken: tokenData["refresh_token"].(string),
-	}, nil
+	return true
+}
+
+func (svc *service) Remove(userID int) bool {
+	rowsAffected := svc.model.DeleteByID(userID)
+
+	if rowsAffected <= 0 {
+		log.Error("There is No Customer Deleted!")
+		return false
+	}
+
+	return true
+}
+
+func (svc *service) ValidateVerification(verificationKey string) bool {
+	return svc.model.ValidateVerification(verificationKey)
 }
 
 func (svc *service) InsertVerification(email string, verificationKey string) error {

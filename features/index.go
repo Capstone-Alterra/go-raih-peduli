@@ -2,17 +2,12 @@ package features
 
 import (
 	"raihpeduli/config"
-	"raihpeduli/features/admin"
 	"raihpeduli/features/auth"
-	"raihpeduli/features/customer"
+	"raihpeduli/features/user"
 
-	adminHandler "raihpeduli/features/admin/handler"
-	adminRepo "raihpeduli/features/admin/repository"
-	adminUsecase "raihpeduli/features/admin/usecase"
-
-	customerHandler "raihpeduli/features/customer/handler"
-	customerRepo "raihpeduli/features/customer/repository"
-	customerUsecase "raihpeduli/features/customer/usecase"
+	userHandler "raihpeduli/features/user/handler"
+	userRepo "raihpeduli/features/user/repository"
+	userUsecase "raihpeduli/features/user/usecase"
 
 	authHandler "raihpeduli/features/auth/handler"
 	authRepo "raihpeduli/features/auth/repository"
@@ -22,28 +17,17 @@ import (
 	"raihpeduli/utils"
 )
 
-func AdminHandler() admin.Handler {
+func UserHandler() user.Handler {
 	config := config.InitConfig()
 
 	db := utils.InitDB()
 	jwt := helpers.New(config.Secret, config.RefreshSecret)
 	hash := helpers.NewHash()
+	redis := utils.ConnectRedis()
 
-	repo := adminRepo.New(db)
-	uc := adminUsecase.New(repo, jwt, hash)
-	return adminHandler.New(uc)
-}
-
-func CustomerHandler() customer.Handler {
-	config := config.InitConfig()
-
-	db := utils.InitDB()
-	jwt := helpers.New(config.Secret, config.RefreshSecret)
-	hash := helpers.NewHash()
-
-	repo := customerRepo.New(db)
-	uc := customerUsecase.New(repo, jwt, hash)
-	return customerHandler.New(uc)
+	repo := userRepo.New(db, redis)
+	uc := userUsecase.New(repo, jwt, hash)
+	return userHandler.New(uc)
 }
 
 func AuthHandler() auth.Handler {
@@ -52,8 +36,9 @@ func AuthHandler() auth.Handler {
 	db := utils.InitDB()
 	jwt := helpers.New(config.Secret, config.RefreshSecret)
 	hash := helpers.NewHash()
+	redis := utils.ConnectRedis()
 
-	repo := authRepo.New(db)
+	repo := authRepo.New(db, redis)
 	uc := authUsecase.New(repo, jwt, hash)
 	return authHandler.New(uc)
 }

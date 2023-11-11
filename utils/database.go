@@ -2,13 +2,13 @@ package utils
 
 import (
 	"raihpeduli/config"
-	"raihpeduli/features/admin"
 	"raihpeduli/features/auth"
-	"raihpeduli/features/customer"
 	"raihpeduli/features/fundraise"
 
 	"fmt"
 
+	"github.com/go-redis/redis"
+	"github.com/sirupsen/logrus"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -29,5 +29,24 @@ func InitDB() *gorm.DB {
 }
 
 func migrate(db *gorm.DB) {
-	db.AutoMigrate(fundraise.Fundraise{}, &auth.User{}, &admin.Admin{}, &customer.Customer{}, &customer.OTP{})
+	db.AutoMigrate(fundraise.Fundraise{}, &auth.User{})
+}
+
+func ConnectRedis() *redis.Client {
+	config := config.LoadRedisConfig()
+
+	client := redis.NewClient(&redis.Options{
+		Addr: fmt.Sprintf("%v:%v", config.REDIS_HOST, config.REDIS_PORT),
+		DB:   1,
+	})
+
+	_, err := client.Ping().Result()
+	if err != nil {
+		logrus.Error(err.Error())
+		return nil
+	}
+
+	logrus.Info("Connection established")
+
+	return client
 }

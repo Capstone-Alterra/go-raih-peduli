@@ -8,9 +8,8 @@ import (
 )
 
 var (
-	adminHandler    = features.AdminHandler()
-	customerHandler = features.CustomerHandler()
-	authHandler     = features.AuthHandler()
+	userHandler = features.UserHandler()
+	authHandler = features.AuthHandler()
 )
 
 func main() {
@@ -21,8 +20,7 @@ func main() {
 	// jwtInterface := helpers.New(config.Secret, config.RefreshSecret)
 	// jwtMiddleware := middlewares.AuthorizeJWT(jwtInterface)
 
-	routes.Admins(e, adminHandler)
-	routes.Customers(e, customerHandler)
+	routes.Users(e, userHandler)
 	routes.Auth(e, authHandler)
 
 	e.Start(":8000")
