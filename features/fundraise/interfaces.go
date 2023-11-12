@@ -7,7 +7,7 @@ import (
 )
 
 type Repository interface {
-	Paginate(page, size int) ([]Fundraise, error)
+	Paginate(page int, size int, title string) ([]Fundraise, error)
 	Insert(newFundraise Fundraise) (int, error)
 	SelectByID(fundraiseID int) (*Fundraise, error)
 	Update(fundraise Fundraise) (int, error)
@@ -15,7 +15,7 @@ type Repository interface {
 }
 
 type Usecase interface {
-	FindAll(page, size int) []dtos.ResFundraise
+	FindAll(page int, size int, title string) []dtos.ResFundraise
 	FindByID(fundraiseID int) *dtos.ResFundraise
 	Create(newFundraise dtos.InputFundraise, userID int) (*dtos.ResFundraise, error)
 	Modify(fundraiseData dtos.InputFundraise, fundraiseID int) bool

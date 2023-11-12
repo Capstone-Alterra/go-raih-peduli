@@ -18,10 +18,10 @@ func New(model fundraise.Repository) fundraise.Usecase {
 	}
 }
 
-func (svc *service) FindAll(page, size int) []dtos.ResFundraise {
+func (svc *service) FindAll(page int, size int, title string) []dtos.ResFundraise {
 	var fundraises []dtos.ResFundraise
 
-	entites, err := svc.model.Paginate(page, size)
+	entites, err := svc.model.Paginate(page, size, title)
 
 	if err != nil {
 		log.Error(err)
