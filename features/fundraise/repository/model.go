@@ -16,12 +16,13 @@ func New(db *gorm.DB) fundraise.Repository {
 	}
 }
 
-func (mdl *model) Paginate(page, size int) ([]fundraise.Fundraise, error) {
+func (mdl *model) Paginate(page int, size int, title string) ([]fundraise.Fundraise, error) {
 	var fundraises []fundraise.Fundraise
 
 	offset := (page - 1) * size
+	titleName := "%" + title + "%"
 
-	if err := mdl.db.Offset(offset).Limit(size).Find(&fundraises).Error; err != nil {
+	if err := mdl.db.Offset(offset).Limit(size).Where("title LIKE ?", titleName).Find(&fundraises).Error; err != nil {
 		return nil, err
 	}
 

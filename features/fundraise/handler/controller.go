@@ -31,13 +31,14 @@ func (ctl *controller) GetFundraises() echo.HandlerFunc {
 		
 		page := pagination.Page
 		size := pagination.Size
+		title := ctx.QueryParam("title")
 
 		if page <= 0 || size <= 0 {
 			page = 1
 			size = 10
 		}
 
-		fundraises := ctl.service.FindAll(page, size)
+		fundraises := ctl.service.FindAll(page, size, title)
 
 		if fundraises == nil {
 			return ctx.JSON(404, helper.Response("fundraises not found"))
