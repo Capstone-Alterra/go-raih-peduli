@@ -22,6 +22,11 @@ import (
 	fr "raihpeduli/features/fundraise/repository"
 	fu "raihpeduli/features/fundraise/usecase"
 
+	"raihpeduli/features/volunteer"
+	vh "raihpeduli/features/volunteer/handler"
+	vr "raihpeduli/features/volunteer/repository"
+	vu "raihpeduli/features/volunteer/usecase"
+
 	"github.com/labstack/echo/v4"
 )
 
@@ -30,9 +35,10 @@ func main() {
 	cfg := config.InitConfig()
 	jwtService := helpers.New(cfg.Secret, cfg.RefreshSecret)
 
-	// routes.Auth(e, AuthHandler())
-	// routes.Users(e, UserHandler())
+	routes.Auth(e, AuthHandler())
+	routes.Users(e, UserHandler())
 	routes.Fundraises(e, FundraiseHandler(), jwtService)
+	routes.Volunteers(e, VolunteerHandler())
 
 	e.Start(fmt.Sprintf(":%s", cfg.SERVER_PORT))
 }
@@ -68,4 +74,13 @@ func AuthHandler() auth.Handler {
 	repo := ar.New(db, redis)
 	uc := au.New(repo, jwt, hash)
 	return ah.New(uc)
+}
+
+func VolunteerHandler() volunteer.Handler{
+
+	db := utils.InitDB()
+	
+	repo := vr.New(db)
+	uc := vu.New(repo)
+	return vh.New(uc)
 }
