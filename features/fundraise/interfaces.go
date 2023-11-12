@@ -7,17 +7,17 @@ import (
 )
 
 type Repository interface {
-	Paginate(page, size int) []Fundraise
-	Insert(newFundraise Fundraise) int64
-	SelectByID(fundraiseID int) *Fundraise
-	Update(fundraise Fundraise) int64
-	DeleteByID(fundraiseID int) int64
+	Paginate(page, size int) ([]Fundraise, error)
+	Insert(newFundraise Fundraise) (int, error)
+	SelectByID(fundraiseID int) (*Fundraise, error)
+	Update(fundraise Fundraise) (int, error)
+	DeleteByID(fundraiseID int) (int, error)
 }
 
 type Usecase interface {
 	FindAll(page, size int) []dtos.ResFundraise
 	FindByID(fundraiseID int) *dtos.ResFundraise
-	Create(newFundraise dtos.InputFundraise) *dtos.ResFundraise
+	Create(newFundraise dtos.InputFundraise, userID int) (*dtos.ResFundraise, error)
 	Modify(fundraiseData dtos.InputFundraise, fundraiseID int) bool
 	Remove(fundraiseID int) bool
 }

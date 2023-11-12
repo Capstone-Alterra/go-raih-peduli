@@ -138,16 +138,16 @@ func (ctl *controller) CreateVolunteer() echo.HandlerFunc{
 
 		ctx.Bind(&input)
 
-		// validate = validator.New(validator.WithRequiredStructEnabled())
+		 validate = validator.New(validator.WithRequiredStructEnabled())
 		
-		// err := validate.Struct(input)
+		 err := validate.Struct(input)
 
-		// if err != nil {
-		// 	errMap := helpers.ErrorMapValidation(err)
-		// 	return ctx.JSON(400, helpers.Response("Controller : Bad Request", map[string]any{
-		// 		"error": errMap,
-		// 	}))
-		// }
+		 if err != nil {
+		 	errMap := helpers.ErrorMapValidation(err)
+		 	return ctx.JSON(400, helpers.Response("Controller : Bad Request", map[string]any{
+		 		"error": errMap,
+		 	}))
+		 }
 		volun, _ := ctl.service.Create(input)
 
 		if volun == nil {

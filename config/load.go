@@ -28,13 +28,15 @@ type DatabaseConfig struct {
 	DB_NAME string
 }
 
+type RedisConfig struct {
+	REDIS_HOST string
+	REDIS_PORT string
+}
+
 type ProgramConfig struct {
 	Secret        string
 	RefreshSecret string
-}
-
-type ServerConfig struct {
-	SERVER_PORT string
+	SERVER_PORT   string
 }
 
 func LoadDBConfig() DatabaseConfig {
@@ -43,7 +45,7 @@ func LoadDBConfig() DatabaseConfig {
 	DB_PORT, err := strconv.Atoi(os.Getenv("DB_PORT"))
 
 	if err != nil {
-		panic(err)
+		DB_PORT = 3306
 	}
 
 	return DatabaseConfig{
@@ -53,6 +55,27 @@ func LoadDBConfig() DatabaseConfig {
 		DB_PORT: DB_PORT,
 		DB_NAME: os.Getenv("DB_NAME"),
 	}
+}
+
+func LoadRedisConfig() *RedisConfig {
+	var res = new(RedisConfig)
+
+	err := godotenv.Load(".env")
+
+	if err != nil {
+		logrus.Error("Config : Cannot load config file,", err.Error())
+		return nil
+	}
+
+	if val, found := os.LookupEnv("REDIS_HOST"); found {
+		res.REDIS_HOST = val
+	}
+
+	if val, found := os.LookupEnv("REDIS_PORT"); found {
+		res.REDIS_PORT = val
+	}
+
+	return res
 }
 
 func loadConfig() *ProgramConfig {
@@ -73,6 +96,9 @@ func loadConfig() *ProgramConfig {
 		res.RefreshSecret = val
 	}
 
-	return res
+	if val, found := os.LookupEnv("SERVER_PORT"); found {
+		res.SERVER_PORT = val
+	}
 
+	return res
 }

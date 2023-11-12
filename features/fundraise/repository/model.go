@@ -3,7 +3,6 @@ package repository
 import (
 	"raihpeduli/features/fundraise"
 
-	"github.com/labstack/gommon/log"
 	"gorm.io/gorm"
 )
 
@@ -17,61 +16,52 @@ func New(db *gorm.DB) fundraise.Repository {
 	}
 }
 
-func (mdl *model) Paginate(page, size int) []fundraise.Fundraise {
+func (mdl *model) Paginate(page, size int) ([]fundraise.Fundraise, error) {
 	var fundraises []fundraise.Fundraise
 
 	offset := (page - 1) * size
 
-	result := mdl.db.Offset(offset).Limit(size).Find(&fundraises)
-	
-	if result.Error != nil {
-		log.Error(result.Error)
-		return nil
+	if err := mdl.db.Offset(offset).Limit(size).Find(&fundraises).Error; err != nil {
+		return nil, err
 	}
 
-	return fundraises
+	return fundraises, nil
 }
 
-func (mdl *model) Insert(newFundraise fundraise.Fundraise) int64 {
-	result := mdl.db.Create(&newFundraise)
-
-	if result.Error != nil {
-		log.Error(result.Error)
-		return -1
+func (mdl *model) Insert(newFundraise fundraise.Fundraise) (int, error) {
+	if err := mdl.db.Create(&newFundraise).Error; err != nil {
+		return 0, err
 	}
 
-	return int64(newFundraise.ID)
+	return newFundraise.ID, nil
 }
 
-func (mdl *model) SelectByID(fundraiseID int) *fundraise.Fundraise {
+func (mdl *model) SelectByID(fundraiseID int) (*fundraise.Fundraise, error) {
 	var fundraise fundraise.Fundraise
-	result := mdl.db.First(&fundraise, fundraiseID)
 
-	if result.Error != nil {
-		log.Error(result.Error)
-		return nil
+	if err := mdl.db.First(&fundraise, fundraiseID).Error; err != nil {
+		return nil, err
 	}
 
-	return &fundraise
+	return &fundraise, nil
 }
 
-func (mdl *model) Update(fundraise fundraise.Fundraise) int64 {
+func (mdl *model) Update(fundraise fundraise.Fundraise) (int, error) {
 	result := mdl.db.Save(&fundraise)
 
 	if result.Error != nil {
-		log.Error(result.Error)
+		return 0, result.Error
 	}
 
-	return result.RowsAffected
+	return int(result.RowsAffected), nil
 }
 
-func (mdl *model) DeleteByID(fundraiseID int) int64 {
+func (mdl *model) DeleteByID(fundraiseID int) (int, error) {
 	result := mdl.db.Delete(&fundraise.Fundraise{}, fundraiseID)
 	
 	if result.Error != nil {
-		log.Error(result.Error)
-		return 0
+		return 0, result.Error
 	}
 
-	return result.RowsAffected
+	return int(result.RowsAffected), nil
 }

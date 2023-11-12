@@ -98,13 +98,15 @@ func (svc *service) Create(newVolunteer dtos.InputVolunteer) (*dtos.ResVolunteer
 
 	err := smapping.FillStruct(&volun, smapping.MapFields(newVolunteer))
 
+	result, err := svc.model.Insert(&volun)
+
 	if err != nil {
 		log.Error(err)
 		return nil, errors.New("Use Case : failed to create volunteer")
 	}
 
 	resVolun := dtos.ResVolunteer{}
-	errRes := smapping.FillStruct(&resVolun, smapping.MapFields(volun))
+	errRes := smapping.FillStruct(&resVolun, smapping.MapFields(result))
 	
 	if errRes != nil {
 		log.Error(errRes)

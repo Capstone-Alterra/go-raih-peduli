@@ -21,9 +21,14 @@ func New(model fundraise.Repository) fundraise.Usecase {
 func (svc *service) FindAll(page, size int) []dtos.ResFundraise {
 	var fundraises []dtos.ResFundraise
 
-	fundraisesEnt := svc.model.Paginate(page, size)
+	entites, err := svc.model.Paginate(page, size)
 
-	for _, fundraise := range fundraisesEnt {
+	if err != nil {
+		log.Error(err)
+		return nil
+	}
+
+	for _, fundraise := range entites {
 		var data dtos.ResFundraise
 
 		if err := smapping.FillStruct(&data, smapping.MapFields(fundraise)); err != nil {
@@ -37,15 +42,15 @@ func (svc *service) FindAll(page, size int) []dtos.ResFundraise {
 }
 
 func (svc *service) FindByID(fundraiseID int) *dtos.ResFundraise {
-	res := dtos.ResFundraise{}
-	fundraise := svc.model.SelectByID(fundraiseID)
+	var res dtos.ResFundraise
+	fundraise, err := svc.model.SelectByID(fundraiseID)
 
-	if fundraise == nil {
+	if err != nil {
+		log.Error(err)
 		return nil
 	}
-
-	err := smapping.FillStruct(&res, smapping.MapFields(fundraise))
-	if err != nil {
+	
+	if err := smapping.FillStruct(&res, smapping.MapFields(fundraise)); err != nil {
 		log.Error(err)
 		return nil
 	}
@@ -53,45 +58,45 @@ func (svc *service) FindByID(fundraiseID int) *dtos.ResFundraise {
 	return &res
 }
 
-func (svc *service) Create(newFundraise dtos.InputFundraise) *dtos.ResFundraise {
-	fundraise := fundraise.Fundraise{}
+func (svc *service) Create(newFundraise dtos.InputFundraise, userID int) (*dtos.ResFundraise, error) {
+	var fundraise fundraise.Fundraise
 	
-	err := smapping.FillStruct(&fundraise, smapping.MapFields(newFundraise))
-	if err != nil {
+	fundraise.UserID = userID
+	fundraise.Status = "pending"
+	if err := smapping.FillStruct(&fundraise, smapping.MapFields(newFundraise)); err != nil {
 		log.Error(err)
-		return nil
+		return nil, err
 	}
 
-	fundraiseID := svc.model.Insert(fundraise)
+	_, err := svc.model.Insert(fundraise)
 
-	if fundraiseID == -1 {
-		return nil
+	if err != nil {
+		return nil, err
 	}
 
-	resFundraise := dtos.ResFundraise{}
-	errRes := smapping.FillStruct(&resFundraise, smapping.MapFields(newFundraise))
-	if errRes != nil {
-		log.Error(errRes)
-		return nil
+	var res dtos.ResFundraise
+	
+	res.Status = "pending"
+	if err := smapping.FillStruct(&res, smapping.MapFields(newFundraise)); err != nil {
+		return nil, err
 	}
 
-	return &resFundraise
+	return &res, nil
 }
 
 func (svc *service) Modify(fundraiseData dtos.InputFundraise, fundraiseID int) bool {
-	newFundraise := fundraise.Fundraise{}
-
-	err := smapping.FillStruct(&newFundraise, smapping.MapFields(fundraiseData))
-	if err != nil {
+	var newFundraise fundraise.Fundraise
+	
+	if err := smapping.FillStruct(&newFundraise, smapping.MapFields(fundraiseData)); err != nil {
 		log.Error(err)
 		return false
 	}
 
 	newFundraise.ID = fundraiseID
-	rowsAffected := svc.model.Update(newFundraise)
+	_, err := svc.model.Update(newFundraise)
 
-	if rowsAffected <= 0 {
-		log.Error("There is No Fundraise Updated!")
+	if err != nil {
+		log.Error(err)
 		return false
 	}
 	
@@ -99,10 +104,10 @@ func (svc *service) Modify(fundraiseData dtos.InputFundraise, fundraiseID int) b
 }
 
 func (svc *service) Remove(fundraiseID int) bool {
-	rowsAffected := svc.model.DeleteByID(fundraiseID)
+	_, err := svc.model.DeleteByID(fundraiseID)
 
-	if rowsAffected <= 0 {
-		log.Error("There is No Fundraise Deleted!")
+	if err != nil {
+		log.Error(err)
 		return false
 	}
 
