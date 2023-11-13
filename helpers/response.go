@@ -1,5 +1,10 @@
 package helpers
 
+type ResponseError struct {
+	Status  bool   `json:"status"`
+	Message string `json:"message"`
+}
+
 func Response(message string, datas ...map[string]any) map[string]any {
 
 	var res = map[string]any{
@@ -14,5 +19,13 @@ func Response(message string, datas ...map[string]any) map[string]any {
 		}
 	}
 
+	return res
+}
+
+func BuildErrorResponse(message string) ResponseError {
+	res := ResponseError{
+		Status:  false,
+		Message: message,
+	}
 	return res
 }
