@@ -36,10 +36,7 @@ type RedisConfig struct {
 type ProgramConfig struct {
 	Secret        string
 	RefreshSecret string
-}
-
-type ServerConfig struct {
-	SERVER_PORT string
+	SERVER_PORT   string
 }
 
 func LoadDBConfig() DatabaseConfig {
@@ -48,7 +45,7 @@ func LoadDBConfig() DatabaseConfig {
 	DB_PORT, err := strconv.Atoi(os.Getenv("DB_PORT"))
 
 	if err != nil {
-		panic(err)
+		DB_PORT = 3306
 	}
 
 	return DatabaseConfig{
@@ -99,6 +96,9 @@ func loadConfig() *ProgramConfig {
 		res.RefreshSecret = val
 	}
 
-	return res
+	if val, found := os.LookupEnv("SERVER_PORT"); found {
+		res.SERVER_PORT = val
+	}
 
+	return res
 }

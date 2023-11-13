@@ -4,6 +4,7 @@ import (
 	"raihpeduli/config"
 	"raihpeduli/features/auth"
 	"raihpeduli/features/fundraise"
+	"raihpeduli/features/volunteer"
 
 	"fmt"
 
@@ -29,7 +30,7 @@ func InitDB() *gorm.DB {
 }
 
 func migrate(db *gorm.DB) {
-	db.AutoMigrate(fundraise.Fundraise{}, &auth.User{})
+	db.AutoMigrate(fundraise.Fundraise{}, &auth.User{}, &volunteer.VolunteerVacancies{})
 }
 
 func ConnectRedis() *redis.Client {
