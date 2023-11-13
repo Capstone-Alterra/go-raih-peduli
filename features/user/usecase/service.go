@@ -144,7 +144,24 @@ func (svc *service) Remove(userID int) bool {
 }
 
 func (svc *service) ValidateVerification(verificationKey string) bool {
-	return svc.model.ValidateVerification(verificationKey)
+	email := svc.model.ValidateVerification(verificationKey)
+	if email == "" {
+		return false
+	}
+
+	user, err := svc.model.SelectByEmail(email)
+	if err != nil {
+		return false
+	}
+
+	user.IsVerified = true
+	rowsAffected := svc.model.UpdateUser(*user)
+	if rowsAffected <= 0 {
+		log.Error("There is No Customer Deleted!")
+		return false
+	}
+
+	return true
 }
 
 func (svc *service) InsertVerification(email string, verificationKey string) error {

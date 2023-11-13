@@ -16,7 +16,7 @@ type Repository interface {
 	DeleteByID(customerID int) int64
 	SendOTPByEmail(email string, otp string) error
 	InsertVerification(email string, verificationKey string) error
-	ValidateVerification(verificationKey string) bool
+	ValidateVerification(verificationKey string) string
 }
 
 type Usecase interface {
