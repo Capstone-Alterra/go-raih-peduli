@@ -7,25 +7,25 @@ import (
 	"raihpeduli/routes"
 	"raihpeduli/utils"
 
-	"raihpeduli/features/admin"
-	adh "raihpeduli/features/admin/handler"
-	adr "raihpeduli/features/admin/repository"
-	adu "raihpeduli/features/admin/usecase"
-
 	"raihpeduli/features/auth"
 	ah "raihpeduli/features/auth/handler"
 	ar "raihpeduli/features/auth/repository"
 	au "raihpeduli/features/auth/usecase"
 
-	"raihpeduli/features/customer"
-	ch "raihpeduli/features/customer/handler"
-	cr "raihpeduli/features/customer/repository"
-	cu "raihpeduli/features/customer/usecase"
+	"raihpeduli/features/user"
+	uh "raihpeduli/features/user/handler"
+	ur "raihpeduli/features/user/repository"
+	uu "raihpeduli/features/user/usecase"
 
 	"raihpeduli/features/fundraise"
 	fh "raihpeduli/features/fundraise/handler"
 	fr "raihpeduli/features/fundraise/repository"
 	fu "raihpeduli/features/fundraise/usecase"
+
+	"raihpeduli/features/volunteer"
+	vh "raihpeduli/features/volunteer/handler"
+	vr "raihpeduli/features/volunteer/repository"
+	vu "raihpeduli/features/volunteer/usecase"
 
 	"github.com/labstack/echo/v4"
 )
@@ -33,13 +33,14 @@ import (
 func main() {
 	e := echo.New()
 	cfg := config.InitConfig()
+	jwtService := helpers.New(cfg.Secret, cfg.RefreshSecret)
 
-	routes.Admins(e, AdminHandler())
-	routes.Customers(e, CustomerHandler())
 	routes.Auth(e, AuthHandler())
-	routes.Fundraises(e, FundraiseHandler())
+	routes.Users(e, UserHandler())
+	routes.Fundraises(e, FundraiseHandler(), jwtService)
+	routes.Volunteers(e, VolunteerHandler())
 
-	e.Start(fmt.Sprintf(":%d", cfg.SERVER_PORT))
+	e.Start(fmt.Sprintf(":%s", cfg.SERVER_PORT))
 }
 
 func FundraiseHandler() fundraise.Handler {
@@ -49,28 +50,17 @@ func FundraiseHandler() fundraise.Handler {
 	return fh.New(uc)
 }
 
-func AdminHandler() admin.Handler {
+func UserHandler() user.Handler {
 	config := config.InitConfig()
 
 	db := utils.InitDB()
 	jwt := helpers.New(config.Secret, config.RefreshSecret)
 	hash := helpers.NewHash()
+	redis := utils.ConnectRedis()
 
-	repo := adr.New(db)
-	uc := adu.New(repo, jwt, hash)
-	return adh.New(uc)
-}
-
-func CustomerHandler() customer.Handler {
-	config := config.InitConfig()
-
-	db := utils.InitDB()
-	jwt := helpers.New(config.Secret, config.RefreshSecret)
-	hash := helpers.NewHash()
-
-	repo := cr.New(db)
-	uc := cu.New(repo, jwt, hash)
-	return ch.New(uc)
+	repo := ur.New(db, redis)
+	uc := uu.New(repo, jwt, hash)
+	return uh.New(uc)
 }
 
 func AuthHandler() auth.Handler {
@@ -79,8 +69,18 @@ func AuthHandler() auth.Handler {
 	db := utils.InitDB()
 	jwt := helpers.New(config.Secret, config.RefreshSecret)
 	hash := helpers.NewHash()
+	redis := utils.ConnectRedis()
 
-	repo := ar.New(db)
+	repo := ar.New(db, redis)
 	uc := au.New(repo, jwt, hash)
 	return ah.New(uc)
+}
+
+func VolunteerHandler() volunteer.Handler{
+
+	db := utils.InitDB()
+	
+	repo := vr.New(db)
+	uc := vu.New(repo)
+	return vh.New(uc)
 }
