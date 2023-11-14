@@ -136,18 +136,31 @@ func (ctl *controller) UpdateFundraise() echo.HandlerFunc {
 
 		if err := validate.Struct(input); err != nil {
 			errMap := helpers.ErrorMapValidation(err)
-			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any {
+			return ctx.JSON(400, helper.Response("error missing some data", map[string]any {
 				"error": errMap,
 			}))
 		}
 
-		update := ctl.service.Modify(input, fundraiseID)
+		fileHeader, err := ctx.FormFile("photo")
+		var file multipart.File
+		
+		if err == nil {
+			formFile, err := fileHeader.Open()
+
+			if err != nil {
+				return ctx.JSON(500, helper.Response("something went wrong"))
+			}
+
+			file = formFile
+		}
+
+		update := ctl.service.Modify(input, file, *fundraise)
 
 		if !update {
 			return ctx.JSON(500, helper.Response("something went wrong"))
 		}
 
-		return ctx.JSON(200, helper.Response("Fundraise Success Updated!"))
+		return ctx.JSON(200, helper.Response("fundraise success updated"))
 	}
 }
 

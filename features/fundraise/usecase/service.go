@@ -2,11 +2,12 @@ package usecase
 
 import (
 	"mime/multipart"
+	"raihpeduli/config"
 	"raihpeduli/features/fundraise"
 	"raihpeduli/features/fundraise/dtos"
 
-	"github.com/labstack/gommon/log"
 	"github.com/mashingan/smapping"
+	"github.com/sirupsen/logrus"
 )
 
 type service struct {
@@ -25,7 +26,7 @@ func (svc *service) FindAll(page int, size int, title string) []dtos.ResFundrais
 	entites, err := svc.model.Paginate(page, size, title)
 
 	if err != nil {
-		log.Error(err)
+		logrus.Error(err)
 		return nil
 	}
 
@@ -33,7 +34,7 @@ func (svc *service) FindAll(page int, size int, title string) []dtos.ResFundrais
 		var data dtos.ResFundraise
 
 		if err := smapping.FillStruct(&data, smapping.MapFields(fundraise)); err != nil {
-			log.Error(err.Error())
+			logrus.Error(err)
 		} 
 		
 		fundraises = append(fundraises, data)
@@ -47,12 +48,12 @@ func (svc *service) FindByID(fundraiseID int) *dtos.ResFundraise {
 	fundraise, err := svc.model.SelectByID(fundraiseID)
 
 	if err != nil {
-		log.Error(err)
+		logrus.Error(err)
 		return nil
 	}
 	
 	if err := smapping.FillStruct(&res, smapping.MapFields(fundraise)); err != nil {
-		log.Error(err)
+		logrus.Error(err)
 		return nil
 	}
 
@@ -67,6 +68,7 @@ func (svc *service) Create(newFundraise dtos.InputFundraise, userID int, file mu
 		imageURL, err := svc.model.UploadFile(file, "")
 	
 		if err != nil {
+			logrus.Error(err)
 			return nil, err
 		}
 
@@ -77,7 +79,7 @@ func (svc *service) Create(newFundraise dtos.InputFundraise, userID int, file mu
 	fundraise.Status = "pending"
 	fundraise.Photo = url
 	if err := smapping.FillStruct(&fundraise, smapping.MapFields(newFundraise)); err != nil {
-		log.Error(err)
+		logrus.Error(err)
 		return nil, err
 	}
 
@@ -88,8 +90,8 @@ func (svc *service) Create(newFundraise dtos.InputFundraise, userID int, file mu
 	var res dtos.ResFundraise
 	
 	res.Status = "pending"
-	res.UserID = userID
 	res.Photo = url
+	res.UserID = userID
 	if err := smapping.FillStruct(&res, smapping.MapFields(newFundraise)); err != nil {
 		return nil, err
 	}
@@ -97,19 +99,39 @@ func (svc *service) Create(newFundraise dtos.InputFundraise, userID int, file mu
 	return &res, nil
 }
 
-func (svc *service) Modify(fundraiseData dtos.InputFundraise, fundraiseID int) bool {
+func (svc *service) Modify(fundraiseData dtos.InputFundraise, file multipart.File, oldData dtos.ResFundraise) bool {
 	var newFundraise fundraise.Fundraise
-	
-	if err := smapping.FillStruct(&newFundraise, smapping.MapFields(fundraiseData)); err != nil {
-		log.Error(err)
-		return false
+	var url string = ""
+	var config = config.LoadCloudStorageConfig()
+	var oldFilename string = oldData.Photo
+	var urlLength int = len("https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/fundraises/")
+
+	if file != nil {
+		if len(oldFilename) > urlLength {
+			oldFilename = oldFilename[urlLength:]
+		}
+		imageURL, err := svc.model.UploadFile(file, oldFilename)
+		
+		if err != nil {
+			logrus.Error(err)
+			return false
+		}
+
+		url = imageURL
 	}
 
-	newFundraise.ID = fundraiseID
+	if err := smapping.FillStruct(&newFundraise, smapping.MapFields(fundraiseData)); err != nil {
+		logrus.Error(err)
+		return false
+	}
+	
+	newFundraise.Photo = url
+	newFundraise.ID = oldData.ID
+	newFundraise.UserID = oldData.UserID
 	_, err := svc.model.Update(newFundraise)
 
 	if err != nil {
-		log.Error(err)
+		logrus.Error(err)
 		return false
 	}
 	
@@ -120,7 +142,7 @@ func (svc *service) Remove(fundraiseID int) bool {
 	_, err := svc.model.DeleteByID(fundraiseID)
 
 	if err != nil {
-		log.Error(err)
+		logrus.Error(err)
 		return false
 	}
 
