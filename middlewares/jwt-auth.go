@@ -8,6 +8,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
+	"github.com/sirupsen/logrus"
 )
 
 func AuthorizeJWT(jwtService helpers.JWTInterface, role int) echo.MiddlewareFunc {
@@ -28,18 +29,22 @@ func AuthorizeJWT(jwtService helpers.JWTInterface, role int) echo.MiddlewareFunc
 			}
 			if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 				userID, _ := strconv.Atoi(claims["user_id"].(string))
-				
+				roleID, _ := strconv.Atoi(claims["role_id"].(string))
+
 				ctx.Set("user_id", userID)
 				ctx.Set("role_id", claims["role_id"])
 
-				if claims["role_id"].(int) == 0 {
+
+				if role == 0 {
 					return next(ctx)
 				}
 
-				if claims["role_id"].(int) != role {
+				if roleID != role {
 					response := helpers.BuildErrorResponse("this user cannot access this endpoint")
 					return ctx.JSON(http.StatusUnauthorized, response)
 				}
+				
+				logrus.Error("test 2")
 
 				return next(ctx)
 			}
