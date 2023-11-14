@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"mime/multipart"
 	"raihpeduli/features/fundraise"
 	"raihpeduli/features/fundraise/dtos"
 
@@ -58,25 +59,37 @@ func (svc *service) FindByID(fundraiseID int) *dtos.ResFundraise {
 	return &res
 }
 
-func (svc *service) Create(newFundraise dtos.InputFundraise, userID int) (*dtos.ResFundraise, error) {
+func (svc *service) Create(newFundraise dtos.InputFundraise, userID int, file multipart.File) (*dtos.ResFundraise, error) {
 	var fundraise fundraise.Fundraise
+	var url string = ""
+
+	if file != nil {
+		imageURL, err := svc.model.UploadFile(file, "")
+	
+		if err != nil {
+			return nil, err
+		}
+
+		url = imageURL
+	} 
 	
 	fundraise.UserID = userID
 	fundraise.Status = "pending"
+	fundraise.Photo = url
 	if err := smapping.FillStruct(&fundraise, smapping.MapFields(newFundraise)); err != nil {
 		log.Error(err)
 		return nil, err
 	}
 
-	_, err := svc.model.Insert(fundraise)
-
-	if err != nil {
+	if _, err := svc.model.Insert(fundraise); err != nil {
 		return nil, err
 	}
 
 	var res dtos.ResFundraise
 	
 	res.Status = "pending"
+	res.UserID = userID
+	res.Photo = url
 	if err := smapping.FillStruct(&res, smapping.MapFields(newFundraise)); err != nil {
 		return nil, err
 	}
