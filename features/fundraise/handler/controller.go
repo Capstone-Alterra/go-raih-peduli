@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"mime/multipart"
 	"raihpeduli/helpers"
 	helper "raihpeduli/helpers"
 	"strconv"
@@ -79,18 +80,29 @@ func (ctl *controller) CreateFundraise() echo.HandlerFunc {
 
 		validate = validator.New(validator.WithRequiredStructEnabled())
 
-		err := validate.Struct(input)
-
-		if err != nil {
+		if err := validate.Struct(input); err != nil {
 			errMap := helpers.ErrorMapValidation(err)
-			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any {
+			return ctx.JSON(400, helper.Response("missing some data", map[string]any {
 				"error": errMap,
 			}))
 		}
 
 		userID := ctx.Get("user_id")
+		
+		fileHeader, err := ctx.FormFile("photo")
+		var file multipart.File
+		
+		if err == nil {
+			formFile, err := fileHeader.Open()
 
-		fundraise, err := ctl.service.Create(input, userID.(int))
+			if err != nil {
+				return ctx.JSON(500, helper.Response("something went wrong"))
+			}
+
+			file = formFile
+		}
+
+		fundraise, err := ctl.service.Create(input, userID.(int), file)
 
 		if err != nil {
 			return ctx.JSON(500, helper.Response(err.Error()))
@@ -121,7 +133,6 @@ func (ctl *controller) UpdateFundraise() echo.HandlerFunc {
 		ctx.Bind(&input)
 
 		validate = validator.New(validator.WithRequiredStructEnabled())
-		
 
 		if err := validate.Struct(input); err != nil {
 			errMap := helpers.ErrorMapValidation(err)

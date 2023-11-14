@@ -44,8 +44,11 @@ func main() {
 }
 
 func FundraiseHandler() fundraise.Handler {
+	config := config.LoadCloudStorageConfig()
+	
 	db := utils.InitDB()
-	repo := fr.New(db)
+	clStorage := helpers.NewCloudStorage(config.CLOUD_PROJECT_ID, config.CLOUD_BUCKET_NAME, "fundraises/")
+	repo := fr.New(db, clStorage)
 	uc := fu.New(repo)
 	return fh.New(uc)
 }
