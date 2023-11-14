@@ -34,14 +34,15 @@ type RedisConfig struct {
 
 type CloudStorageConfig struct {
 	GOOGLE_APPLICATION_CREDENTIALS string
-	CLOUD_PROJECT_ID string
-	CLOUD_BUCKET_NAME string
+	CLOUD_PROJECT_ID               string
+	CLOUD_BUCKET_NAME              string
 }
 
 type ProgramConfig struct {
-	Secret        string
-	RefreshSecret string
-	SERVER_PORT   string
+	SECRET         string
+	REFRESH_SECRET string
+	SERVER_PORT    string
+	OTP_SECRET     string
 }
 
 func LoadDBConfig() *DatabaseConfig {
@@ -69,7 +70,7 @@ func LoadDBConfig() *DatabaseConfig {
 	if val, found := os.LookupEnv("DB_PORT"); found {
 		res.DB_PORT = val
 	}
-	
+
 	if val, found := os.LookupEnv("DB_NAME"); found {
 		res.DB_NAME = val
 	}
@@ -134,15 +135,19 @@ func loadConfig() *ProgramConfig {
 	}
 
 	if val, found := os.LookupEnv("SECRET"); found {
-		res.Secret = val
+		res.SECRET = val
 	}
 
 	if val, found := os.LookupEnv("REFSECRET"); found {
-		res.RefreshSecret = val
+		res.REFRESH_SECRET = val
 	}
 
 	if val, found := os.LookupEnv("SERVER_PORT"); found {
 		res.SERVER_PORT = val
+	}
+
+	if val, found := os.LookupEnv("OTP_SECRET"); found {
+		res.OTP_SECRET = val
 	}
 
 	return res

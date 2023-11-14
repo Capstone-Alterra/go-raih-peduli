@@ -164,6 +164,68 @@ func (svc *service) ValidateVerification(verificationKey string) bool {
 	return true
 }
 
-func (svc *service) InsertVerification(email string, verificationKey string) error {
-	return svc.model.InsertVerification(email, verificationKey)
+func (svc *service) ForgetPassword(data dtos.ForgetPassword) error {
+	user, err := svc.model.SelectByEmail(data.Email)
+
+	if err != nil {
+		return err
+	}
+
+	user.IsVerified = false
+	rowsAffected := svc.model.UpdateUser(*user)
+
+	if rowsAffected == 0 {
+		log.Error("There is No Customer Updated!")
+		return errors.New("There is No Customer Updated!")
+	}
+
+	otp := helpers.GenerateRandomOTP()
+
+	err = svc.model.SendOTPByEmail(user.Email, otp)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (svc *service) VerifyOTP(verificationKey string) string {
+	email := svc.model.ValidateVerification(verificationKey)
+	if email == "" {
+		return ""
+	}
+
+	user, err := svc.model.SelectByEmail(email)
+	if err != nil {
+		return ""
+	}
+
+	userID := strconv.Itoa(user.ID)
+	roleID := strconv.Itoa(user.RoleID)
+	token := svc.jwt.GenerateTokenResetPassword(userID, roleID)
+
+	return token
+}
+
+func (svc *service) ResetPassword(newData dtos.ResetPassword) error {
+	user, err := svc.model.SelectByEmail(newData.Email)
+
+	if err != nil {
+		return err
+	}
+
+	if user.IsVerified {
+		return errors.New("Cannot reset password")
+	}
+
+	user.Password = svc.hash.HashPassword(newData.Password)
+	user.IsVerified = true
+	rowsAffected := svc.model.UpdateUser(*user)
+
+	if rowsAffected == 0 {
+		log.Error("There is No Customer Updated!")
+		return errors.New("There is No Customer Updated!")
+	}
+
+	return nil
 }
