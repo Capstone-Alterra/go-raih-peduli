@@ -8,10 +8,9 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
-	"github.com/sirupsen/logrus"
 )
 
-func AuthorizeJWT(jwtService helpers.JWTInterface, role int) echo.MiddlewareFunc {
+func AuthorizeJWT(jwtService helpers.JWTInterface, role int, secret string) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
 			authHeader := ctx.Request().Header.Get("Authorization")
@@ -21,7 +20,7 @@ func AuthorizeJWT(jwtService helpers.JWTInterface, role int) echo.MiddlewareFunc
 			}
 
 			tokenString := authHeader[len("Bearer "):]
-			token, err := jwtService.ValidateToken(tokenString)
+			token, err := jwtService.ValidateToken(tokenString, secret)
 			if err != nil {
 				log.Println(err)
 				response := helpers.BuildErrorResponse("token is not valid - " + err.Error())
@@ -34,7 +33,6 @@ func AuthorizeJWT(jwtService helpers.JWTInterface, role int) echo.MiddlewareFunc
 				ctx.Set("user_id", userID)
 				ctx.Set("role_id", claims["role_id"])
 
-
 				if role == 0 {
 					return next(ctx)
 				}
@@ -43,8 +41,6 @@ func AuthorizeJWT(jwtService helpers.JWTInterface, role int) echo.MiddlewareFunc
 					response := helpers.BuildErrorResponse("this user cannot access this endpoint")
 					return ctx.JSON(http.StatusUnauthorized, response)
 				}
-				
-				logrus.Error("test 2")
 
 				return next(ctx)
 			}

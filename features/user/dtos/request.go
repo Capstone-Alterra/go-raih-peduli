@@ -17,3 +17,12 @@ type Pagination struct {
 type VerifyOTP struct {
 	OTP string `json:"otp" form:"otp"`
 }
+
+type ForgetPassword struct {
+	Email string `json:"email" form:"email" validate:"email"`
+}
+
+type ResetPassword struct {
+	Email    string `json:"email" form:"email" validate:"required"`
+	Password string `json:"password" form:"password" validate:"required"`
+}
