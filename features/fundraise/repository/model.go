@@ -1,18 +1,24 @@
 package repository
 
 import (
+	"mime/multipart"
+	"raihpeduli/config"
 	"raihpeduli/features/fundraise"
+	"raihpeduli/helpers"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type model struct {
 	db *gorm.DB
+	clStorage helpers.CloudStorageInterface
 }
 
-func New(db *gorm.DB) fundraise.Repository {
+func New(db *gorm.DB, clStorage helpers.CloudStorageInterface) fundraise.Repository {
 	return &model {
 		db: db,
+		clStorage: clStorage,
 	}
 }
 
@@ -65,4 +71,18 @@ func (mdl *model) DeleteByID(fundraiseID int) (int, error) {
 	}
 
 	return int(result.RowsAffected), nil
+}
+
+func (mdl *model) UploadFile(file multipart.File, objectName string) (string, error) {
+	config := config.LoadCloudStorageConfig()
+	randomChar := uuid.New().String()
+	if objectName == "" {
+		objectName = randomChar
+	}
+
+	if err := mdl.clStorage.UploadFile(file, objectName); err != nil {
+		return "", err
+	}
+
+	return "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/fundraises/" + objectName, nil
 }
