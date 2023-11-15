@@ -2,18 +2,21 @@ package news
 
 import (
 	"raihpeduli/features/auth"
+	"time"
 
 	"gorm.io/gorm"
 )
 
 type News struct {
-	gorm.Model
-
 	ID          int    `gorm:"type:int(11)"`
 	Title       string `gorm:"type:varchar(255)"`
 	Description string `gorm:"type:varchar(255)"`
 	Photo       string `gorm:"type:varchar(255)"`
 	UserID      int    `gorm:"type:int(11)"`
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt gorm.DeletedAt `gorm:"index"`
 
 	User auth.User
 }
