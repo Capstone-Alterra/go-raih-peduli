@@ -15,7 +15,7 @@ type service struct {
 }
 
 func New(model fundraise.Repository) fundraise.Usecase {
-	return &service {
+	return &service{
 		model: model,
 	}
 }
@@ -35,8 +35,8 @@ func (svc *service) FindAll(page int, size int, title string) []dtos.ResFundrais
 
 		if err := smapping.FillStruct(&data, smapping.MapFields(fundraise)); err != nil {
 			logrus.Error(err)
-		} 
-		
+		}
+
 		fundraises = append(fundraises, data)
 	}
 
@@ -51,7 +51,7 @@ func (svc *service) FindByID(fundraiseID int) *dtos.ResFundraise {
 		logrus.Error(err)
 		return nil
 	}
-	
+
 	if err := smapping.FillStruct(&res, smapping.MapFields(fundraise)); err != nil {
 		logrus.Error(err)
 		return nil
@@ -66,15 +66,15 @@ func (svc *service) Create(newFundraise dtos.InputFundraise, userID int, file mu
 
 	if file != nil {
 		imageURL, err := svc.model.UploadFile(file, "")
-	
+
 		if err != nil {
 			logrus.Error(err)
 			return nil, err
 		}
 
 		url = imageURL
-	} 
-	
+	}
+
 	fundraise.UserID = userID
 	fundraise.Status = "pending"
 	fundraise.Photo = url
@@ -88,7 +88,7 @@ func (svc *service) Create(newFundraise dtos.InputFundraise, userID int, file mu
 	}
 
 	var res dtos.ResFundraise
-	
+
 	res.Status = "pending"
 	res.Photo = url
 	res.UserID = userID
@@ -111,7 +111,7 @@ func (svc *service) Modify(fundraiseData dtos.InputFundraise, file multipart.Fil
 			oldFilename = oldFilename[urlLength:]
 		}
 		imageURL, err := svc.model.UploadFile(file, oldFilename)
-		
+
 		if err != nil {
 			logrus.Error(err)
 			return false
@@ -124,7 +124,7 @@ func (svc *service) Modify(fundraiseData dtos.InputFundraise, file multipart.Fil
 		logrus.Error(err)
 		return false
 	}
-	
+
 	newFundraise.Photo = url
 	newFundraise.ID = oldData.ID
 	newFundraise.UserID = oldData.UserID
@@ -134,7 +134,7 @@ func (svc *service) Modify(fundraiseData dtos.InputFundraise, file multipart.Fil
 		logrus.Error(err)
 		return false
 	}
-	
+
 	return true
 }
 

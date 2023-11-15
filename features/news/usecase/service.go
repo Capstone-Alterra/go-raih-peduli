@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"mime/multipart"
 	"raihpeduli/features/news"
 	"raihpeduli/features/news/dtos"
 
@@ -13,23 +14,28 @@ type service struct {
 }
 
 func New(model news.Repository) news.Usecase {
-	return &service {
+	return &service{
 		model: model,
 	}
 }
 
-func (svc *service) FindAll(page, size int) []dtos.ResNews {
+func (svc *service) FindAll(page, size int, keyword string) []dtos.ResNews {
 	var newss []dtos.ResNews
 
-	newssEnt := svc.model.Paginate(page, size)
+	newsEnt, err := svc.model.Paginate(page, size, keyword)
 
-	for _, news := range newssEnt {
+	if err != nil {
+		log.Error(err)
+		return nil
+	}
+
+	for _, news := range newsEnt {
 		var data dtos.ResNews
 
 		if err := smapping.FillStruct(&data, smapping.MapFields(news)); err != nil {
 			log.Error(err.Error())
-		} 
-		
+		}
+
 		newss = append(newss, data)
 	}
 
@@ -53,29 +59,39 @@ func (svc *service) FindByID(newsID int) *dtos.ResNews {
 	return &res
 }
 
-func (svc *service) Create(newNews dtos.InputNews) *dtos.ResNews {
+func (svc *service) Create(newNews dtos.InputNews, userID int, file multipart.File) (*dtos.ResNews, error) {
 	news := news.News{}
-	
+	var url string
+
+	if file != nil {
+		imgURL, err := svc.model.UploadFile(file, "")
+
+		if err != nil {
+			return nil, err
+		}
+
+		url = imgURL
+	}
+	news.UserID = userID
+	news.Photo = url
 	err := smapping.FillStruct(&news, smapping.MapFields(newNews))
 	if err != nil {
 		log.Error(err)
-		return nil
+		return nil, err
 	}
 
-	newsID := svc.model.Insert(news)
-
-	if newsID == -1 {
-		return nil
+	if _, err := svc.model.Insert(news); err != nil {
+		return nil, err
 	}
 
 	resNews := dtos.ResNews{}
-	errRes := smapping.FillStruct(&resNews, smapping.MapFields(newNews))
-	if errRes != nil {
-		log.Error(errRes)
-		return nil
+	resNews.UserID = userID
+	resNews.Photo = url
+	if err := smapping.FillStruct(&resNews, smapping.MapFields(newNews)); err != nil {
+		return nil, err
 	}
 
-	return &resNews
+	return &resNews, nil
 }
 
 func (svc *service) Modify(newsData dtos.InputNews, newsID int) bool {
@@ -94,7 +110,7 @@ func (svc *service) Modify(newsData dtos.InputNews, newsID int) bool {
 		log.Error("There is No News Updated!")
 		return false
 	}
-	
+
 	return true
 }
 

@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"raihpeduli/helpers"
+	"mime/multipart"
 	helper "raihpeduli/helpers"
 	"strconv"
 
@@ -31,12 +31,13 @@ func (ctl *controller) GetNews() echo.HandlerFunc {
 
 		page := pagination.Page
 		size := pagination.Size
+		keyword := ctx.QueryParam("title")
 
 		if page <= 0 || size <= 0 {
 			return ctx.JSON(400, helper.Response("Please provide query `page` and `size` in number!"))
 		}
 
-		newss := ctl.service.FindAll(page, size)
+		newss := ctl.service.FindAll(page, size, keyword)
 
 		if newss == nil {
 			return ctx.JSON(404, helper.Response("There is No Newss!"))
@@ -76,19 +77,31 @@ func (ctl *controller) CreateNews() echo.HandlerFunc {
 
 		validate = validator.New(validator.WithRequiredStructEnabled())
 
-		err := validate.Struct(input)
-
-		if err != nil {
-			errMap := helpers.ErrorMapValidation(err)
+		if err := validate.Struct(input); err != nil {
+			errMap := helper.ErrorMapValidation(err)
 			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any{
 				"error": errMap,
 			}))
 		}
 
-		news := ctl.service.Create(input)
+		userID := ctx.Get("user_id")
 
-		if news == nil {
-			return ctx.JSON(500, helper.Response("Something went Wrong!", nil))
+		fileHeader, err := ctx.FormFile("photo")
+		var file multipart.File
+
+		if err == nil {
+			formFile, err := fileHeader.Open()
+
+			if err != nil {
+				return ctx.JSON(500, helper.Response("something went wrong"))
+			}
+
+			file = formFile
+		}
+		news, err := ctl.service.Create(input, userID.(int), file)
+
+		if err != nil {
+			return ctx.JSON(500, helper.Response(err.Error(), nil))
 		}
 
 		return ctx.JSON(200, helper.Response("Success!", map[string]any{
@@ -119,7 +132,7 @@ func (ctl *controller) UpdateNews() echo.HandlerFunc {
 		err := validate.Struct(input)
 
 		if err != nil {
-			errMap := helpers.ErrorMapValidation(err)
+			errMap := helper.ErrorMapValidation(err)
 			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any{
 				"error": errMap,
 			}))

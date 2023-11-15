@@ -1,46 +1,47 @@
 package repository
 
 import (
+	"mime/multipart"
+	"raihpeduli/config"
 	"raihpeduli/features/news"
+	"raihpeduli/helpers"
 
+	"github.com/google/uuid"
 	"github.com/labstack/gommon/log"
 	"gorm.io/gorm"
 )
 
 type model struct {
-	db *gorm.DB
+	db        *gorm.DB
+	clStorage helpers.CloudStorageInterface
 }
 
-func New(db *gorm.DB) news.Repository {
-	return &model {
-		db: db,
+func New(db *gorm.DB, clStorage helpers.CloudStorageInterface) news.Repository {
+	return &model{
+		db:        db,
+		clStorage: clStorage,
 	}
 }
 
-func (mdl *model) Paginate(page, size int) []news.News {
-	var newss []news.News
+func (mdl *model) Paginate(page, size int, keyword string) ([]news.News, error) {
+	var news []news.News
 
 	offset := (page - 1) * size
+	searching := "%" + keyword + "%"
 
-	result := mdl.db.Offset(offset).Limit(size).Find(&newss)
-	
-	if result.Error != nil {
-		log.Error(result.Error)
-		return nil
+	if err := mdl.db.Offset(offset).Limit(size).Where("title LIKE ?", searching).Find(&news).Error; err != nil {
+		return nil, err
 	}
 
-	return newss
+	return news, nil
 }
 
-func (mdl *model) Insert(newNews news.News) int64 {
-	result := mdl.db.Create(&newNews)
-
-	if result.Error != nil {
-		log.Error(result.Error)
-		return -1
+func (mdl *model) Insert(newNews news.News) (int, error) {
+	if err := mdl.db.Create(&newNews).Error; err != nil {
+		return 0, err
 	}
 
-	return int64(newNews.ID)
+	return newNews.ID, nil
 }
 
 func (mdl *model) SelectByID(newsID int) *news.News {
@@ -67,11 +68,25 @@ func (mdl *model) Update(news news.News) int64 {
 
 func (mdl *model) DeleteByID(newsID int) int64 {
 	result := mdl.db.Delete(&news.News{}, newsID)
-	
+
 	if result.Error != nil {
 		log.Error(result.Error)
 		return 0
 	}
 
 	return result.RowsAffected
+}
+
+func (mdl *model) UploadFile(file multipart.File, objectName string) (string, error) {
+	config := config.LoadCloudStorageConfig()
+	randomChar := uuid.New().String()
+	if objectName == "" {
+		objectName = randomChar
+	}
+
+	if err := mdl.clStorage.UploadFile(file, objectName); err != nil {
+		return "", err
+	}
+
+	return "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/news/" + objectName, nil
 }
