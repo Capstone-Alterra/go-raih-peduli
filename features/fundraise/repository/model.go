@@ -11,13 +11,13 @@ import (
 )
 
 type model struct {
-	db *gorm.DB
+	db        *gorm.DB
 	clStorage helpers.CloudStorageInterface
 }
 
 func New(db *gorm.DB, clStorage helpers.CloudStorageInterface) fundraise.Repository {
-	return &model {
-		db: db,
+	return &model{
+		db:        db,
 		clStorage: clStorage,
 	}
 }
@@ -65,7 +65,7 @@ func (mdl *model) Update(fundraise fundraise.Fundraise) (int, error) {
 
 func (mdl *model) DeleteByID(fundraiseID int) (int, error) {
 	result := mdl.db.Delete(&fundraise.Fundraise{}, fundraiseID)
-	
+
 	if result.Error != nil {
 		return 0, result.Error
 	}

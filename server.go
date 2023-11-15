@@ -27,6 +27,11 @@ import (
 	vr "raihpeduli/features/volunteer/repository"
 	vu "raihpeduli/features/volunteer/usecase"
 
+	"raihpeduli/features/news"
+	nh "raihpeduli/features/news/handler"
+	nr "raihpeduli/features/news/repository"
+	nu "raihpeduli/features/news/usecase"
+
 	"github.com/labstack/echo/v4"
 )
 
@@ -39,6 +44,7 @@ func main() {
 	routes.Users(e, UserHandler(), jwtService, *cfg)
 	routes.Fundraises(e, FundraiseHandler(), jwtService, *cfg)
 	routes.Volunteers(e, VolunteerHandler())
+	routes.News(e, NewsHandler(), jwtService, *cfg)
 
 	e.Start(fmt.Sprintf(":%s", cfg.SERVER_PORT))
 }
@@ -86,4 +92,14 @@ func VolunteerHandler() volunteer.Handler {
 	repo := vr.New(db)
 	uc := vu.New(repo)
 	return vh.New(uc)
+}
+
+func NewsHandler() news.Handler {
+	db := utils.InitDB()
+	config := config.LoadCloudStorageConfig()
+
+	clStorage := helpers.NewCloudStorage(config.CLOUD_PROJECT_ID, config.CLOUD_BUCKET_NAME, "news/")
+	repo := nr.New(db, clStorage)
+	uc := nu.New(repo)
+	return nh.New(uc)
 }
