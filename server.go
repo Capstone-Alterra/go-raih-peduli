@@ -38,7 +38,7 @@ import (
 func main() {
 	e := echo.New()
 	cfg := config.InitConfig()
-	jwtService := helpers.New(*cfg)
+	jwtService := helpers.NewJWT(*cfg)
 
 	routes.Auth(e, AuthHandler())
 	routes.Users(e, UserHandler(), jwtService, *cfg)
@@ -51,11 +51,12 @@ func main() {
 
 func FundraiseHandler() fundraise.Handler {
 	config := config.LoadCloudStorageConfig()
+	validation := helpers.NewValidationRequest()
 
 	db := utils.InitDB()
 	clStorage := helpers.NewCloudStorage(config.CLOUD_PROJECT_ID, config.CLOUD_BUCKET_NAME, "fundraises/")
 	repo := fr.New(db, clStorage)
-	uc := fu.New(repo)
+	uc := fu.New(repo, validation)
 	return fh.New(uc)
 }
 
@@ -63,12 +64,13 @@ func UserHandler() user.Handler {
 	config := config.InitConfig()
 
 	db := utils.InitDB()
-	jwt := helpers.New(*config)
+	jwt := helpers.NewJWT(*config)
 	hash := helpers.NewHash()
+	generator := helpers.NewGenerator()
 	redis := utils.ConnectRedis()
 
 	repo := ur.New(db, redis)
-	uc := uu.New(repo, jwt, hash)
+	uc := uu.New(repo, jwt, hash, generator)
 	return uh.New(uc)
 }
 
@@ -76,12 +78,13 @@ func AuthHandler() auth.Handler {
 	config := config.InitConfig()
 
 	db := utils.InitDB()
-	jwt := helpers.New(*config)
+	jwt := helpers.NewJWT(*config)
 	hash := helpers.NewHash()
+	generator := helpers.NewGenerator()
 	redis := utils.ConnectRedis()
 
 	repo := ar.New(db, redis)
-	uc := au.New(repo, jwt, hash)
+	uc := au.New(repo, jwt, hash, generator)
 	return ah.New(uc)
 }
 

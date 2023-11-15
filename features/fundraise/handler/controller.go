@@ -77,15 +77,6 @@ func (ctl *controller) CreateFundraise() echo.HandlerFunc {
 
 		ctx.Bind(&input)
 
-		validate = validator.New(validator.WithRequiredStructEnabled())
-
-		if err := validate.Struct(input); err != nil {
-			errMap := helpers.ErrorMapValidation(err)
-			return ctx.JSON(400, helper.Response("missing some data", map[string]any{
-				"error": errMap,
-			}))
-		}
-
 		userID := ctx.Get("user_id")
 
 		fileHeader, err := ctx.FormFile("photo")
@@ -101,7 +92,13 @@ func (ctl *controller) CreateFundraise() echo.HandlerFunc {
 			file = formFile
 		}
 
-		fundraise, err := ctl.service.Create(input, userID.(int), file)
+		fundraise, errMap, err := ctl.service.Create(input, userID.(int), file)
+
+		if errMap != nil {
+			return ctx.JSON(400, helper.Response("missing some data", map[string]any{
+				"error": errMap,
+			}))
+		}
 
 		if err != nil {
 			return ctx.JSON(500, helper.Response(err.Error()))
