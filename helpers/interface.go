@@ -30,3 +30,7 @@ type GeneratorInterface interface {
 type CloudStorageInterface interface {
 	UploadFile(file multipart.File, object string) error
 }
+
+type ConverterInterface interface {
+	Convert(target any, value any) error
+}
