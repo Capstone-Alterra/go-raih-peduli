@@ -5,7 +5,13 @@ import (
 	"time"
 )
 
-func GenerateRandomOTP() string {
+type generator struct{}
+
+func NewGenerator() GeneratorInterface {
+	return &generator{}
+}
+
+func (g generator) GenerateRandomOTP() string {
 	src := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(src)
 

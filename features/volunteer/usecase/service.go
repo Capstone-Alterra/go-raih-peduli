@@ -2,11 +2,13 @@ package usecase
 
 import (
 	"errors"
+	"mime/multipart"
 	"raihpeduli/features/volunteer"
 	"raihpeduli/features/volunteer/dtos"
 
 	"github.com/labstack/gommon/log"
 	"github.com/mashingan/smapping"
+	"github.com/sirupsen/logrus"
 )
 
 type service struct {
@@ -93,9 +95,25 @@ func (svc *service) Remove(volunteerID int) bool {
 	return true
 }
 
-func (svc *service) Create(newVolunteer dtos.InputVolunteer) (*dtos.ResVolunteer, error){
+func (svc *service) Create(newVolunteer dtos.InputVolunteer, UserID int, file multipart.File) (*dtos.ResVolunteer, error){
 	volun := volunteer.VolunteerVacancies{}
 
+	var url string = ""
+
+	if file != nil {
+		imageURL, err := svc.model.UploadFile(file, "")
+
+		if err != nil {
+			logrus.Error(err)
+			return nil, err
+		}
+
+		url = imageURL
+	}
+
+	volun.UserID = UserID
+	volun.Status = "Pending"
+	volun.Photo = url
 	err := smapping.FillStruct(&volun, smapping.MapFields(newVolunteer))
 
 	result, err := svc.model.Insert(&volun)
