@@ -10,7 +10,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func AuthorizeJWT(jwtService helpers.JWTInterface, role int) echo.MiddlewareFunc {
+func AuthorizeJWT(jwtService helpers.JWTInterface, role int, secret string) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
 			authHeader := ctx.Request().Header.Get("Authorization")
@@ -20,7 +20,7 @@ func AuthorizeJWT(jwtService helpers.JWTInterface, role int) echo.MiddlewareFunc
 			}
 
 			tokenString := authHeader[len("Bearer "):]
-			token, err := jwtService.ValidateToken(tokenString)
+			token, err := jwtService.ValidateToken(tokenString, secret)
 			if err != nil {
 				log.Println(err)
 				response := helpers.BuildErrorResponse("token is not valid - " + err.Error())
@@ -28,15 +28,16 @@ func AuthorizeJWT(jwtService helpers.JWTInterface, role int) echo.MiddlewareFunc
 			}
 			if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 				userID, _ := strconv.Atoi(claims["user_id"].(string))
-				
+				roleID, _ := strconv.Atoi(claims["role_id"].(string))
+
 				ctx.Set("user_id", userID)
 				ctx.Set("role_id", claims["role_id"])
 
-				if claims["role_id"].(int) == 0 {
+				if role == 0 {
 					return next(ctx)
 				}
 
-				if claims["role_id"].(int) != role {
+				if roleID != role {
 					response := helpers.BuildErrorResponse("this user cannot access this endpoint")
 					return ctx.JSON(http.StatusUnauthorized, response)
 				}

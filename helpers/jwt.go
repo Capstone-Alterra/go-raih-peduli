@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"fmt"
+	"raihpeduli/config"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -12,19 +13,22 @@ import (
 type JWTInterface interface {
 	GenerateJWT(userID string, roleID string) map[string]any
 	GenerateToken(userID string, roleID string) string
+	GenerateTokenResetPassword(userID string, roleID string) string
 	ExtractToken(token *jwt.Token) any
-	ValidateToken(token string) (*jwt.Token, error)
+	ValidateToken(token string, secret string) (*jwt.Token, error)
 }
 
 type JWT struct {
 	signKey    string
 	refreshKey string
+	otpKey     string
 }
 
-func New(signKey string, refreshKey string) JWTInterface {
+func New(config config.ProgramConfig) JWTInterface {
 	return &JWT{
-		signKey:    signKey,
-		refreshKey: refreshKey,
+		signKey:    config.SECRET,
+		refreshKey: config.REFRESH_SECRET,
+		otpKey:     config.OTP_SECRET,
 	}
 }
 
@@ -49,6 +53,23 @@ func (j *JWT) GenerateToken(userID string, roleID string) string {
 
 	var sign = jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	validToken, err := sign.SignedString([]byte(j.signKey))
+
+	if err != nil {
+		return ""
+	}
+
+	return validToken
+}
+
+func (j *JWT) GenerateTokenResetPassword(userID string, roleID string) string {
+	var claims = jwt.MapClaims{}
+	claims["user_id"] = userID
+	claims["role_id"] = roleID
+	claims["iat"] = time.Now().Unix()
+	claims["exp"] = time.Now().Add(time.Minute * 10).Unix()
+
+	var sign = jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	validToken, err := sign.SignedString([]byte(j.otpKey))
 
 	if err != nil {
 		return ""
@@ -128,12 +149,12 @@ func (j JWT) ExtractToken(token *jwt.Token) any {
 	return nil
 }
 
-func (j JWT) ValidateToken(token string) (*jwt.Token, error) {
+func (j JWT) ValidateToken(token string, secret string) (*jwt.Token, error) {
 	parsedToken, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Unexpected signing method %v", token.Header["alg"])
 		}
-		return []byte(j.signKey), nil
+		return []byte(secret), nil
 	})
 	if err != nil {
 		return nil, err
