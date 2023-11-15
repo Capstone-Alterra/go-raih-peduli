@@ -16,7 +16,7 @@ type Repository interface {
 	DeleteByID(customerID int) int64
 	SendOTPByEmail(email string, otp string) error
 	InsertVerification(email string, verificationKey string) error
-	ValidateVerification(verificationKey string) bool
+	ValidateVerification(verificationKey string) string
 }
 
 type Usecase interface {
@@ -25,8 +25,10 @@ type Usecase interface {
 	Create(newUser dtos.InputUser) (*dtos.ResUser, error)
 	Modify(customerData dtos.InputUser, customerID int) bool
 	Remove(customerID int) bool
-	InsertVerification(email string, verificationKey string) error
 	ValidateVerification(verificationKey string) bool
+	ForgetPassword(email dtos.ForgetPassword) error
+	VerifyOTP(verificationKey string) string
+	ResetPassword(newData dtos.ResetPassword) error
 }
 
 type Handler interface {
@@ -36,4 +38,7 @@ type Handler interface {
 	UpdateUser() echo.HandlerFunc
 	DeleteUser() echo.HandlerFunc
 	VerifyEmail() echo.HandlerFunc
+	ForgetPassword() echo.HandlerFunc
+	VerifyOTP() echo.HandlerFunc
+	ResetPassword() echo.HandlerFunc
 }

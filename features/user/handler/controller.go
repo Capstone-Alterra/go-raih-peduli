@@ -185,3 +185,73 @@ func (ctl *controller) VerifyEmail() echo.HandlerFunc {
 		return ctx.JSON(200, helper.Response("Success verify email!"))
 	}
 }
+
+func (ctl *controller) ForgetPassword() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		var email dtos.ForgetPassword
+
+		ctx.Bind(&email)
+
+		err := ctl.service.ForgetPassword(email)
+		if err != nil {
+			return ctx.JSON(404, helper.Response("User Not Found!"))
+		}
+
+		return ctx.JSON(200, helper.Response("OTP has been sent via email"))
+	}
+}
+
+func (ctl *controller) VerifyOTP() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		var input dtos.VerifyOTP
+
+		ctx.Bind(&input)
+
+		validate = validator.New(validator.WithRequiredStructEnabled())
+
+		err := validate.Struct(input)
+
+		if err != nil {
+			errMap := helpers.ErrorMapValidation(err)
+			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any{
+				"error": errMap,
+			}))
+		}
+
+		token := ctl.service.VerifyOTP(input.OTP)
+		if token == "" {
+			return ctx.JSON(500, helper.Response("Incorrect / Expired OTP"))
+		}
+
+		return ctx.JSON(200, helper.Response("Success verify email!", map[string]any{
+			"access_token": token,
+		}))
+	}
+}
+
+func (ctl *controller) ResetPassword() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		var input dtos.ResetPassword
+
+		ctx.Bind(&input)
+
+		validate = validator.New(validator.WithRequiredStructEnabled())
+
+		err := validate.Struct(input)
+
+		if err != nil {
+			errMap := helpers.ErrorMapValidation(err)
+			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any{
+				"error": errMap,
+			}))
+		}
+
+		err = ctl.service.ResetPassword(input)
+
+		if err != nil {
+			return ctx.JSON(500, helper.Response("Something Went Wrong!"))
+		}
+
+		return ctx.JSON(200, helper.Response("Success Reset Password!"))
+	}
+}
