@@ -44,7 +44,7 @@ func main() {
 	routes.Users(e, UserHandler(), jwtService, *cfg)
 	routes.Fundraises(e, FundraiseHandler(), jwtService, *cfg)
 	routes.Volunteers(e, VolunteerHandler())
-	routes.News(e, NewsHandler(), jwtService)
+	routes.News(e, NewsHandler(), jwtService, *cfg)
 
 	e.Start(fmt.Sprintf(":%s", cfg.SERVER_PORT))
 }
@@ -93,8 +93,6 @@ func VolunteerHandler() volunteer.Handler {
 	uc := vu.New(repo)
 	return vh.New(uc)
 }
-<<<<<<< Updated upstream
-=======
 
 func NewsHandler() news.Handler {
 	db := utils.InitDB()
@@ -105,4 +103,3 @@ func NewsHandler() news.Handler {
 	uc := nu.New(repo)
 	return nh.New(uc)
 }
->>>>>>> Stashed changes
