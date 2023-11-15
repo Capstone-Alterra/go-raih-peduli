@@ -43,7 +43,7 @@ func main() {
 	routes.Auth(e, AuthHandler())
 	routes.Users(e, UserHandler(), jwtService, *cfg)
 	routes.Fundraises(e, FundraiseHandler(), jwtService, *cfg)
-	routes.Volunteers(e, VolunteerHandler())
+	routes.Volunteers(e, VolunteerHandler(), jwtService, *cfg)
 	routes.News(e, NewsHandler(), jwtService, *cfg)
 
 	e.Start(fmt.Sprintf(":%s", cfg.SERVER_PORT))
@@ -86,10 +86,12 @@ func AuthHandler() auth.Handler {
 }
 
 func VolunteerHandler() volunteer.Handler {
+	config := config.LoadCloudStorageConfig()
 
 	db := utils.InitDB()
 
-	repo := vr.New(db)
+	clStorage := helpers.NewCloudStorage(config.CLOUD_PROJECT_ID, config.CLOUD_BUCKET_NAME, "fundraises/")
+	repo := vr.New(db, clStorage)
 	uc := vu.New(repo)
 	return vh.New(uc)
 }
