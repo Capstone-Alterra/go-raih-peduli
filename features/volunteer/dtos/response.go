@@ -15,7 +15,9 @@ type ResVolunteer struct {
 	NumberOfVacancies   int            `json:"number_of_vacancies"`
 	ApplicationDeadline time.Time      `json:"application_deadline"`
 	ContactEmail        string         `json:"contact_email"`
-	Location            string         `json:"location"`
+	Province 			string 		   `json:"province"`
+	City 				string 		   `json:"city"`
+	SubDistrict 		string 		   `json:"sub_district"`
 	Photo               string         `json:"photo"`
 	Status              string         `json:"status"`
 	CreatedAt           time.Time      `json:"created_at"`

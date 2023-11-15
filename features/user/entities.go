@@ -1,6 +1,7 @@
 package user
 
 import (
+	"raihpeduli/features/volunteer"
 	"time"
 
 	"gorm.io/gorm"
@@ -22,4 +23,6 @@ type User struct {
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 	DeletedAt      gorm.DeletedAt `gorm:"index"`
+
+	VolunteerVacancies  []volunteer.VolunteerVacancies `gorm:"foreignKey:UserID;references:ID"`
 }
