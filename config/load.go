@@ -1,7 +1,6 @@
 package config
 
 import (
-	"github.com/joho/godotenv"
 	"io"
 	"os"
 
@@ -48,8 +47,6 @@ type ProgramConfig struct {
 
 func LoadDBConfig() *DatabaseConfig {
 	var res = new(DatabaseConfig)
-
-	godotenv.Load(".env")
 
 	if val, found := os.LookupEnv("DB_USER"); found {
 		res.DB_USER = val
