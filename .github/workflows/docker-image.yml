@@ -71,5 +71,6 @@ jobs:
             -e GOOGLE_APPLICATION_CREDENTIALS=${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }} \
             -e CLOUD_BUCKET_NAME=${{ secrets.CLOUD_BUCKET_NAME }} \
             -e CLOUD_PROJECT_ID=${{ secrets.CLOUD_PROJECT_ID }} \
+            -e APPLICATION_DEFAULT_CREDENTIALS="$(echo '${{secrets.APPLICATION_DEFAULT_CREDENTIALS}}')" \
             ${{ secrets.DOCKERHUB_USERNAME }}/imgoraihpeduli
        
