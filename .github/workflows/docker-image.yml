@@ -56,7 +56,7 @@ jobs:
             --name ${{ secrets.CNAME }} \
             --network ${{ secrets.DOCKER_NETWORK }}  \
             -e DB_USER=${{ secrets.DB_USER }} \
-            -e DB_PASS=\
+            -e DB_PASS= \
             -e DB_HOST=${{ secrets.DB_HOST }} \
             -e DB_NAME=${{ secrets.DB_NAME }} \
             -e DB_PORT=${{ secrets.DB_PORT }} \
