@@ -1,0 +1,75 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: "development"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      -
+        name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      -
+        name: Fetch service account key
+        run: |
+          mkdir -p $GITHUB_WORKSPACE/credentials
+          echo "${{ secrets.APPLICATION_DEFAULT_CREDENTIALS }}" > $GITHUB_WORKSPACE/credentials/application_default_credentials.json
+      -
+        name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/imgoraihpeduli
+      -
+        name: connect ssh
+        uses: appleboy/ssh-action@v0.1.9
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }} 
+          key: ${{ secrets.KEY }}
+          port:  ${{ secrets.PORT }} 
+          script: |
+            docker stop my-redis
+            docker rm my-redis
+            docker pull redis
+            docker network rm ${{ secrets.DOCKER_NETWORK }} 
+            docker network create ${{ secrets.DOCKER_NETWORK }} 
+            docker run -d --name my-redis --network ${{ secrets.DOCKER_NETWORK }} redis
+            docker stop ${{ secrets.CNAME }} 
+            docker rm ${{ secrets.CNAME }} 
+            docker rmi -f ${{ secrets.DOCKERHUB_USERNAME }}/imgoraihpeduli
+            docker run -d \
+            -p 8000:8000 \
+            --name ${{ secrets.CNAME }} \
+            --network ${{ secrets.DOCKER_NETWORK }}  \
+            -e DB_USER=${{ secrets.DB_USER }} \
+            -e DB_PASS=${{ secrets.DB_PASS }} \
+            -e DB_HOST=${{ secrets.DB_HOST }} \
+            -e DB_NAME=${{ secrets.DB_NAME }} \
+            -e DB_PORT=${{ secrets.DB_PORT }} \
+            -e SERVER_PORT=${{ secrets.SERVER_PORT }} \
+            -e SECRET=${{ secrets.SECRET }} \
+            -e REFSECRET=${{ secrets.REFSECRET }} \
+            -e SMTP_USER=${{ secrets.SMTP_USER }} \
+            -e SMTP_PASS=${{ secrets.SMTP_PASS }} \
+            -e SMTP_PORT=${{ secrets.SMTP_PORT }} \
+            -e REDIS_HOST=${{ secrets.REDIS_HOST }} \
+            -e REDIS_PORT=${{ secrets.REDIS_PORT }} \
+            -e GOOGLE_APPLICATION_CREDENTIALS=${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }} \
+            -e CLOUD_BUCKET_NAME=${{ secrets.CLOUD_BUCKET_NAME }} \
+            -e CLOUD_PROJECT_ID=${{ secrets.CLOUD_PROJECT_ID }} \
+            ${{ secrets.DOCKERHUB_USERNAME }}/imgoraihpeduli
+       

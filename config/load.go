@@ -1,9 +1,9 @@
 package config
 
 import (
+	"io"
 	"os"
 
-	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
 )
 
@@ -48,13 +48,6 @@ type ProgramConfig struct {
 func LoadDBConfig() *DatabaseConfig {
 	var res = new(DatabaseConfig)
 
-	err := godotenv.Load(".env")
-
-	if err != nil {
-		logrus.Error("Config : Cannot load config file,", err.Error())
-		return nil
-	}
-
 	if val, found := os.LookupEnv("DB_USER"); found {
 		res.DB_USER = val
 	}
@@ -81,13 +74,6 @@ func LoadDBConfig() *DatabaseConfig {
 func LoadRedisConfig() *RedisConfig {
 	var res = new(RedisConfig)
 
-	err := godotenv.Load(".env")
-
-	if err != nil {
-		logrus.Error("Config : Cannot load config file,", err.Error())
-		return nil
-	}
-
 	if val, found := os.LookupEnv("REDIS_HOST"); found {
 		res.REDIS_HOST = val
 	}
@@ -102,14 +88,20 @@ func LoadRedisConfig() *RedisConfig {
 func LoadCloudStorageConfig() *CloudStorageConfig {
 	var res = new(CloudStorageConfig)
 
-	err := godotenv.Load(".env")
-
-	if err != nil {
-		logrus.Error("Config : Cannot load config file,", err.Error())
-		return nil
-	}
-
 	if val, found := os.LookupEnv("GOOGLE_APPLICATION_CREDENTIALS"); found {
+		gcredentials, _ := os.LookupEnv("APPLICATION_DEFAULT_CREDENTIALS")
+
+		file, err := os.Create("credentials.json")
+		if err != nil {
+			panic(err)
+		}
+		defer file.Close()
+
+		_, err = io.WriteString(file, gcredentials)
+		if err != nil {
+			panic(err)
+		}
+
 		res.GOOGLE_APPLICATION_CREDENTIALS = val
 	}
 
@@ -126,13 +118,6 @@ func LoadCloudStorageConfig() *CloudStorageConfig {
 
 func loadConfig() *ProgramConfig {
 	var res = new(ProgramConfig)
-
-	err := godotenv.Load(".env")
-
-	if err != nil {
-		logrus.Error("Config : Cannot load config file,", err.Error())
-		return nil
-	}
 
 	if val, found := os.LookupEnv("SECRET"); found {
 		res.SECRET = val
