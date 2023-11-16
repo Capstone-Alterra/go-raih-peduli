@@ -77,15 +77,6 @@ func (ctl *controller) CreateFundraise() echo.HandlerFunc {
 
 		ctx.Bind(&input)
 
-		validate = validator.New(validator.WithRequiredStructEnabled())
-
-		if err := validate.Struct(input); err != nil {
-			errMap := helpers.ErrorMapValidation(err)
-			return ctx.JSON(400, helper.Response("missing some data", map[string]any{
-				"error": errMap,
-			}))
-		}
-
 		userID := ctx.Get("user_id")
 
 		fileHeader, err := ctx.FormFile("photo")
@@ -101,7 +92,13 @@ func (ctl *controller) CreateFundraise() echo.HandlerFunc {
 			file = formFile
 		}
 
-		fundraise, err := ctl.service.Create(input, userID.(int), file)
+		fundraise, errMap, err := ctl.service.Create(input, userID.(int), file)
+
+		if errMap != nil {
+			return ctx.JSON(400, helper.Response("missing some data", map[string]any{
+				"error": errMap,
+			}))
+		}
 
 		if err != nil {
 			return ctx.JSON(500, helper.Response(err.Error()))
@@ -154,6 +151,43 @@ func (ctl *controller) UpdateFundraise() echo.HandlerFunc {
 		}
 
 		update := ctl.service.Modify(input, file, *fundraise)
+
+		if !update {
+			return ctx.JSON(500, helper.Response("something went wrong"))
+		}
+
+		return ctx.JSON(200, helper.Response("fundraise success updated"))
+	}
+}
+
+func (ctl *controller) UpdateFundraiseStatus() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		input := dtos.InputFundraiseStatus{}
+
+		fundraiseID, err := strconv.Atoi(ctx.Param("id"))
+
+		if err != nil {
+			return ctx.JSON(400, helper.Response(err.Error()))
+		}
+
+		fundraise := ctl.service.FindByID(fundraiseID)
+
+		if fundraise == nil {
+			return ctx.JSON(404, helper.Response("fundraise not found"))
+		}
+
+		ctx.Bind(&input)
+
+		validate = validator.New(validator.WithRequiredStructEnabled())
+
+		if err := validate.Struct(input); err != nil {
+			errMap := helpers.ErrorMapValidation(err)
+			return ctx.JSON(400, helper.Response("error missing some data", map[string]any{
+				"error": errMap,
+			}))
+		}
+
+		update := ctl.service.ModifyStatus(input, *fundraise)
 
 		if !update {
 			return ctx.JSON(500, helper.Response("something went wrong"))

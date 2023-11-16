@@ -1,6 +1,7 @@
 package volunteer
 
 import (
+	"mime/multipart"
 	"raihpeduli/features/volunteer/dtos"
 
 	"github.com/labstack/echo/v4"
@@ -14,6 +15,7 @@ type Repository interface {
 	Update(volunteer VolunteerVacancies) int64
 	DeleteByID(volunteerID int) int64
 	Insert(*VolunteerVacancies) (*VolunteerVacancies, error)
+	UploadFile(file multipart.File, objectName string) (string, error)
 }
 
 type Usecase interface {
@@ -21,7 +23,7 @@ type Usecase interface {
 	FindByID(volunteerID int) *dtos.ResVolunteer
 	Modify(volunteerData dtos.InputVolunteer, volunteerID int) bool
 	Remove(volunteerID int) bool
-	Create(newVolunteer dtos.InputVolunteer) (*dtos.ResVolunteer, error)
+	Create(newVolunteer dtos.InputVolunteer, UserID int, file multipart.File) (*dtos.ResVolunteer, error)
 }
 
 type Handler interface {

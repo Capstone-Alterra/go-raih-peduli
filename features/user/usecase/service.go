@@ -13,16 +13,18 @@ import (
 )
 
 type service struct {
-	model user.Repository
-	jwt   helpers.JWTInterface
-	hash  helpers.HashInterface
+	model     user.Repository
+	jwt       helpers.JWTInterface
+	hash      helpers.HashInterface
+	generator helpers.GeneratorInterface
 }
 
-func New(model user.Repository, jwt helpers.JWTInterface, hash helpers.HashInterface) user.Usecase {
+func New(model user.Repository, jwt helpers.JWTInterface, hash helpers.HashInterface, generator helpers.GeneratorInterface) user.Usecase {
 	return &service{
-		model: model,
-		jwt:   jwt,
-		hash:  hash,
+		model:     model,
+		jwt:       jwt,
+		hash:      hash,
+		generator: generator,
 	}
 }
 
@@ -82,7 +84,7 @@ func (svc *service) Create(newData dtos.InputUser) (*dtos.ResUser, error) {
 		return nil, err
 	}
 
-	otp := helpers.GenerateRandomOTP()
+	otp := svc.generator.GenerateRandomOTP()
 
 	err = svc.model.SendOTPByEmail(userModel.Email, otp)
 	if err != nil {
@@ -179,7 +181,7 @@ func (svc *service) ForgetPassword(data dtos.ForgetPassword) error {
 		return errors.New("There is No Customer Updated!")
 	}
 
-	otp := helpers.GenerateRandomOTP()
+	otp := svc.generator.GenerateRandomOTP()
 
 	err = svc.model.SendOTPByEmail(user.Email, otp)
 	if err != nil {
