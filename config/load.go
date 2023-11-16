@@ -45,6 +45,12 @@ type ProgramConfig struct {
 	OTP_SECRET     string
 }
 
+type SMTPConfig struct {
+	SMTP_USER string
+	SMTP_PASS string
+	SMTP_PORT string
+}
+
 func LoadDBConfig() *DatabaseConfig {
 	var res = new(DatabaseConfig)
 
@@ -119,6 +125,31 @@ func LoadCloudStorageConfig() *CloudStorageConfig {
 
 	if val, found := os.LookupEnv("CLOUD_BUCKET_NAME"); found {
 		res.CLOUD_BUCKET_NAME = val
+	}
+
+	return res
+}
+
+func LoadSMTPConfig() *SMTPConfig {
+	var res = new(SMTPConfig)
+
+	err := godotenv.Load(".env")
+
+	if err != nil {
+		logrus.Error("Config : Cannot load config file,", err.Error())
+		return nil
+	}
+
+	if val, found := os.LookupEnv("SMTP_USER"); found {
+		res.SMTP_USER = val
+	}
+
+	if val, found := os.LookupEnv("SMTP_PASS"); found {
+		res.SMTP_PASS = val
+	}
+
+	if val, found := os.LookupEnv("SMTP_PORT"); found {
+		res.SMTP_PORT = val
 	}
 
 	return res

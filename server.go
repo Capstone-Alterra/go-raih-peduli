@@ -75,16 +75,19 @@ func UserHandler() user.Handler {
 }
 
 func AuthHandler() auth.Handler {
+	smtpConfig := config.LoadSMTPConfig()
 	config := config.InitConfig()
 
 	db := utils.InitDB()
 	jwt := helpers.NewJWT(*config)
 	hash := helpers.NewHash()
 	generator := helpers.NewGenerator()
+	validation := helpers.NewValidationRequest()
+	converter := helpers.NewConverter()
 	redis := utils.ConnectRedis()
 
-	repo := ar.New(db, redis)
-	uc := au.New(repo, jwt, hash, generator)
+	repo := ar.New(db, redis, smtpConfig)
+	uc := au.New(repo, jwt, hash, generator, validation, converter)
 	return ah.New(uc)
 }
 
