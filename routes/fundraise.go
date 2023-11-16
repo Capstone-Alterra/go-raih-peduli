@@ -17,5 +17,6 @@ func Fundraises(e *echo.Echo, handler fundraise.Handler, jwt helpers.JWTInterfac
 
 	fundraises.GET("/:id", handler.FundraiseDetails())
 	fundraises.PUT("/:id", handler.UpdateFundraise())
+	fundraises.PATCH("/:id", handler.UpdateFundraiseStatus())
 	fundraises.DELETE("/:id", handler.DeleteFundraise())
 }

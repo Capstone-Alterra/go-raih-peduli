@@ -1,22 +1,26 @@
 package usecase
 
 import (
+	"errors"
 	"mime/multipart"
 	"raihpeduli/config"
 	"raihpeduli/features/fundraise"
 	"raihpeduli/features/fundraise/dtos"
+	"raihpeduli/helpers"
 
 	"github.com/mashingan/smapping"
 	"github.com/sirupsen/logrus"
 )
 
 type service struct {
-	model fundraise.Repository
+	model      fundraise.Repository
+	validation helpers.ValidationInterface
 }
 
-func New(model fundraise.Repository) fundraise.Usecase {
-	return &service {
-		model: model,
+func New(model fundraise.Repository, validation helpers.ValidationInterface) fundraise.Usecase {
+	return &service{
+		model:      model,
+		validation: validation,
 	}
 }
 
@@ -35,8 +39,8 @@ func (svc *service) FindAll(page int, size int, title string) []dtos.ResFundrais
 
 		if err := smapping.FillStruct(&data, smapping.MapFields(fundraise)); err != nil {
 			logrus.Error(err)
-		} 
-		
+		}
+
 		fundraises = append(fundraises, data)
 	}
 
@@ -51,7 +55,7 @@ func (svc *service) FindByID(fundraiseID int) *dtos.ResFundraise {
 		logrus.Error(err)
 		return nil
 	}
-	
+
 	if err := smapping.FillStruct(&res, smapping.MapFields(fundraise)); err != nil {
 		logrus.Error(err)
 		return nil
@@ -60,43 +64,47 @@ func (svc *service) FindByID(fundraiseID int) *dtos.ResFundraise {
 	return &res
 }
 
-func (svc *service) Create(newFundraise dtos.InputFundraise, userID int, file multipart.File) (*dtos.ResFundraise, error) {
+func (svc *service) Create(newFundraise dtos.InputFundraise, userID int, file multipart.File) (*dtos.ResFundraise, []string, error) {
+	if errMap := svc.validation.ValidateRequest(newFundraise); errMap != nil {
+		return nil, errMap, errors.New("error")
+	}
+
 	var fundraise fundraise.Fundraise
 	var url string = ""
 
 	if file != nil {
 		imageURL, err := svc.model.UploadFile(file, "")
-	
+
 		if err != nil {
 			logrus.Error(err)
-			return nil, err
+			return nil, nil, err
 		}
 
 		url = imageURL
-	} 
-	
+	}
+
 	fundraise.UserID = userID
 	fundraise.Status = "pending"
 	fundraise.Photo = url
 	if err := smapping.FillStruct(&fundraise, smapping.MapFields(newFundraise)); err != nil {
 		logrus.Error(err)
-		return nil, err
+		return nil, nil, err
 	}
 
 	if _, err := svc.model.Insert(fundraise); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	var res dtos.ResFundraise
-	
+
 	res.Status = "pending"
 	res.Photo = url
 	res.UserID = userID
 	if err := smapping.FillStruct(&res, smapping.MapFields(newFundraise)); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return &res, nil
+	return &res, nil, nil
 }
 
 func (svc *service) Modify(fundraiseData dtos.InputFundraise, file multipart.File, oldData dtos.ResFundraise) bool {
@@ -111,7 +119,7 @@ func (svc *service) Modify(fundraiseData dtos.InputFundraise, file multipart.Fil
 			oldFilename = oldFilename[urlLength:]
 		}
 		imageURL, err := svc.model.UploadFile(file, oldFilename)
-		
+
 		if err != nil {
 			logrus.Error(err)
 			return false
@@ -124,9 +132,35 @@ func (svc *service) Modify(fundraiseData dtos.InputFundraise, file multipart.Fil
 		logrus.Error(err)
 		return false
 	}
-	
+
 	newFundraise.Photo = url
 	newFundraise.ID = oldData.ID
+	newFundraise.UserID = oldData.UserID
+	newFundraise.Status = oldData.Status
+	_, err := svc.model.Update(newFundraise)
+
+	if err != nil {
+		logrus.Error(err)
+		return false
+	}
+
+	return true
+}
+
+func (svc *service) ModifyStatus(fundraiseData dtos.InputFundraiseStatus, oldData dtos.ResFundraise) bool {
+	var newFundraise fundraise.Fundraise
+
+	if err := smapping.FillStruct(&newFundraise, smapping.MapFields(fundraiseData)); err != nil {
+		logrus.Error(err)
+		return false
+	}
+	newFundraise.ID = oldData.ID
+	newFundraise.Title = oldData.Title
+	newFundraise.Description = oldData.Description
+	newFundraise.Photo = oldData.Photo
+	newFundraise.Target = oldData.Target
+	newFundraise.StartDate = oldData.StartDate
+	newFundraise.EndDate = oldData.EndDate
 	newFundraise.UserID = oldData.UserID
 	_, err := svc.model.Update(newFundraise)
 
@@ -134,7 +168,7 @@ func (svc *service) Modify(fundraiseData dtos.InputFundraise, file multipart.Fil
 		logrus.Error(err)
 		return false
 	}
-	
+
 	return true
 }
 

@@ -2,11 +2,6 @@ package helpers
 
 import "golang.org/x/crypto/bcrypt"
 
-type HashInterface interface {
-	HashPassword(password string) string
-	CompareHash(password, hashed string) bool
-}
-
 type hash struct{}
 
 func NewHash() HashInterface {
