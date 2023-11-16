@@ -10,11 +10,7 @@ import (
 	"cloud.google.com/go/storage"
 )
 
-type CloudStorageInterface interface {
-	UploadFile(file multipart.File, object string) error
-}
-
-type cloudStorage struct{
+type cloudStorage struct {
 	projectID  string
 	bucketName string
 	uploadPath string
@@ -22,7 +18,7 @@ type cloudStorage struct{
 
 func NewCloudStorage(projectID string, bucketName string, uploadPath string) CloudStorageInterface {
 	return &cloudStorage{
-		projectID: projectID,
+		projectID:  projectID,
 		bucketName: bucketName,
 		uploadPath: uploadPath,
 	}
@@ -31,7 +27,7 @@ func NewCloudStorage(projectID string, bucketName string, uploadPath string) Clo
 func (uf *cloudStorage) UploadFile(file multipart.File, object string) error {
 	ctx := context.Background()
 
-	ctx, cancel := context.WithTimeout(ctx, time.Second * 50)
+	ctx, cancel := context.WithTimeout(ctx, time.Second*50)
 	defer cancel()
 
 	client, err := storage.NewClient(ctx)

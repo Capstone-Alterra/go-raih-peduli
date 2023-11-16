@@ -13,16 +13,18 @@ import (
 )
 
 type service struct {
-	model auth.Repository
-	jwt   helpers.JWTInterface
-	hash  helpers.HashInterface
+	model     auth.Repository
+	jwt       helpers.JWTInterface
+	hash      helpers.HashInterface
+	generator helpers.GeneratorInterface
 }
 
-func New(model auth.Repository, jwt helpers.JWTInterface, hash helpers.HashInterface) auth.Usecase {
+func New(model auth.Repository, jwt helpers.JWTInterface, hash helpers.HashInterface, generator helpers.GeneratorInterface) auth.Usecase {
 	return &service{
-		model: model,
-		jwt:   jwt,
-		hash:  hash,
+		model:     model,
+		jwt:       jwt,
+		hash:      hash,
+		generator: generator,
 	}
 }
 
@@ -47,7 +49,7 @@ func (svc *service) Register(newData dtos.InputUser) (*dtos.ResUser, error) {
 		return nil, err
 	}
 
-	otp := helpers.GenerateRandomOTP()
+	otp := svc.generator.GenerateRandomOTP()
 
 	err = svc.model.SendOTPByEmail(userModel.Email, otp)
 	if err != nil {

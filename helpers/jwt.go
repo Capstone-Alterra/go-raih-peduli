@@ -10,21 +10,13 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type JWTInterface interface {
-	GenerateJWT(userID string, roleID string) map[string]any
-	GenerateToken(userID string, roleID string) string
-	GenerateTokenResetPassword(userID string, roleID string) string
-	ExtractToken(token *jwt.Token) any
-	ValidateToken(token string, secret string) (*jwt.Token, error)
-}
-
 type JWT struct {
 	signKey    string
 	refreshKey string
 	otpKey     string
 }
 
-func New(config config.ProgramConfig) JWTInterface {
+func NewJWT(config config.ProgramConfig) JWTInterface {
 	return &JWT{
 		signKey:    config.SECRET,
 		refreshKey: config.REFRESH_SECRET,
