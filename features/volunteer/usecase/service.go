@@ -112,7 +112,6 @@ func (svc *service) Create(newVolunteer dtos.InputVolunteer, UserID int, file mu
 	}
 
 	volun.UserID = UserID
-	volun.Status = "Pending"
 	volun.Photo = url
 	err := smapping.FillStruct(&volun, smapping.MapFields(newVolunteer))
 
@@ -124,6 +123,7 @@ func (svc *service) Create(newVolunteer dtos.InputVolunteer, UserID int, file mu
 	}
 
 	resVolun := dtos.ResVolunteer{}
+	resVolun.Photo = url
 	errRes := smapping.FillStruct(&resVolun, smapping.MapFields(result))
 	
 	if errRes != nil {
@@ -132,4 +132,37 @@ func (svc *service) Create(newVolunteer dtos.InputVolunteer, UserID int, file mu
 	}
 
 	return &resVolun, nil
+}
+
+func (svc *service) Register(newApply dtos.ApplyVolunteer, userID int, file multipart.File) bool {
+	registrar := volunteer.VolunteerRelations{}
+
+	var url string = ""
+
+	if file != nil {
+		imageURL, err := svc.model.UploadFile(file, "")
+
+		if err != nil {
+			logrus.Error(err)
+			return false
+		}
+
+		url = imageURL
+	}
+
+	registrar.UserID = userID
+	err := smapping.FillStruct(&registrar, smapping.MapFields(newApply))
+	if err != nil {
+		log.Error(err)
+		return false
+	}
+
+	registrar.Resume = url
+
+	err = svc.model.Register(&registrar)
+	if err != nil {
+		return false
+	}
+
+	return true
 }

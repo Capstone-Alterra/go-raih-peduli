@@ -16,6 +16,7 @@ type Repository interface {
 	DeleteByID(volunteerID int) int64
 	Insert(*VolunteerVacancies) (*VolunteerVacancies, error)
 	UploadFile(file multipart.File, objectName string) (string, error)
+	Register(registrar *VolunteerRelations) error
 }
 
 type Usecase interface {
@@ -24,6 +25,7 @@ type Usecase interface {
 	Modify(volunteerData dtos.InputVolunteer, volunteerID int) bool
 	Remove(volunteerID int) bool
 	Create(newVolunteer dtos.InputVolunteer, UserID int, file multipart.File) (*dtos.ResVolunteer, error)
+	Register(newApply dtos.ApplyVolunteer, userID int, file multipart.File) bool
 }
 
 type Handler interface {
@@ -32,4 +34,5 @@ type Handler interface {
 	UpdateVolunteer() echo.HandlerFunc
 	DeleteVolunteer() echo.HandlerFunc
 	CreateVolunteer() echo.HandlerFunc
+	ApplyVacancies() echo.HandlerFunc
 }

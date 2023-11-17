@@ -25,4 +25,5 @@ type User struct {
 	DeletedAt      gorm.DeletedAt `gorm:"index"`
 
 	VolunteerVacancies  []volunteer.VolunteerVacancies `gorm:"foreignKey:UserID;references:ID"`
+	VolunteerRelationships []volunteer.VolunteerRelations `gorm:"foreignKey:UserID;references:ID"`
 }

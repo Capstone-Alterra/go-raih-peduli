@@ -111,6 +111,16 @@ func (mdl *model) Insert(newVolunteer *volunteer.VolunteerVacancies) (*volunteer
 	return newVolunteer, nil
 }
 
+func (mdl *model) Register(registrar *volunteer.VolunteerRelations) error {
+	result := mdl.db.Table("volunteer_relations").Create(registrar)
+
+	if result.Error != nil {
+		log.Error(result.Error)
+		return result.Error
+	}
+	return nil
+} 
+
 func (mdl *model) UploadFile(file multipart.File, objectName string) (string, error) {
 	config := config.LoadCloudStorageConfig()
 	randomChar := uuid.New().String()
@@ -122,5 +132,5 @@ func (mdl *model) UploadFile(file multipart.File, objectName string) (string, er
 		return "", err
 	}
 
-	return "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/fundraises/" + objectName, nil
+	return "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/volunteer/" + objectName, nil
 }

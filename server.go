@@ -41,6 +41,7 @@ import (
 )
 
 func main() {
+	// godotenv.Load(".env")
 	e := echo.New()
 	cfg := config.InitConfig()
 	jwtService := helpers.NewJWT(*cfg)
