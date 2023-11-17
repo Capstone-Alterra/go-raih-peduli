@@ -114,10 +114,10 @@ func (ctl *controller) UpdateNews() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		input := dtos.InputNews{}
 
-		newsID, errParam := strconv.Atoi(ctx.Param("id"))
+		newsID, err := strconv.Atoi(ctx.Param("id"))
 
-		if errParam != nil {
-			return ctx.JSON(400, helper.Response(errParam.Error()))
+		if err != nil {
+			return ctx.JSON(400, helper.Response(err.Error()))
 		}
 
 		news := ctl.service.FindByID(newsID)
@@ -129,24 +129,37 @@ func (ctl *controller) UpdateNews() echo.HandlerFunc {
 		ctx.Bind(&input)
 
 		validate = validator.New(validator.WithRequiredStructEnabled())
-		err := validate.Struct(input)
 
-		if err != nil {
+		if err := validate.Struct(input); err != nil {
 			errMap := helper.ErrorMapValidation(err)
-			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any{
-				"error": errMap,
+			return ctx.JSON(400, helper.Response("error missing some data", map[string]any{
+				"errors": errMap,
 			}))
 		}
 
-		update := ctl.service.Modify(input, newsID)
+		fileHeader, err := ctx.FormFile("photo")
+		var file multipart.File
 
-		if !update {
-			return ctx.JSON(500, helper.Response("Something Went Wrong!"))
+		if err == nil {
+			formFile, err := fileHeader.Open()
+			if err != nil {
+				return ctx.JSON(500, helper.Response("something went wrong"))
+			}
+
+			file = formFile
 		}
 
-		return ctx.JSON(200, helper.Response("News Success Updated!"))
+		update := ctl.service.Modify(input, file, *news)
+
+		if !update {
+			return ctx.JSON(500, helper.Response("something went wrong"))
+		}
+
+		return ctx.JSON(200, helper.Response("news success updated"))
 	}
+
 }
+
 
 func (ctl *controller) DeleteNews() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
