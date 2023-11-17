@@ -1,13 +1,19 @@
 package bookmark
 
-import (
-	"gorm.io/gorm"
-)
-
-type Bookmark struct {
-	gorm.Model
-
-	ID int `gorm:"type:int(11)"`
-	Name string `gorm:"type:varchar(255)"`
+type NewsBookmark struct {
+	ID int `bson:"id"`
+	UserID int `bson:"user_id"`
+	NewsID int `bson:"news_id"`
 }
 
+type FundraiseBookmark struct {
+	ID int `bson:"id"`
+	UserID int `bson:"user_id"`
+	FundraiseID int `bson:"fundraise_id"`
+}
+
+type VacancyBookmark struct {
+	ID int `bson:"id"`
+	UserID int `bson:"user_id"`
+	VacancyID int `bson:"vacancy_id"`
+}

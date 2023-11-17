@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"context"
 	"raihpeduli/config"
 	"raihpeduli/features/auth"
 	"raihpeduli/features/fundraise"
@@ -11,6 +12,8 @@ import (
 
 	"github.com/go-redis/redis"
 	"github.com/sirupsen/logrus"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -51,4 +54,21 @@ func ConnectRedis() *redis.Client {
 	logrus.Info("Connection established")
 
 	return client
+}
+
+func ConnectMongo() *mongo.Database {
+	config := config.LoadMongoConfig()
+
+	clientOptions := options.Client()
+    clientOptions.ApplyURI(fmt.Sprintf("mongodb://%s:%s", config.MONGO_HOST, config.MONGO_PORT))
+    client, err := mongo.NewClient(clientOptions)
+    if err != nil {
+        return nil
+    }
+    
+    if err := client.Connect(context.Background()); err != nil {
+        return nil
+    }
+
+    return client.Database(config.MONGO_DB_NAME)
 }

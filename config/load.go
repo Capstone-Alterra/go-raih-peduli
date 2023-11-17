@@ -32,6 +32,12 @@ type RedisConfig struct {
 	REDIS_PORT string
 }
 
+type MongoConfig struct {
+	MONGO_DB_NAME string
+	MONGO_HOST string
+	MONGO_PORT string
+}
+
 type CloudStorageConfig struct {
 	GOOGLE_APPLICATION_CREDENTIALS string
 	CLOUD_PROJECT_ID               string
@@ -80,6 +86,24 @@ func LoadRedisConfig() *RedisConfig {
 
 	if val, found := os.LookupEnv("REDIS_PORT"); found {
 		res.REDIS_PORT = val
+	}
+
+	return res
+}
+
+func LoadMongoConfig() *MongoConfig {
+	var res = new(MongoConfig)
+
+	if val, found := os.LookupEnv("MONGO_DB_NAME"); found {
+		res.MONGO_DB_NAME = val
+	}
+
+	if val, found := os.LookupEnv("MONGO_HOST"); found {
+		res.MONGO_HOST = val
+	}
+
+	if val, found := os.LookupEnv("MONGO_PORT"); found {
+		res.MONGO_PORT = val
 	}
 
 	return res

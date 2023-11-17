@@ -55,32 +55,12 @@ func (svc *service) FindByID(bookmarkID int) *dtos.ResBookmark {
 
 }
 
-func (svc *service) SetBookmark(newBookmark dtos.InputBookmark) *dtos.ResBookmark {
-	bookmark := bookmark.Bookmark{}
-	
-	err := smapping.FillStruct(&bookmark, smapping.MapFields(newBookmark))
-	if err != nil {
-		log.Error(err)
-		return nil
-	}
-
-	bookmarkID := svc.model.Insert(bookmark)
-
-	if bookmarkID == -1 {
-		return nil
-	}
-
-	resBookmark := dtos.ResBookmark{}
-	errRes := smapping.FillStruct(&resBookmark, smapping.MapFields(newBookmark))
-	if errRes != nil {
-		log.Error(errRes)
-		return nil
-	}
+func (svc *service) SetBookmark(postID int, userID int, postType string) *dtos.ResBookmark {
 
 	return &resBookmark
 }
 
-func (svc *service) UnsetBookmark(bookmarkID int) bool {
+func (svc *service) UnsetBookmark(postID int, userID int, postType string) bool {
 	rowsAffected := svc.model.DeleteByID(bookmarkID)
 
 	if rowsAffected <= 0 {

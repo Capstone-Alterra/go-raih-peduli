@@ -6,6 +6,7 @@ import (
 
 	"raihpeduli/features/bookmark"
 	"raihpeduli/features/bookmark/dtos"
+	"raihpeduli/features/fundraise"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
@@ -15,7 +16,7 @@ type controller struct {
 	service bookmark.Usecase
 }
 
-func New(service bookmark.Usecase) bookmark.Handler {
+func New(service bookmark.Usecase, fundraiseService fundraise.Usecase) bookmark.Handler {
 	return &controller {
 		service: service,
 	}
@@ -48,16 +49,52 @@ func (ctl *controller) GetBookmarksByUserID() echo.HandlerFunc {
 	}
 }
 
-func (ctl *controller) BookmarkAPost() echo.HandlerFunc {
+func (ctl *controller) BookmarkANews() echo.HandlerFunc {
 	return func (ctx echo.Context) error  {
-		input := dtos.InputBookmark{}
+		input := dtos.InputNewsID{}
 
 		ctx.Bind(&input)
 
 		bookmark := ctl.service.SetBookmark(input)
 
 		if bookmark == nil {
-			return ctx.JSON(500, helper.Response("Something went Wrong!", nil))
+			return ctx.JSON(500, helper.Response("something went wrong"))
+		}
+
+		return ctx.JSON(200, helper.Response("Success!", map[string]any {
+			"data": bookmark,
+		}))
+	}
+}
+
+func (ctl *controller) BookmarkAFundraise() echo.HandlerFunc {
+	return func (ctx echo.Context) error  {
+		input := dtos.InputFundraiseID{}
+
+		ctx.Bind(&input)
+
+		bookmark := ctl.service.SetBookmark(input)
+
+		if bookmark == nil {
+			return ctx.JSON(500, helper.Response("something went wrong"))
+		}
+
+		return ctx.JSON(200, helper.Response("Success!", map[string]any {
+			"data": bookmark,
+		}))
+	}
+}
+
+func (ctl *controller) BookmarkAVacancy() echo.HandlerFunc {
+	return func (ctx echo.Context) error  {
+		input := dtos.InputVacancyID{}
+
+		ctx.Bind(&input)
+
+		bookmark := ctl.service.SetBookmark(input)
+
+		if bookmark == nil {
+			return ctx.JSON(500, helper.Response("something went wrong"))
 		}
 
 		return ctx.JSON(200, helper.Response("Success!", map[string]any {
