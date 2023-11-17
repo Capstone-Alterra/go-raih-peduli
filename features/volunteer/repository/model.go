@@ -12,13 +12,13 @@ import (
 )
 
 type model struct {
-	db *gorm.DB
+	db        *gorm.DB
 	clStorage helpers.CloudStorageInterface
 }
 
 func New(db *gorm.DB, clStorage helpers.CloudStorageInterface) volunteer.Repository {
 	return &model{
-		db: db,
+		db:        db,
 		clStorage: clStorage,
 	}
 }
@@ -68,6 +68,21 @@ func (mdl *model) SelectBySkill(page, size int, title string) []volunteer.Volunt
 	return volunteers
 }
 
+func (mdl *model) SelectByCity(page, size int, City string) []volunteer.VolunteerVacancies {
+	var volunteers []volunteer.VolunteerVacancies
+
+	offset := (page - 1) * size
+
+	result := mdl.db.Where("city LIKE ?", "%"+City+"%").Offset(offset).Limit(size).Find(&volunteers)
+
+	if result.Error != nil {
+		log.Error(result.Error)
+		return nil
+	}
+
+	return volunteers
+}
+
 func (mdl *model) SelectByID(volunteerID int) *volunteer.VolunteerVacancies {
 	var volunteer volunteer.VolunteerVacancies
 	result := mdl.db.First(&volunteer, volunteerID)
@@ -101,9 +116,9 @@ func (mdl *model) DeleteByID(volunteerID int) int64 {
 	return result.RowsAffected
 }
 
-func (mdl *model) Insert(newVolunteer *volunteer.VolunteerVacancies) (*volunteer.VolunteerVacancies, error){
+func (mdl *model) Insert(newVolunteer *volunteer.VolunteerVacancies) (*volunteer.VolunteerVacancies, error) {
 	result := mdl.db.Create(newVolunteer)
-	
+
 	if result.Error != nil {
 		log.Error(result.Error)
 		return nil, result.Error
@@ -119,7 +134,7 @@ func (mdl *model) Register(registrar *volunteer.VolunteerRelations) error {
 		return result.Error
 	}
 	return nil
-} 
+}
 
 func (mdl *model) UploadFile(file multipart.File, objectName string) (string, error) {
 	config := config.LoadCloudStorageConfig()
