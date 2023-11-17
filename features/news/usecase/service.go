@@ -2,11 +2,13 @@ package usecase
 
 import (
 	"mime/multipart"
+	"raihpeduli/config"
 	"raihpeduli/features/news"
 	"raihpeduli/features/news/dtos"
 
 	"github.com/labstack/gommon/log"
 	"github.com/mashingan/smapping"
+	"github.com/sirupsen/logrus"
 )
 
 type service struct {
@@ -43,16 +45,16 @@ func (svc *service) FindAll(page, size int, keyword string) []dtos.ResNews {
 }
 
 func (svc *service) FindByID(newsID int) *dtos.ResNews {
-	res := dtos.ResNews{}
-	news := svc.model.SelectByID(newsID)
+	var res dtos.ResNews
+	news, err := svc.model.SelectByID(newsID)
 
-	if news == nil {
+	if err != nil {
+		logrus.Error(err)
 		return nil
 	}
 
-	err := smapping.FillStruct(&res, smapping.MapFields(news))
-	if err != nil {
-		log.Error(err)
+	if err := smapping.FillStruct(&res, smapping.MapFields(news)); err != nil {
+		logrus.Error(err)
 		return nil
 	}
 
@@ -94,31 +96,51 @@ func (svc *service) Create(newNews dtos.InputNews, userID int, file multipart.Fi
 	return &resNews, nil
 }
 
-func (svc *service) Modify(newsData dtos.InputNews, newsID int) bool {
-	newNews := news.News{}
+func (svc *service) Modify(newsData dtos.InputNews, file multipart.File, oldData dtos.ResNews) bool {
+	var newNews news.News
+	var url string = ""
+	var config = config.LoadCloudStorageConfig()
+	var oldFilename string = oldData.Photo
+	var urlLength int = len("https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/news/")
 
-	err := smapping.FillStruct(&newNews, smapping.MapFields(newsData))
-	if err != nil {
-		log.Error(err)
+	if file != nil {
+		if len(oldFilename) > urlLength {
+			oldFilename = oldFilename[urlLength:]
+		}
+		imageURL, err := svc.model.UploadFile(file, oldFilename)
+
+		if err != nil {
+			logrus.Error(err)
+			return false
+		}
+
+		url = imageURL
+	}
+
+	if err := smapping.FillStruct(&newNews, smapping.MapFields(newsData)); err != nil {
+		logrus.Error(err)
 		return false
 	}
 
-	newNews.ID = newsID
-	rowsAffected := svc.model.Update(newNews)
+	newNews.Photo = url
+	newNews.ID = oldData.ID
+	newNews.UserID = oldData.UserID
+	_, err := svc.model.Update(newNews)
 
-	if rowsAffected <= 0 {
-		log.Error("There is No News Updated!")
+	if err != nil {
+		logrus.Error(err)
 		return false
 	}
 
 	return true
+
 }
 
 func (svc *service) Remove(newsID int) bool {
-	rowsAffected := svc.model.DeleteByID(newsID)
+	_, err := svc.model.DeleteByID(newsID)
 
-	if rowsAffected <= 0 {
-		log.Error("There is No News Deleted!")
+	if err != nil {
+		logrus.Error(err)
 		return false
 	}
 
