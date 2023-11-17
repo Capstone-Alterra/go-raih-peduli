@@ -7,7 +7,6 @@ import (
 	"raihpeduli/helpers"
 
 	"github.com/google/uuid"
-	"github.com/labstack/gommon/log"
 	"gorm.io/gorm"
 )
 
@@ -44,37 +43,34 @@ func (mdl *model) Insert(newNews news.News) (int, error) {
 	return newNews.ID, nil
 }
 
-func (mdl *model) SelectByID(newsID int) *news.News {
+func (mdl *model) SelectByID(newsID int) (*news.News, error) {
 	var news news.News
-	result := mdl.db.First(&news, newsID)
-
-	if result.Error != nil {
-		log.Error(result.Error)
-		return nil
+	
+	if err := mdl.db.First(&news, newsID).Error; err != nil {
+		return nil, err
 	}
 
-	return &news
+	return &news, nil
 }
 
-func (mdl *model) Update(news news.News) int64 {
+func (mdl *model) Update(news news.News) (int, error) {
 	result := mdl.db.Save(&news)
 
 	if result.Error != nil {
-		log.Error(result.Error)
+		return 0, result.Error
 	}
 
-	return result.RowsAffected
+	return int(result.RowsAffected), nil
 }
 
-func (mdl *model) DeleteByID(newsID int) int64 {
+func (mdl *model) DeleteByID(newsID int) (int, error) {
 	result := mdl.db.Delete(&news.News{}, newsID)
 
 	if result.Error != nil {
-		log.Error(result.Error)
-		return 0
+		return 0, result.Error	
 	}
 
-	return result.RowsAffected
+	return int(result.RowsAffected), nil
 }
 
 func (mdl *model) UploadFile(file multipart.File, objectName string) (string, error) {

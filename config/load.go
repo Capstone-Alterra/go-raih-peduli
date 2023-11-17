@@ -38,6 +38,11 @@ type CloudStorageConfig struct {
 	CLOUD_BUCKET_NAME              string
 }
 
+type MidtransConfig struct {
+	MT_SERVER_KEY string
+	MT_CLIENT_KEY string
+}
+
 type ProgramConfig struct {
 	SECRET         string
 	REFRESH_SECRET string
@@ -111,6 +116,20 @@ func LoadCloudStorageConfig() *CloudStorageConfig {
 
 	if val, found := os.LookupEnv("CLOUD_BUCKET_NAME"); found {
 		res.CLOUD_BUCKET_NAME = val
+	}
+
+	return res
+}
+
+func LoadMidtransConfig() *MidtransConfig {
+	var res = new(MidtransConfig)
+
+	if val, found := os.LookupEnv("MT_SERVER_KEY"); found {
+		res.MT_SERVER_KEY = val
+	}
+
+	if val, found := os.LookupEnv("MT_CLIENT_KEY"); found {
+		res.MT_CLIENT_KEY = val
 	}
 
 	return res

@@ -32,6 +32,11 @@ import (
 	nr "raihpeduli/features/news/repository"
 	nu "raihpeduli/features/news/usecase"
 
+	"raihpeduli/features/transaction"
+	th "raihpeduli/features/transaction/handler"
+	tr "raihpeduli/features/transaction/repository"
+	tu "raihpeduli/features/transaction/usecase"
+
 	"github.com/labstack/echo/v4"
 )
 
@@ -46,6 +51,7 @@ func main() {
 	routes.Fundraises(e, FundraiseHandler(), jwtService, *cfg)
 	routes.Volunteers(e, VolunteerHandler(), jwtService, *cfg)
 	routes.News(e, NewsHandler(), jwtService, *cfg)
+	routes.Transactions(e, TransactionHandler(), jwtService, *cfg)
 
 	e.Start(fmt.Sprintf(":%s", cfg.SERVER_PORT))
 }
@@ -108,4 +114,15 @@ func NewsHandler() news.Handler {
 	repo := nr.New(db, clStorage)
 	uc := nu.New(repo)
 	return nh.New(uc)
+}
+
+func TransactionHandler() transaction.Handler {
+	db := utils.InitDB()
+	repo := tr.New(db)
+	coreAPIClient := utils.MidtransCoreAPIClient()
+
+	generator := helpers.NewGenerator()
+	midtrans := helpers.NewMidtransRequest()
+	tc := tu.New(repo, generator, midtrans, coreAPIClient)
+	return th.New(tc)
 }

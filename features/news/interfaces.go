@@ -10,9 +10,9 @@ import (
 type Repository interface {
 	Paginate(page, size int, keyword string) ([]News, error)
 	Insert(newNews News) (int, error)
-	SelectByID(newsID int) *News
-	Update(news News) int64
-	DeleteByID(newsID int) int64
+	SelectByID(newsID int) (*News, error)
+	Update(news News) (int, error)
+	DeleteByID(newsID int) (int, error)
 	UploadFile(file multipart.File, objectName string) (string, error)
 }
 
@@ -20,7 +20,7 @@ type Usecase interface {
 	FindAll(page, size int, keyword string) []dtos.ResNews
 	FindByID(newsID int) *dtos.ResNews
 	Create(newNews dtos.InputNews, userID int, file multipart.File) (*dtos.ResNews, error)
-	Modify(newsData dtos.InputNews, newsID int) bool
+	Modify(newsData dtos.InputNews, file multipart.File, oldData dtos.ResNews) bool
 	Remove(newsID int) bool
 }
 
