@@ -4,6 +4,7 @@ import (
 	"raihpeduli/config"
 	"raihpeduli/features/auth"
 	"raihpeduli/features/fundraise"
+	"raihpeduli/features/news"
 	"raihpeduli/features/volunteer"
 
 	"fmt"
@@ -17,7 +18,7 @@ import (
 func InitDB() *gorm.DB {
 	config := config.LoadDBConfig()
 
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local", config.DB_USER, config.DB_PASS, config.DB_HOST, config.DB_PORT, config.DB_NAME)
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", config.DB_USER, config.DB_PASS, config.DB_HOST, config.DB_PORT, config.DB_NAME)
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
@@ -30,7 +31,7 @@ func InitDB() *gorm.DB {
 }
 
 func migrate(db *gorm.DB) {
-	db.AutoMigrate(fundraise.Fundraise{}, &auth.User{}, &volunteer.VolunteerVacancies{})
+	db.AutoMigrate(fundraise.Fundraise{}, &auth.User{}, &volunteer.VolunteerVacancies{}, news.News{})
 }
 
 func ConnectRedis() *redis.Client {

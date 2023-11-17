@@ -57,29 +57,18 @@ func (mdl *model) InsertVerification(email string, verificationKey string) error
 	return nil
 }
 
-func (mdl *model) ValidateVerification(verificationKey string) bool {
+func (mdl *model) ValidateVerification(verificationKey string) string {
 	email, statusCMD := mdl.connection.Get(verificationKey).Result()
 	if statusCMD != nil {
 		logrus.Error(statusCMD.Error())
-		return false
-	}
-
-	var user user.User
-	if err := mdl.db.Where("email = ?", email).First(&user).Error; err != nil {
-		return true
-	}
-
-	user.IsVerified = true
-
-	if err := mdl.db.Save(&user).Error; err != nil {
-		return true
+		return ""
 	}
 
 	_, err := mdl.connection.Del(verificationKey).Result()
 	if err != nil {
-		return true
+		return ""
 	}
-	return true
+	return email
 }
 
 func (mdl *model) InsertUser(newUser *user.User) (*user.User, error) {

@@ -1,10 +1,9 @@
 package config
 
 import (
+	"io"
 	"os"
-	"strconv"
 
-	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
 )
 
@@ -24,7 +23,7 @@ type DatabaseConfig struct {
 	DB_USER string
 	DB_PASS string
 	DB_HOST string
-	DB_PORT int
+	DB_PORT string
 	DB_NAME string
 }
 
@@ -33,39 +32,47 @@ type RedisConfig struct {
 	REDIS_PORT string
 }
 
-type ProgramConfig struct {
-	Secret        string
-	RefreshSecret string
-	SERVER_PORT   string
+type CloudStorageConfig struct {
+	GOOGLE_APPLICATION_CREDENTIALS string
+	CLOUD_PROJECT_ID               string
+	CLOUD_BUCKET_NAME              string
 }
 
-func LoadDBConfig() DatabaseConfig {
-	godotenv.Load(".env")
+type ProgramConfig struct {
+	SECRET         string
+	REFRESH_SECRET string
+	SERVER_PORT    string
+	OTP_SECRET     string
+}
 
-	DB_PORT, err := strconv.Atoi(os.Getenv("DB_PORT"))
+func LoadDBConfig() *DatabaseConfig {
+	var res = new(DatabaseConfig)
 
-	if err != nil {
-		DB_PORT = 3306
+	if val, found := os.LookupEnv("DB_USER"); found {
+		res.DB_USER = val
 	}
 
-	return DatabaseConfig{
-		DB_USER: os.Getenv("DB_USER"),
-		DB_PASS: os.Getenv("DB_PASS"),
-		DB_HOST: os.Getenv("DB_HOST"),
-		DB_PORT: DB_PORT,
-		DB_NAME: os.Getenv("DB_NAME"),
+	if val, found := os.LookupEnv("DB_PASS"); found {
+		res.DB_PASS = val
 	}
+
+	if val, found := os.LookupEnv("DB_HOST"); found {
+		res.DB_HOST = val
+	}
+
+	if val, found := os.LookupEnv("DB_PORT"); found {
+		res.DB_PORT = val
+	}
+
+	if val, found := os.LookupEnv("DB_NAME"); found {
+		res.DB_NAME = val
+	}
+
+	return res
 }
 
 func LoadRedisConfig() *RedisConfig {
 	var res = new(RedisConfig)
-
-	err := godotenv.Load(".env")
-
-	if err != nil {
-		logrus.Error("Config : Cannot load config file,", err.Error())
-		return nil
-	}
 
 	if val, found := os.LookupEnv("REDIS_HOST"); found {
 		res.REDIS_HOST = val
@@ -78,26 +85,54 @@ func LoadRedisConfig() *RedisConfig {
 	return res
 }
 
+func LoadCloudStorageConfig() *CloudStorageConfig {
+	var res = new(CloudStorageConfig)
+
+	if val, found := os.LookupEnv("GOOGLE_APPLICATION_CREDENTIALS"); found {
+		gcredentials, _ := os.LookupEnv("APPLICATION_DEFAULT_CREDENTIALS")
+
+		file, err := os.Create("credentials.json")
+		if err != nil {
+			panic(err)
+		}
+		defer file.Close()
+
+		_, err = io.WriteString(file, gcredentials)
+		if err != nil {
+			panic(err)
+		}
+
+		res.GOOGLE_APPLICATION_CREDENTIALS = val
+	}
+
+	if val, found := os.LookupEnv("CLOUD_PROJECT_ID"); found {
+		res.CLOUD_PROJECT_ID = val
+	}
+
+	if val, found := os.LookupEnv("CLOUD_BUCKET_NAME"); found {
+		res.CLOUD_BUCKET_NAME = val
+	}
+
+	return res
+}
+
 func loadConfig() *ProgramConfig {
 	var res = new(ProgramConfig)
 
-	err := godotenv.Load(".env")
-
-	if err != nil {
-		logrus.Error("Config : Cannot load config file,", err.Error())
-		return nil
-	}
-
 	if val, found := os.LookupEnv("SECRET"); found {
-		res.Secret = val
+		res.SECRET = val
 	}
 
 	if val, found := os.LookupEnv("REFSECRET"); found {
-		res.RefreshSecret = val
+		res.REFRESH_SECRET = val
 	}
 
 	if val, found := os.LookupEnv("SERVER_PORT"); found {
 		res.SERVER_PORT = val
+	}
+
+	if val, found := os.LookupEnv("OTP_SECRET"); found {
+		res.OTP_SECRET = val
 	}
 
 	return res

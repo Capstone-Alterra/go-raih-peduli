@@ -13,16 +13,18 @@ import (
 )
 
 type service struct {
-	model user.Repository
-	jwt   helpers.JWTInterface
-	hash  helpers.HashInterface
+	model     user.Repository
+	jwt       helpers.JWTInterface
+	hash      helpers.HashInterface
+	generator helpers.GeneratorInterface
 }
 
-func New(model user.Repository, jwt helpers.JWTInterface, hash helpers.HashInterface) user.Usecase {
+func New(model user.Repository, jwt helpers.JWTInterface, hash helpers.HashInterface, generator helpers.GeneratorInterface) user.Usecase {
 	return &service{
-		model: model,
-		jwt:   jwt,
-		hash:  hash,
+		model:     model,
+		jwt:       jwt,
+		hash:      hash,
+		generator: generator,
 	}
 }
 
@@ -82,7 +84,7 @@ func (svc *service) Create(newData dtos.InputUser) (*dtos.ResUser, error) {
 		return nil, err
 	}
 
-	otp := helpers.GenerateRandomOTP()
+	otp := svc.generator.GenerateRandomOTP()
 
 	err = svc.model.SendOTPByEmail(userModel.Email, otp)
 	if err != nil {
@@ -144,9 +146,88 @@ func (svc *service) Remove(userID int) bool {
 }
 
 func (svc *service) ValidateVerification(verificationKey string) bool {
-	return svc.model.ValidateVerification(verificationKey)
+	email := svc.model.ValidateVerification(verificationKey)
+	if email == "" {
+		return false
+	}
+
+	user, err := svc.model.SelectByEmail(email)
+	if err != nil {
+		return false
+	}
+
+	user.IsVerified = true
+	rowsAffected := svc.model.UpdateUser(*user)
+	if rowsAffected <= 0 {
+		log.Error("There is No Customer Deleted!")
+		return false
+	}
+
+	return true
 }
 
-func (svc *service) InsertVerification(email string, verificationKey string) error {
-	return svc.model.InsertVerification(email, verificationKey)
+func (svc *service) ForgetPassword(data dtos.ForgetPassword) error {
+	user, err := svc.model.SelectByEmail(data.Email)
+
+	if err != nil {
+		return err
+	}
+
+	user.IsVerified = false
+	rowsAffected := svc.model.UpdateUser(*user)
+
+	if rowsAffected == 0 {
+		log.Error("There is No Customer Updated!")
+		return errors.New("There is No Customer Updated!")
+	}
+
+	otp := svc.generator.GenerateRandomOTP()
+
+	err = svc.model.SendOTPByEmail(user.Email, otp)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (svc *service) VerifyOTP(verificationKey string) string {
+	email := svc.model.ValidateVerification(verificationKey)
+	if email == "" {
+		return ""
+	}
+
+	user, err := svc.model.SelectByEmail(email)
+	if err != nil {
+		return ""
+	}
+
+	userID := strconv.Itoa(user.ID)
+	roleID := strconv.Itoa(user.RoleID)
+	token := svc.jwt.GenerateTokenResetPassword(userID, roleID)
+
+	return token
+}
+
+func (svc *service) ResetPassword(newData dtos.ResetPassword) error {
+	user, err := svc.model.SelectByEmail(newData.Email)
+
+	if err != nil {
+		return err
+	}
+
+	if user.IsVerified {
+		return errors.New("Cannot reset password")
+	}
+
+	user.Password = svc.hash.HashPassword(newData.Password)
+	user.IsVerified = true
+	rowsAffected := svc.model.UpdateUser(*user)
+
+	if rowsAffected == 0 {
+		log.Error("There is No Customer Updated!")
+		return errors.New("There is No Customer Updated!")
+	}
+
+	return nil
 }
