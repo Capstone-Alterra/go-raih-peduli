@@ -34,12 +34,13 @@ func (ctl *controller) GetVolunteers() echo.HandlerFunc {
 		size := pagination.Size
 		title := ctx.QueryParam("title")
 		skill := ctx.QueryParam("skill")
+		city := ctx.QueryParam("city")
 
 		if page <= 0 || size <= 0 {
 			return ctx.JSON(400, helper.Response("Please provide query `page` and `size` in number!"))
 		}
 
-		volunteers := ctl.service.FindAll(page, size, title, skill)
+		volunteers := ctl.service.FindAll(page, size, title, skill, city)
 
 		if volunteers == nil {
 			return ctx.JSON(404, helper.Response("There is No Volunteers!"))
@@ -133,12 +134,12 @@ func (ctl *controller) DeleteVolunteer() echo.HandlerFunc {
 	}
 }
 
-func (ctl *controller) CreateVolunteer() echo.HandlerFunc{
-	return func (ctx echo.Context) error {
+func (ctl *controller) CreateVolunteer() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
 		input := dtos.InputVolunteer{}
 
 		ctx.Bind(&input)
-		 validate = validator.New(validator.WithRequiredStructEnabled())
+		validate = validator.New(validator.WithRequiredStructEnabled())
 
 		if err := validate.Struct(input); err != nil {
 			errMap := helpers.ErrorMapValidation(err)
@@ -161,15 +162,15 @@ func (ctl *controller) CreateVolunteer() echo.HandlerFunc{
 
 			file = formFile
 		}
-		
-		 err = validate.Struct(input)
 
-		 if err != nil {
-		 	errMap := helpers.ErrorMapValidation(err)
-		 	return ctx.JSON(400, helpers.Response("Controller : Bad Request", map[string]any{
-		 		"error": errMap,
-		 	}))
-		 }
+		err = validate.Struct(input)
+
+		if err != nil {
+			errMap := helpers.ErrorMapValidation(err)
+			return ctx.JSON(400, helpers.Response("Controller : Bad Request", map[string]any{
+				"error": errMap,
+			}))
+		}
 		volun, _ := ctl.service.Create(input, userID.(int), file)
 
 		if volun == nil {
@@ -181,8 +182,8 @@ func (ctl *controller) CreateVolunteer() echo.HandlerFunc{
 	}
 }
 
-func (ctl *controller) ApplyVacancies() echo.HandlerFunc{
-	return func(ctx echo.Context) error{
+func (ctl *controller) ApplyVacancies() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
 		input := dtos.ApplyVolunteer{}
 
 		ctx.Bind(&input)
@@ -207,6 +208,6 @@ func (ctl *controller) ApplyVacancies() echo.HandlerFunc{
 			return ctx.JSON(500, helpers.Response("Controller : Something when wrong!"))
 		}
 
-		return ctx.JSON(200, helper.Response("Apply Volunteer Success!", nil)) 
+		return ctx.JSON(200, helper.Response("Apply Volunteer Success!", nil))
 	}
 }
