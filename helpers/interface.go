@@ -4,6 +4,9 @@ import (
 	"mime/multipart"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/midtrans/midtrans-go/coreapi"
+
+	"raihpeduli/features/transaction"
 )
 
 type ValidationInterface interface {
@@ -25,6 +28,13 @@ type HashInterface interface {
 
 type GeneratorInterface interface {
 	GenerateRandomOTP() string
+	GenerateRandomID() int
+}
+
+type MidtransInterface interface {
+	CreateTransactionBank(IDTransaction string, PaymentType string, Amount int64) (string, error)
+	CreateTransactionGopay(IDTransaction string, PaymentType string, Amount int64) (string, error)
+	TransactionStatus(transactionStatusResp *coreapi.TransactionStatusResponse) transaction.Status
 }
 
 type CloudStorageInterface interface {
