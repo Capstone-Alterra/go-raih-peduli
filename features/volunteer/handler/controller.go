@@ -89,15 +89,15 @@ func (ctl *controller) UpdateVolunteer() echo.HandlerFunc {
 
 		ctx.Bind(&input)
 
-		validate = validator.New(validator.WithRequiredStructEnabled())
-		err := validate.Struct(input)
+		// validate = validator.New(validator.WithRequiredStructEnabled())
+		// err := validate.Struct(input)
 
-		if err != nil {
-			errMap := helpers.ErrorMapValidation(err)
-			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any{
-				"error": errMap,
-			}))
-		}
+		// if err != nil {
+		// 	errMap := helpers.ErrorMapValidation(err)
+		// 	return ctx.JSON(400, helper.Response("Bad Request!", map[string]any{
+		// 		"error": errMap,
+		// 	}))
+		// }
 
 		update := ctl.service.Modify(input, volunteerID)
 
@@ -178,5 +178,35 @@ func (ctl *controller) CreateVolunteer() echo.HandlerFunc{
 		return ctx.JSON(200, helpers.Response("Succes", map[string]any{
 			"data": volun,
 		}))
+	}
+}
+
+func (ctl *controller) ApplyVacancies() echo.HandlerFunc{
+	return func(ctx echo.Context) error{
+		input := dtos.ApplyVolunteer{}
+
+		ctx.Bind(&input)
+
+		userID := ctx.Get("user_id")
+
+		fileHeader, err := ctx.FormFile("resume")
+		var file multipart.File
+
+		if err == nil {
+			formFile, err := fileHeader.Open()
+
+			if err != nil {
+				return ctx.JSON(500, helper.Response("something went wrong"))
+			}
+
+			file = formFile
+		}
+
+		result := ctl.service.Register(input, userID.(int), file)
+		if !result {
+			return ctx.JSON(500, helpers.Response("Controller : Something when wrong!"))
+		}
+
+		return ctx.JSON(200, helper.Response("Apply Volunteer Success!", nil)) 
 	}
 }
