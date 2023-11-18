@@ -72,5 +72,7 @@ jobs:
             -e CLOUD_BUCKET_NAME=${{ secrets.CLOUD_BUCKET_NAME }} \
             -e CLOUD_PROJECT_ID=${{ secrets.CLOUD_PROJECT_ID }} \
             -e APPLICATION_DEFAULT_CREDENTIALS="$(echo '${{secrets.APPLICATION_DEFAULT_CREDENTIALS}}')" \
+            -e MT_SERVER_KEY=${{ secrets.MT_SERVER_KEY }} \
+            -e MT_CLIENT_KEY=${{ secrets.MT_CLIENT_KEY }} \
             ${{ secrets.DOCKERHUB_USERNAME }}/imgoraihpeduli
        

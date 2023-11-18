@@ -1,6 +1,9 @@
 package dtos
 
-import "time"
+import (
+	"mime/multipart"
+	"time"
+)
 
 type InputVolunteer struct {
 	Title               string    `form:"title" validate:"required" json:"tittle"`
@@ -13,7 +16,15 @@ type InputVolunteer struct {
 	City 				string	  `form:"city" validate:"required" json:"city"`
 	SubDistrict 		string 	  `form:"sub_district" validate:"required" json:"sub_district`
 	DetailLocation      string    `form:"detail_location" validate:"required" json:"detail_location"`
-	Photo               string    `form:"photo" json:"photo"`
+	Photo               multipart.File `json:"photo" form:"photo"`
+	Status  			string `json:"status" form:"status"`
+}
+
+type ApplyVolunteer struct {
+	VolunteerID			int				`json:"volunteer_id" form:"volunteer_id"`
+	Skills 				string 	   		`json:"skills" form:"skills"`
+	Resume				multipart.File  `json:"resume" form:"resume"`
+	Reason				string			`json:"reason" form:"reason"`
 }
 
 type Pagination struct {

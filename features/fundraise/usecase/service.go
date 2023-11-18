@@ -136,6 +136,32 @@ func (svc *service) Modify(fundraiseData dtos.InputFundraise, file multipart.Fil
 	newFundraise.Photo = url
 	newFundraise.ID = oldData.ID
 	newFundraise.UserID = oldData.UserID
+	newFundraise.Status = oldData.Status
+	_, err := svc.model.Update(newFundraise)
+
+	if err != nil {
+		logrus.Error(err)
+		return false
+	}
+
+	return true
+}
+
+func (svc *service) ModifyStatus(fundraiseData dtos.InputFundraiseStatus, oldData dtos.ResFundraise) bool {
+	var newFundraise fundraise.Fundraise
+
+	if err := smapping.FillStruct(&newFundraise, smapping.MapFields(fundraiseData)); err != nil {
+		logrus.Error(err)
+		return false
+	}
+	newFundraise.ID = oldData.ID
+	newFundraise.Title = oldData.Title
+	newFundraise.Description = oldData.Description
+	newFundraise.Photo = oldData.Photo
+	newFundraise.Target = oldData.Target
+	newFundraise.StartDate = oldData.StartDate
+	newFundraise.EndDate = oldData.EndDate
+	newFundraise.UserID = oldData.UserID
 	_, err := svc.model.Update(newFundraise)
 
 	if err != nil {
