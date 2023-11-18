@@ -37,10 +37,12 @@ import (
 	tr "raihpeduli/features/transaction/repository"
 	tu "raihpeduli/features/transaction/usecase"
 
+	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 )
 
 func main() {
+	godotenv.Load()
 	e := echo.New()
 	cfg := config.InitConfig()
 	jwtService := helpers.NewJWT(*cfg)

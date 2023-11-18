@@ -32,6 +32,47 @@ func (mdl *model) Paginate(page, size int) []transaction.Transaction {
 	return transactions
 }
 
+func (mdl *model) GetTotalData() int64 {
+	var totalData int64
+
+	result := mdl.db.Model(&transaction.Transaction{}).Count(&totalData)
+
+	if result.Error != nil {
+		log.Error(result.Error)
+		return 0
+	}
+
+	return totalData
+}
+
+func (mdl *model) GetTotalDataByUser(userID int) int64 {
+	var totalData int64
+
+	result := mdl.db.Model(&transaction.Transaction{}).Where("user_id = ?", userID).Count(&totalData)
+
+	if result.Error != nil {
+		log.Error(result.Error)
+		return 0
+	}
+
+	return totalData
+}
+
+func (mdl *model) PaginateUser(page, size, userID int) []transaction.Transaction {
+	var transactions []transaction.Transaction
+
+	offset := (page - 1) * size
+
+	result := mdl.db.Where("user_id = ?", userID).Offset(offset).Limit(size).Find(&transactions)
+
+	if result.Error != nil {
+		log.Error(result.Error)
+		return nil
+	}
+
+	return transactions
+}
+
 func (mdl *model) Insert(newTransaction transaction.Transaction) int64 {
 	result := mdl.db.Create(&newTransaction)
 
