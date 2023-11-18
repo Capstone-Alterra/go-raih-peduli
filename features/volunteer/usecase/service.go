@@ -21,19 +21,24 @@ func New(model volunteer.Repository) volunteer.Usecase {
 	}
 }
 
-func (svc *service) FindAll(page, size int, title, skill, city string) []dtos.ResVolunteer {
+func (svc *service) FindAll(page, size int, title, skill, city string) ([]dtos.ResVolunteer, int64) {
 	var volunteers []dtos.ResVolunteer
 
 	var volunteersEnt []volunteer.VolunteerVacancies
 
+	var totalData int64
 	if title != "" {
 		volunteersEnt = svc.model.SelectByTitle(page, size, title)
+		totalData = svc.model.GetTotalDataByTitle(title)
 	} else if skill != "" {
 		volunteersEnt = svc.model.SelectBySkill(page, size, skill)
+		totalData = svc.model.GetTotalDataBySkill(skill)
 	} else if city != "" {
-		volunteersEnt = svc.model.SelectByCity(page, size, skill)
+		volunteersEnt = svc.model.SelectByCity(page, size, city)
+		totalData = svc.model.GetTotalDataByCity(city)
 	} else {
 		volunteersEnt = svc.model.Paginate(page, size)
+		totalData = svc.model.GetTotalData()
 	}
 
 	for _, volunteer := range volunteersEnt {
@@ -46,7 +51,7 @@ func (svc *service) FindAll(page, size int, title, skill, city string) []dtos.Re
 		volunteers = append(volunteers, data)
 	}
 
-	return volunteers
+	return volunteers, totalData
 }
 
 func (svc *service) FindByID(volunteerID int) *dtos.ResVolunteer {

@@ -68,12 +68,12 @@ func (mdl *model) SelectBySkill(page, size int, title string) []volunteer.Volunt
 	return volunteers
 }
 
-func (mdl *model) SelectByCity(page, size int, City string) []volunteer.VolunteerVacancies {
+func (mdl *model) SelectByCity(page, size int, city string) []volunteer.VolunteerVacancies {
 	var volunteers []volunteer.VolunteerVacancies
 
 	offset := (page - 1) * size
 
-	result := mdl.db.Where("city LIKE ?", "%"+City+"%").Offset(offset).Limit(size).Find(&volunteers)
+	result := mdl.db.Where("city = ?", city).Offset(offset).Limit(size).Find(&volunteers)
 
 	if result.Error != nil {
 		log.Error(result.Error)
@@ -148,4 +148,56 @@ func (mdl *model) UploadFile(file multipart.File, objectName string) (string, er
 	}
 
 	return "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/volunteer/" + objectName, nil
+}
+
+func (mdl *model) GetTotalData() int64 {
+	var totalData int64
+
+	result := mdl.db.Table("volunteer_vacancies").Where("deleted_at IS NULL").Count(&totalData)
+
+	if result.Error != nil {
+		log.Error(result.Error)
+		return 0
+	}
+
+	return totalData
+}
+
+func (mdl *model) GetTotalDataByTitle(title string) int64 {
+	var totalData int64
+
+	result := mdl.db.Table("volunteer_vacancies").Where("title = ? AND deleted_at IS NULL").Count(&totalData)
+
+	if result.Error != nil {
+		log.Error(result.Error)
+		return 0
+	}
+
+	return totalData
+}
+
+func (mdl *model) GetTotalDataBySkill(skill string) int64 {
+	var totalData int64
+
+	result := mdl.db.Table("volunteer_vacancies").Where("skill = ? AND deleted_at IS NULL").Count(&totalData)
+
+	if result.Error != nil {
+		log.Error(result.Error)
+		return 0
+	}
+
+	return totalData
+}
+
+func (mdl *model) GetTotalDataByCity(city string) int64 {
+	var totalData int64
+
+	result := mdl.db.Table("volunteer_vacancies").Where("city = ? AND deleted_at IS NULL").Count(&totalData)
+
+	if result.Error != nil {
+		log.Error(result.Error)
+		return 0
+	}
+
+	return totalData
 }

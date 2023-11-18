@@ -18,10 +18,14 @@ type Repository interface {
 	Insert(*VolunteerVacancies) (*VolunteerVacancies, error)
 	UploadFile(file multipart.File, objectName string) (string, error)
 	Register(registrar *VolunteerRelations) error
+	GetTotalData() int64
+	GetTotalDataByTitle(title string) int64
+	GetTotalDataBySkill(title string) int64
+	GetTotalDataByCity(title string) int64
 }
 
 type Usecase interface {
-	FindAll(page, size int, title, skill, city string) []dtos.ResVolunteer
+	FindAll(page, size int, title, skill, city string) ([]dtos.ResVolunteer, int64)
 	FindByID(volunteerID int) *dtos.ResVolunteer
 	Modify(volunteerData dtos.InputVolunteer, volunteerID int) bool
 	Remove(volunteerID int) bool

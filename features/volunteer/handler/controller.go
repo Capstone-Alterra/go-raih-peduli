@@ -28,7 +28,14 @@ var validate *validator.Validate
 func (ctl *controller) GetVolunteers() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		pagination := dtos.Pagination{}
+		paginationResponse := dtos.PaginationResponse{}
+
 		ctx.Bind(&pagination)
+
+		if pagination.Page < 1 || pagination.Size < 1 {
+			pagination.Page = 1
+			pagination.Size = 20
+		}
 
 		page := pagination.Page
 		size := pagination.Size
@@ -36,18 +43,34 @@ func (ctl *controller) GetVolunteers() echo.HandlerFunc {
 		skill := ctx.QueryParam("skill")
 		city := ctx.QueryParam("city")
 
-		if page <= 0 || size <= 0 {
-			return ctx.JSON(400, helper.Response("Please provide query `page` and `size` in number!"))
-		}
-
-		volunteers := ctl.service.FindAll(page, size, title, skill, city)
+		volunteers, totalData := ctl.service.FindAll(page, size, title, skill, city)
 
 		if volunteers == nil {
 			return ctx.JSON(404, helper.Response("There is No Volunteers!"))
 		}
 
+		if pagination.Size >= int(totalData) {
+			paginationResponse.PreviousPage = -1
+			paginationResponse.NextPage = -1
+		} else if pagination.Size < int(totalData) && pagination.Page == 1 {
+			paginationResponse.PreviousPage = -1
+			paginationResponse.NextPage = pagination.Page + 1
+		} else {
+			paginationResponse.PreviousPage = pagination.Page - 1
+			paginationResponse.NextPage = pagination.Page + 1
+		}
+
+		paginationResponse.TotalData = totalData
+		paginationResponse.CurrentPage = pagination.Page
+		paginationResponse.TotalPage = (int(totalData) + pagination.Size - 1) / pagination.Size
+
+		if paginationResponse.CurrentPage == paginationResponse.TotalPage {
+			paginationResponse.NextPage = -1
+		}
+
 		return ctx.JSON(200, helper.Response("Success!", map[string]any{
-			"data": volunteers,
+			"data":       volunteers,
+			"pagination": paginationResponse,
 		}))
 	}
 }
