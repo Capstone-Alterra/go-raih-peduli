@@ -74,8 +74,8 @@ func (svc *service) Register(newData dtos.InputUser) (*dtos.ResUser, error) {
 		log.Error("Token process failed")
 	}
 
-	resCustomer.AccessToken = tokenData["access_token"].(string)
-	resCustomer.RefreshToken = tokenData["refresh_token"].(string)
+	// resCustomer.AccessToken = tokenData["access_token"].(string)
+	// resCustomer.RefreshToken = tokenData["refresh_token"].(string)
 
 	return &resCustomer, nil
 }
