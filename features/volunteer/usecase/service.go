@@ -5,6 +5,7 @@ import (
 	"mime/multipart"
 	"raihpeduli/features/volunteer"
 	"raihpeduli/features/volunteer/dtos"
+	"raihpeduli/helpers"
 
 	"github.com/labstack/gommon/log"
 	"github.com/mashingan/smapping"
@@ -12,12 +13,14 @@ import (
 )
 
 type service struct {
-	model volunteer.Repository
+	model      volunteer.Repository
+	validation helpers.ValidationInterface
 }
 
-func New(model volunteer.Repository) volunteer.Usecase {
+func New(model volunteer.Repository, validation helpers.ValidationInterface) volunteer.Usecase {
 	return &service{
-		model: model,
+		model:      model,
+		validation: validation,
 	}
 }
 
@@ -102,7 +105,11 @@ func (svc *service) Remove(volunteerID int) bool {
 	return true
 }
 
-func (svc *service) Create(newVolunteer dtos.InputVolunteer, UserID int, file multipart.File) (*dtos.ResVolunteer, error) {
+func (svc *service) Create(newVolunteer dtos.InputVolunteer, UserID int, file multipart.File) (*dtos.ResVolunteer, []string, error) {
+	if errMap := svc.validation.ValidateRequest(newVolunteer); errMap != nil {
+		return nil, errMap, errors.New("validation error")
+	}
+
 	volun := volunteer.VolunteerVacancies{}
 
 	var url string = ""
@@ -112,7 +119,7 @@ func (svc *service) Create(newVolunteer dtos.InputVolunteer, UserID int, file mu
 
 		if err != nil {
 			logrus.Error(err)
-			return nil, err
+			return nil, nil, err
 		}
 
 		url = imageURL
@@ -126,7 +133,7 @@ func (svc *service) Create(newVolunteer dtos.InputVolunteer, UserID int, file mu
 
 	if err != nil {
 		log.Error(err)
-		return nil, errors.New("Use Case : failed to create volunteer")
+		return nil, nil, errors.New("Use Case : failed to create volunteer")
 	}
 
 	resVolun := dtos.ResVolunteer{}
@@ -135,13 +142,17 @@ func (svc *service) Create(newVolunteer dtos.InputVolunteer, UserID int, file mu
 
 	if errRes != nil {
 		log.Error(errRes)
-		return nil, errors.New("Use Case : failed to mapping response")
+		return nil, nil, errors.New("Use Case : failed to mapping response")
 	}
 
-	return &resVolun, nil
+	return &resVolun, nil, nil
 }
 
-func (svc *service) Register(newApply dtos.ApplyVolunteer, userID int, file multipart.File) bool {
+func (svc *service) Register(newApply dtos.ApplyVolunteer, userID int, file multipart.File) (bool, []string) {
+	if errMap := svc.validation.ValidateRequest(newApply); errMap != nil {
+		return false, errMap
+	}
+
 	registrar := volunteer.VolunteerRelations{}
 
 	var url string = ""
@@ -151,7 +162,7 @@ func (svc *service) Register(newApply dtos.ApplyVolunteer, userID int, file mult
 
 		if err != nil {
 			logrus.Error(err)
-			return false
+			return false, nil
 		}
 
 		url = imageURL
@@ -161,15 +172,15 @@ func (svc *service) Register(newApply dtos.ApplyVolunteer, userID int, file mult
 	err := smapping.FillStruct(&registrar, smapping.MapFields(newApply))
 	if err != nil {
 		log.Error(err)
-		return false
+		return false, nil
 	}
 
 	registrar.Resume = url
 
 	err = svc.model.Register(&registrar)
 	if err != nil {
-		return false
+		return false, nil
 	}
 
-	return true
+	return true, nil
 }

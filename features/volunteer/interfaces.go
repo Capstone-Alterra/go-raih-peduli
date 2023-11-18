@@ -29,8 +29,8 @@ type Usecase interface {
 	FindByID(volunteerID int) *dtos.ResVolunteer
 	Modify(volunteerData dtos.InputVolunteer, volunteerID int) bool
 	Remove(volunteerID int) bool
-	Create(newVolunteer dtos.InputVolunteer, UserID int, file multipart.File) (*dtos.ResVolunteer, error)
-	Register(newApply dtos.ApplyVolunteer, userID int, file multipart.File) bool
+	Create(newVolunteer dtos.InputVolunteer, UserID int, file multipart.File) (*dtos.ResVolunteer, []string, error)
+	Register(newApply dtos.ApplyVolunteer, userID int, file multipart.File) (bool, []string)
 }
 
 type Handler interface {

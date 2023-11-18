@@ -96,12 +96,13 @@ func AuthHandler() auth.Handler {
 
 func VolunteerHandler() volunteer.Handler {
 	config := config.LoadCloudStorageConfig()
+	validation := helpers.NewValidationRequest()
 
 	db := utils.InitDB()
 
 	clStorage := helpers.NewCloudStorage(config.CLOUD_PROJECT_ID, config.CLOUD_BUCKET_NAME, "fundraises/")
 	repo := vr.New(db, clStorage)
-	uc := vu.New(repo)
+	uc := vu.New(repo, validation)
 	return vh.New(uc)
 }
 
