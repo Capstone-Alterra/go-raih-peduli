@@ -94,6 +94,23 @@ func (svc *service) Modify(volunteerData dtos.InputVolunteer, volunteerID int) b
 	return true
 }
 
+func (svc *service) UpdateStatusRegistrar(status string, registrarID int) bool {
+	registrar := svc.model.SelectRegistrarByID(registrarID)
+
+	if registrar == nil {
+		return false
+	}
+
+	registrar.Status = status
+	rowsAffected := svc.model.UpdateStatusRegistrar(*registrar)
+	if rowsAffected <= 0 {
+		log.Error("Update status registrar failed")
+		return false
+	}
+
+	return true
+}
+
 func (svc *service) Remove(volunteerID int) bool {
 	rowsAffected := svc.model.DeleteByID(volunteerID)
 

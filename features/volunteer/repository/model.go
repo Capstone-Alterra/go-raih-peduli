@@ -136,6 +136,28 @@ func (mdl *model) Register(registrar *volunteer.VolunteerRelations) error {
 	return nil
 }
 
+func (mdl *model) SelectRegistrarByID(registrarID int) *volunteer.VolunteerRelations {
+	var registrar volunteer.VolunteerRelations
+	result := mdl.db.First(&registrar, registrarID)
+
+	if result.Error != nil {
+		log.Error(result.Error)
+		return nil
+	}
+
+	return &registrar
+}
+
+func (mdl *model) UpdateStatusRegistrar(registrar volunteer.VolunteerRelations) int64 {
+	result := mdl.db.Table("volunteer_relations").Updates(&registrar)
+
+	if result.Error != nil {
+		log.Error(result.Error)
+	}
+
+	return result.RowsAffected
+}
+
 func (mdl *model) UploadFile(file multipart.File, objectName string) (string, error) {
 	config := config.LoadCloudStorageConfig()
 	randomChar := uuid.New().String()

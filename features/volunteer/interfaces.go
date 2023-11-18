@@ -18,6 +18,8 @@ type Repository interface {
 	Insert(*VolunteerVacancies) (*VolunteerVacancies, error)
 	UploadFile(file multipart.File, objectName string) (string, error)
 	Register(registrar *VolunteerRelations) error
+	UpdateStatusRegistrar(registrar VolunteerRelations) int64
+	SelectRegistrarByID(registrarID int) *VolunteerRelations
 	GetTotalData() int64
 	GetTotalDataByTitle(title string) int64
 	GetTotalDataBySkill(title string) int64
@@ -31,6 +33,7 @@ type Usecase interface {
 	Remove(volunteerID int) bool
 	Create(newVolunteer dtos.InputVolunteer, UserID int, file multipart.File) (*dtos.ResVolunteer, []string, error)
 	Register(newApply dtos.ApplyVolunteer, userID int, file multipart.File) (bool, []string)
+	UpdateStatusRegistrar(status string, registrarID int) bool
 }
 
 type Handler interface {
@@ -40,4 +43,5 @@ type Handler interface {
 	DeleteVolunteer() echo.HandlerFunc
 	CreateVolunteer() echo.HandlerFunc
 	ApplyVacancies() echo.HandlerFunc
+	UpdateStatusRegistrar() echo.HandlerFunc
 }

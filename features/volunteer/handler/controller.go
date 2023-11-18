@@ -235,3 +235,25 @@ func (ctl *controller) ApplyVacancies() echo.HandlerFunc {
 		return ctx.JSON(200, helper.Response("Apply Volunteer Success!", nil))
 	}
 }
+
+func (ctl *controller) UpdateStatusRegistrar() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		input := dtos.StatusRegistrar{}
+
+		ctx.Bind(&input)
+
+		registrarID, errParam := strconv.Atoi(ctx.Param("id"))
+
+		if errParam != nil {
+			return ctx.JSON(400, helper.Response(errParam.Error()))
+		}
+
+		update := ctl.service.UpdateStatusRegistrar(input.Status, registrarID)
+
+		if !update {
+			return ctx.JSON(500, helper.Response("Something Went Wrong!"))
+		}
+
+		return ctx.JSON(200, helper.Response("Registrar Success Updated!"))
+	}
+}

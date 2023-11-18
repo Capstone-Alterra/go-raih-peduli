@@ -27,6 +27,10 @@ type ApplyVolunteer struct {
 	Reason      string         `json:"reason" form:"reason" validate:"required"`
 }
 
+type StatusRegistrar struct {
+	Status string `json:"status" form:"status"`
+}
+
 type Pagination struct {
 	Page int `query:"page"`
 	Size int `query:"size"`
