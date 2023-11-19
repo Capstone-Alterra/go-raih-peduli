@@ -4,10 +4,13 @@ import (
 	"io"
 	"os"
 
+	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
 )
 
 func InitConfig() *ProgramConfig {
+	godotenv.Load()
+
 	var res = new(ProgramConfig)
 	res = loadConfig()
 
