@@ -68,6 +68,6 @@ jobs:
             -e APPLICATION_DEFAULT_CREDENTIALS="$(echo '${{secrets.APPLICATION_DEFAULT_CREDENTIALS}}')" \
             -e MT_SERVER_KEY=${{ secrets.MT_SERVER_KEY }} \
             -e MT_CLIENT_KEY=${{ secrets.MT_CLIENT_KEY }} \
-            -e MONGO_URI=${{ secrets.MONGO_URI }} \
+            -e MONGO_URI="$(echo '${{ secrets.MONGO_URI }}')" \
             -e MONGO_DB_NAME=${{ secrets.MONGO_DB_NAME }} \
             ${{ secrets.DOCKERHUB_USERNAME }}/imgoraihpeduli
