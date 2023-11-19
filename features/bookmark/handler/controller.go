@@ -2,7 +2,6 @@ package handler
 
 import (
 	"raihpeduli/helpers"
-	"strconv"
 
 	"raihpeduli/features/bookmark"
 	"raihpeduli/features/bookmark/dtos"
@@ -28,21 +27,21 @@ func (ctl *controller) GetBookmarksByUserID() echo.HandlerFunc {
 		pagination := dtos.Pagination{}
 		ctx.Bind(&pagination)
 		
-		page := pagination.Page
 		size := pagination.Size
 
-		if page <= 0 || size <= 0 {
-			page = 1
+		if size <= 0 {
 			size = 10
 		}
 
-		bookmarks := ctl.service.FindAll(page, size)
+		userID := ctx.Get("user_id")
+
+		bookmarks := ctl.service.FindAll(size, userID.(int))
 
 		if bookmarks == nil {
-			return ctx.JSON(404, helpers.Response("There is No Bookmarks!"))
+			return ctx.JSON(404, helpers.Response("there is no bookmarks"))
 		}
 
-		return ctx.JSON(200, helpers.Response("Success!", map[string]any {
+		return ctx.JSON(200, helpers.Response("success", map[string]any {
 			"data": bookmarks,
 		}))
 	}
@@ -62,24 +61,26 @@ func (ctl *controller) BookmarkAPost() echo.HandlerFunc {
 			return ctx.JSON(500, helpers.Response(err.Error()))
 		}
 
-		return ctx.JSON(200, helpers.Response("success bookmark a post"))
+		return ctx.JSON(200, helpers.Response("success bookmarked a post"))
 	}
 }
 
 func (ctl *controller) UnBookmarkAPost() echo.HandlerFunc {
 	return func (ctx echo.Context) error  {
-		bookmarkID, err := strconv.Atoi(ctx.Param("id"))
+		bookmarkID := ctx.Param("id")
 
-		if err != nil {
-			return ctx.JSON(400, helpers.Response(err.Error()))
+		bookmark := ctl.service.FindByID(bookmarkID)
+		
+		if bookmark == nil {
+			return ctx.JSON(404, helpers.Response("post not found"))
 		}
 
 		delete := ctl.service.UnsetBookmark(bookmarkID)
 
 		if !delete {
-			return ctx.JSON(500, helpers.Response("Something Went Wrong!"))
+			return ctx.JSON(500, helpers.Response("something went wrong"))
 		}
 
-		return ctx.JSON(200, helpers.Response("Bookmark Success Deleted!", nil))
+		return ctx.JSON(200, helpers.Response("bookmark success deleted", nil))
 	}
 }

@@ -7,6 +7,7 @@ import (
 
 	"github.com/mashingan/smapping"
 	"github.com/sirupsen/logrus"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type service struct {
@@ -29,59 +30,62 @@ func (svc *service) FindAll(size, userID int) *dtos.ResBookmark {
 	return bookmarks
 }
 
-// func (svc *service) FindByID(bookmarkID int) *dtos.ResBookmark {
-// 	var res dtos.ResBookmark
+func (svc *service) FindByID(bookmarkID string) *bson.M {
+	bookmark, err := svc.model.SelectByID(bookmarkID)
 
-// 	bookmark := svc.model.SelectByID(bookmarkID)
+	if err != nil {
+		return nil
+	}
 
-// 	if bookmark == nil {
-// 		return nil
-// 	}
-
-// 	if err := smapping.FillStruct(&res, smapping.MapFields(bookmark)); err != nil {
-// 		logrus.Error(err)
-// 		return nil
-// 	}
-
-// 	return &res
-// }
+	return bookmark
+}
 
 func (svc *service) SetBookmark(input dtos.InputBookmarkPost, userID int) (bool, error) {
 	var post any
-	var bookmarkPost any
+	var document any
+	var err error
+
+	bookmarked, _ := svc.model.SelectByPostAndUserID(input.PostID, userID, input.PostType)
+	
+	if bookmarked != nil {
+		return false, errors.New("this post has already been bookmarked by this user")
+	}
 
 	switch(input.PostType) {
 		case "news":
-			post, _ = svc.model.SelectNewsByID(input.PostID)
-			bookmarkPost = bookmark.NewsBookmark{
+			post, err = svc.model.SelectNewsByID(input.PostID)
+			document = &bookmark.NewsBookmark{
 				PostID: input.PostID,
 				PostType: input.PostType,
+				UserID: userID,
 			}
 		case "fundraise":
-			post, _ = svc.model.SelectFundraiseByID(input.PostID)
-			bookmarkPost = bookmark.FundraiseBookmark{
+			post, err = svc.model.SelectFundraiseByID(input.PostID)
+			document = &bookmark.FundraiseBookmark{
 				PostID: input.PostID,
 				PostType: input.PostType,
+				UserID: userID,
 			}
 		case "vacancy":
-			post, _ = svc.model.SelectVolunteerByID(input.PostID)
-			bookmarkPost = bookmark.VacancyBookmark{
+			post, err = svc.model.SelectVolunteerByID(input.PostID)
+			document = &bookmark.VacancyBookmark{
 				PostID: input.PostID,
 				PostType: input.PostType,
+				UserID: userID,
 			}
 		default: 
 			return false, errors.New("unknown post type. choose between 'news', 'fundraise' or 'vacancy'")
 	}
 
-	if post == nil {
-		return false, errors.New("post not found")
-	}
-
-	if err := smapping.FillStruct(post, smapping.MapFields(post)); err != nil {
+	if err != nil {
 		return false, err
 	}
 	
-	_, err := svc.model.Insert(bookmarkPost)
+	if err := smapping.FillStruct(document, smapping.MapFields(post)); err != nil {
+		return false, err
+	}
+
+	_, err = svc.model.Insert(document)
 	
 	if err != nil {
 		return false, err
@@ -90,7 +94,7 @@ func (svc *service) SetBookmark(input dtos.InputBookmarkPost, userID int) (bool,
 	return true, nil
 }
 
-func (svc *service) UnsetBookmark(bookmarkID int) bool {
+func (svc *service) UnsetBookmark(bookmarkID string) bool {
 	_, err := svc.model.DeleteByID(bookmarkID)
 
 	if err != nil {

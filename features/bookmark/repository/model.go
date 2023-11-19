@@ -6,6 +6,7 @@ import (
 	"raihpeduli/features/bookmark/dtos"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"gorm.io/gorm"
@@ -13,13 +14,13 @@ import (
 
 type model struct {
 	db *gorm.DB
-	mongoDB *mongo.Database
+	collection *mongo.Collection
 }
 
-func New(db *gorm.DB, mongoDB *mongo.Database) bookmark.Repository {
+func New(db *gorm.DB, collection *mongo.Collection) bookmark.Repository {
 	return &model {
 		db: db,
-		mongoDB: mongoDB,
+		collection: collection,
 	}
 }
 
@@ -28,21 +29,21 @@ func (mdl *model) Paginate(size, userID int) (*dtos.ResBookmark, error) {
 
 	opts := options.Find().SetLimit(int64(size))
 
-	cursor, err := mdl.mongoDB.Collection("bookmark").Find(context.Background(), bson.M{"user_id": userID, "post_type": "fundraise"}, opts)
+	cursor, err := mdl.collection.Find(context.Background(), bson.M{"user_id": userID, "post_type": "fundraise"}, opts)
 	
 	var fundraises []dtos.ResFundraise
 	if err = cursor.All(context.TODO(), &fundraises); err != nil {
 		return nil, err
 	}
 	
-	cursor, err = mdl.mongoDB.Collection("bookmark").Find(context.Background(), bson.M{"user_id": userID, "post_type": "news"}, opts)
+	cursor, err = mdl.collection.Find(context.Background(), bson.M{"user_id": userID, "post_type": "news"}, opts)
 	
 	var news []dtos.ResNews
 	if err = cursor.All(context.TODO(), &news); err != nil {
 		return nil, err
 	}
 	
-	cursor, err = mdl.mongoDB.Collection("bookmark").Find(context.Background(), bson.M{"user_id": userID, "post_type": "vacancy"}, opts)
+	cursor, err = mdl.collection.Find(context.Background(), bson.M{"user_id": userID, "post_type": "vacancy"}, opts)
 
 	var vacancies []dtos.ResVolunteerVacancy
 	if err = cursor.All(context.TODO(), &vacancies); err != nil {
@@ -57,20 +58,36 @@ func (mdl *model) Paginate(size, userID int) (*dtos.ResBookmark, error) {
 }
 
 func (mdl *model) Insert(document any) (bool, error) {
-	if _, err := mdl.mongoDB.Collection("bookmark").InsertOne(context.Background(), document); err != nil {
+	if _, err := mdl.collection.InsertOne(context.Background(), document); err != nil {
 		return false, err
 	}
 
 	return true, nil
 }
 
-func (mdl *model) SelectByID(bookmarkID int) (any, error) {
-	var result any
-	if err := mdl.mongoDB.Collection("bookmark").FindOne(context.TODO(), bson.M{"_id": bookmarkID}).Decode(&result); err != nil {
+func (mdl *model) SelectByPostAndUserID(postID int, userID int, postType string) (*bson.M, error) {
+	var result bson.M
+
+	if err := mdl.collection.FindOne(context.Background(), bson.M{"user_id": userID, "post_id": postID, "post_type": postType}).Decode(&result); err != nil {
 		return nil, err
 	}
 
-	return result, nil
+	return &result, nil
+}
+
+func (mdl *model) SelectByID(bookmarkID string) (*bson.M, error) {
+	var result bson.M
+
+	objectID, err := primitive.ObjectIDFromHex(bookmarkID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := mdl.collection.FindOne(context.Background(), bson.M{"_id": objectID}).Decode(&result); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
 }
 
 func (mdl *model) SelectFundraiseByID(fundraiseID int) (*bookmark.Fundraise, error) {
@@ -103,8 +120,13 @@ func (mdl *model) SelectVolunteerByID(volunteerID int) (*bookmark.VolunteerVacan
 	return &volunteer, nil
 }
 
-func (mdl *model) DeleteByID(bookmarkID int) (int, error) {
-	result := mdl.mongoDB.Collection("bookmark").FindOneAndDelete(context.Background(), bson.M{"_id": bookmarkID})
+func (mdl *model) DeleteByID(bookmarkID string) (int, error) {
+	objectID, err := primitive.ObjectIDFromHex(bookmarkID)
+	if err != nil {
+		return 0, err
+	}
+
+	result := mdl.collection.FindOneAndDelete(context.Background(), bson.M{"_id": objectID})
 	
 	if result.Err() != nil {
 		return 0, result.Err()
