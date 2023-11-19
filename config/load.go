@@ -50,6 +50,12 @@ type ProgramConfig struct {
 	OTP_SECRET     string
 }
 
+type SMTPConfig struct {
+	SMTP_USER string
+	SMTP_PASS string
+	SMTP_PORT string
+}
+
 func LoadDBConfig() *DatabaseConfig {
 	var res = new(DatabaseConfig)
 
@@ -130,6 +136,24 @@ func LoadMidtransConfig() *MidtransConfig {
 
 	if val, found := os.LookupEnv("MT_CLIENT_KEY"); found {
 		res.MT_CLIENT_KEY = val
+	}
+
+	return res
+}
+
+func LoadSMTPConfig() *SMTPConfig {
+	var res = new(SMTPConfig)
+
+	if val, found := os.LookupEnv("SMTP_USER"); found {
+		res.SMTP_USER = val
+	}
+
+	if val, found := os.LookupEnv("SMTP_PASS"); found {
+		res.SMTP_PASS = val
+	}
+
+	if val, found := os.LookupEnv("SMTP_PORT"); found {
+		res.SMTP_PORT = val
 	}
 
 	return res
