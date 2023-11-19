@@ -22,6 +22,8 @@ import (
 func InitDB() *gorm.DB {
 	config := config.LoadDBConfig()
 
+	logrus.Info(config.DB_HOST)
+
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", config.DB_USER, config.DB_PASS, config.DB_HOST, config.DB_PORT, config.DB_NAME)
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
@@ -62,7 +64,7 @@ func ConnectMongo() *mongo.Database {
 
 	clientOptions := options.Client()
     clientOptions.ApplyURI(fmt.Sprintf("mongodb://%s:%s", config.MONGO_HOST, config.MONGO_PORT))
-    client, err := mongo.NewClient(clientOptions)
+    client, err := mongo.Connect(context.Background(), clientOptions)
     if err != nil {
         return nil
     }
