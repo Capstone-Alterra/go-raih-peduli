@@ -1,10 +1,10 @@
 package usecase
 
 import (
+	"errors"
 	"raihpeduli/features/bookmark"
 	"raihpeduli/features/bookmark/dtos"
 
-	"github.com/labstack/gommon/log"
 	"github.com/mashingan/smapping"
 	"github.com/sirupsen/logrus"
 )
@@ -19,52 +19,82 @@ func New(model bookmark.Repository) bookmark.Usecase {
 	}
 }
 
-func (svc *service) FindAll(page, size int) []dtos.ResBookmark {
-	var bookmarks []dtos.ResBookmark
+func (svc *service) FindAll(size, userID int) *dtos.ResBookmark {
+	bookmarks, err := svc.model.Paginate(size, userID)
 
-	bookmarksEnt := svc.model.Paginate(page, size)
-
-	for _, bookmark := range bookmarksEnt {
-		var data dtos.ResBookmark
-
-		if err := smapping.FillStruct(&data, smapping.MapFields(bookmark)); err != nil {
-			log.Error(err.Error())
-		} 
-		
-		bookmarks = append(bookmarks, data)
+	if err != nil {
+		return nil
 	}
 
 	return bookmarks
 }
 
-func (svc *service) FindByID(bookmarkID int) *dtos.ResBookmark {
-	var res dtos.ResBookmark
+// func (svc *service) FindByID(bookmarkID int) *dtos.ResBookmark {
+// 	var res dtos.ResBookmark
 
-	bookmark := svc.model.SelectByID(bookmarkID)
+// 	bookmark := svc.model.SelectByID(bookmarkID)
 
-	if bookmark == nil {
-		return nil
+// 	if bookmark == nil {
+// 		return nil
+// 	}
+
+// 	if err := smapping.FillStruct(&res, smapping.MapFields(bookmark)); err != nil {
+// 		logrus.Error(err)
+// 		return nil
+// 	}
+
+// 	return &res
+// }
+
+func (svc *service) SetBookmark(input dtos.InputBookmarkPost, userID int) (bool, error) {
+	var post any
+	var bookmarkPost any
+
+	switch(input.PostType) {
+		case "news":
+			post, _ = svc.model.SelectNewsByID(input.PostID)
+			bookmarkPost = bookmark.NewsBookmark{
+				PostID: input.PostID,
+				PostType: input.PostType,
+			}
+		case "fundraise":
+			post, _ = svc.model.SelectFundraiseByID(input.PostID)
+			bookmarkPost = bookmark.FundraiseBookmark{
+				PostID: input.PostID,
+				PostType: input.PostType,
+			}
+		case "vacancy":
+			post, _ = svc.model.SelectVolunteerByID(input.PostID)
+			bookmarkPost = bookmark.VacancyBookmark{
+				PostID: input.PostID,
+				PostType: input.PostType,
+			}
+		default: 
+			return false, errors.New("unknown post type. choose between 'news', 'fundraise' or 'vacancy'")
 	}
 
-	if err := smapping.FillStruct(&res, smapping.MapFields(bookmark)); err != nil {
+	if post == nil {
+		return false, errors.New("post not found")
+	}
+
+	if err := smapping.FillStruct(post, smapping.MapFields(post)); err != nil {
+		return false, err
+	}
+	
+	_, err := svc.model.Insert(bookmarkPost)
+	
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+func (svc *service) UnsetBookmark(bookmarkID int) bool {
+	_, err := svc.model.DeleteByID(bookmarkID)
+
+	if err != nil {
 		logrus.Error(err)
-		return nil
-	}
-
-	return &res
-
-}
-
-func (svc *service) SetBookmark(postID int, userID int, postType string) *dtos.ResBookmark {
-
-	return &resBookmark
-}
-
-func (svc *service) UnsetBookmark(postID int, userID int, postType string) bool {
-	rowsAffected := svc.model.DeleteByID(bookmarkID)
-
-	if rowsAffected <= 0 {
-		log.Error("There is No Bookmark Deleted!")
 		return false
 	}
 

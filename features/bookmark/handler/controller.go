@@ -1,12 +1,11 @@
 package handler
 
 import (
-	helper "raihpeduli/helpers"
+	"raihpeduli/helpers"
 	"strconv"
 
 	"raihpeduli/features/bookmark"
 	"raihpeduli/features/bookmark/dtos"
-	"raihpeduli/features/fundraise"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
@@ -16,7 +15,7 @@ type controller struct {
 	service bookmark.Usecase
 }
 
-func New(service bookmark.Usecase, fundraiseService fundraise.Usecase) bookmark.Handler {
+func New(service bookmark.Usecase) bookmark.Handler {
 	return &controller {
 		service: service,
 	}
@@ -40,66 +39,30 @@ func (ctl *controller) GetBookmarksByUserID() echo.HandlerFunc {
 		bookmarks := ctl.service.FindAll(page, size)
 
 		if bookmarks == nil {
-			return ctx.JSON(404, helper.Response("There is No Bookmarks!"))
+			return ctx.JSON(404, helpers.Response("There is No Bookmarks!"))
 		}
 
-		return ctx.JSON(200, helper.Response("Success!", map[string]any {
+		return ctx.JSON(200, helpers.Response("Success!", map[string]any {
 			"data": bookmarks,
 		}))
 	}
 }
 
-func (ctl *controller) BookmarkANews() echo.HandlerFunc {
+func (ctl *controller) BookmarkAPost() echo.HandlerFunc {
 	return func (ctx echo.Context) error  {
-		input := dtos.InputNewsID{}
+		input := dtos.InputBookmarkPost{}
 
 		ctx.Bind(&input)
 
-		bookmark := ctl.service.SetBookmark(input)
+		userID := ctx.Get("user_id")
 
-		if bookmark == nil {
-			return ctx.JSON(500, helper.Response("something went wrong"))
+		_, err := ctl.service.SetBookmark(input, userID.(int))
+
+		if err != nil {
+			return ctx.JSON(500, helpers.Response(err.Error()))
 		}
 
-		return ctx.JSON(200, helper.Response("Success!", map[string]any {
-			"data": bookmark,
-		}))
-	}
-}
-
-func (ctl *controller) BookmarkAFundraise() echo.HandlerFunc {
-	return func (ctx echo.Context) error  {
-		input := dtos.InputFundraiseID{}
-
-		ctx.Bind(&input)
-
-		bookmark := ctl.service.SetBookmark(input)
-
-		if bookmark == nil {
-			return ctx.JSON(500, helper.Response("something went wrong"))
-		}
-
-		return ctx.JSON(200, helper.Response("Success!", map[string]any {
-			"data": bookmark,
-		}))
-	}
-}
-
-func (ctl *controller) BookmarkAVacancy() echo.HandlerFunc {
-	return func (ctx echo.Context) error  {
-		input := dtos.InputVacancyID{}
-
-		ctx.Bind(&input)
-
-		bookmark := ctl.service.SetBookmark(input)
-
-		if bookmark == nil {
-			return ctx.JSON(500, helper.Response("something went wrong"))
-		}
-
-		return ctx.JSON(200, helper.Response("Success!", map[string]any {
-			"data": bookmark,
-		}))
+		return ctx.JSON(200, helpers.Response("success bookmark a post"))
 	}
 }
 
@@ -108,21 +71,15 @@ func (ctl *controller) UnBookmarkAPost() echo.HandlerFunc {
 		bookmarkID, err := strconv.Atoi(ctx.Param("id"))
 
 		if err != nil {
-			return ctx.JSON(400, helper.Response(err.Error()))
-		}
-
-		bookmark := ctl.service.FindByID(bookmarkID)
-
-		if bookmark == nil {
-			return ctx.JSON(404, helper.Response("Bookmark Not Found!"))
+			return ctx.JSON(400, helpers.Response(err.Error()))
 		}
 
 		delete := ctl.service.UnsetBookmark(bookmarkID)
 
 		if !delete {
-			return ctx.JSON(500, helper.Response("Something Went Wrong!"))
+			return ctx.JSON(500, helpers.Response("Something Went Wrong!"))
 		}
 
-		return ctx.JSON(200, helper.Response("Bookmark Success Deleted!", nil))
+		return ctx.JSON(200, helpers.Response("Bookmark Success Deleted!", nil))
 	}
 }

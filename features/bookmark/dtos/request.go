@@ -1,15 +1,8 @@
 package dtos
 
-type InputFundraiseID struct {
-	FundraiseID int `form:"fundraise_id" json:"fundraise_id" validate:"required"`
-}
-
-type InputNewsID struct {
-	NewsID int `form:"news_id" json:"news_id" validate:"required"`
-}
-
-type InputVacancyID struct {
-	VacancyID int `form:"vacancy_id" json:"vacancy_id" validate:"required"`
+type InputBookmarkPost struct {
+	PostID   int    `form:"post_id" json:"post_id" validate:"required"`
+	PostType string `form:"post_type" json:"post_type" validate:"required"`
 }
 
 type Pagination struct {
