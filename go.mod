@@ -10,6 +10,7 @@ require (
 	github.com/labstack/gommon v0.4.0
 	github.com/mashingan/smapping v0.1.19
 	github.com/midtrans/midtrans-go v1.3.7
+	go.mongodb.org/mongo-driver v1.13.0
 	golang.org/x/crypto v0.14.0
 	gorm.io/driver/mysql v1.5.1
 	gorm.io/gorm v1.25.4
@@ -32,7 +33,6 @@ require (
 	github.com/xdg-go/scram v1.1.2 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d // indirect
-	go.mongodb.org/mongo-driver v1.13.0 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	golang.org/x/oauth2 v0.13.0 // indirect
 	golang.org/x/sync v0.5.0 // indirect
