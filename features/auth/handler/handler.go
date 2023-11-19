@@ -70,3 +70,18 @@ func (ctl *controller) RegisterUser() echo.HandlerFunc {
 		}))
 	}
 }
+
+func (ctl *controller) ResendOTP() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		input := dtos.ResendOTP{}
+
+		ctx.Bind(&input)
+
+		result := ctl.service.ResendOTP(input.Email)
+		if !result {
+			return ctx.JSON(500, helper.Response("Something Went Wrong!"))
+		}
+
+		return ctx.JSON(200, helper.Response("OTP has been sent via email"))
+	}
+}
