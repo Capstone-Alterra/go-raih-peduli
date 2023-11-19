@@ -56,7 +56,7 @@ func main() {
 	routes.Volunteers(e, VolunteerHandler(), jwtService, *cfg)
 	routes.News(e, NewsHandler(), jwtService, *cfg)
 	routes.Transactions(e, TransactionHandler(), jwtService, *cfg)
-	routes.Bookmarks(e, BookmarkHandler())
+	routes.Bookmarks(e, BookmarkHandler(), jwtService, *cfg)
 
 	e.Start(fmt.Sprintf(":%s", cfg.SERVER_PORT))
 }
@@ -138,8 +138,9 @@ func TransactionHandler() transaction.Handler {
 func BookmarkHandler() bookmark.Handler {
 	db := utils.InitDB()
 	mongoDB := utils.ConnectMongo()
+	collection := mongoDB.Collection("bookmarks")
 
-	repo := br.New(db, mongoDB)
+	repo := br.New(db, collection)
 	uc := bu.New(repo)
 	return bh.New(uc)
 }
