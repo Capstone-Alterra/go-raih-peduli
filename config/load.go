@@ -4,10 +4,13 @@ import (
 	"io"
 	"os"
 
+	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
 )
 
 func InitConfig() *ProgramConfig {
+	godotenv.Load()
+
 	var res = new(ProgramConfig)
 	res = loadConfig()
 
@@ -30,6 +33,11 @@ type DatabaseConfig struct {
 type RedisConfig struct {
 	REDIS_HOST string
 	REDIS_PORT string
+}
+
+type MongoConfig struct {
+	MONGO_URI string
+	MONGO_DB_NAME string
 }
 
 type CloudStorageConfig struct {
@@ -91,6 +99,20 @@ func LoadRedisConfig() *RedisConfig {
 
 	if val, found := os.LookupEnv("REDIS_PORT"); found {
 		res.REDIS_PORT = val
+	}
+
+	return res
+}
+
+func LoadMongoConfig() *MongoConfig {
+	var res = new(MongoConfig)
+
+	if val, found := os.LookupEnv("MONGO_URI"); found {
+		res.MONGO_URI = val
+	}
+
+	if val, found := os.LookupEnv("MONGO_DB_NAME"); found {
+		res.MONGO_DB_NAME = val
 	}
 
 	return res
