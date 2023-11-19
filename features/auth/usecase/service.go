@@ -75,8 +75,8 @@ func (svc *service) Register(newData dtos.InputUser) (*dtos.ResUser, error) {
 		log.Error("Token process failed")
 	}
 
-	resCustomer.AccessToken = tokenData["access_token"].(string)
-	resCustomer.RefreshToken = tokenData["refresh_token"].(string)
+	// resCustomer.AccessToken = tokenData["access_token"].(string)
+	// resCustomer.RefreshToken = tokenData["refresh_token"].(string)
 
 	return &resCustomer, nil
 }
@@ -111,4 +111,15 @@ func (svc *service) Login(data dtos.RequestLogin) (*dtos.LoginResponse, error) {
 	resUser.RefreshToken = tokenData["refresh_token"].(string)
 
 	return &resUser, nil
+}
+
+func (svc *service) ResendOTP(email string) bool {
+	otp := svc.generator.GenerateRandomOTP()
+
+	err := svc.model.SendOTPByEmail(email, otp)
+	if err != nil {
+		return false
+	}
+
+	return true
 }

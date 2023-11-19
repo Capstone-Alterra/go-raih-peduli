@@ -1,2 +1,4 @@
 .env
 .idea
+application_default_credentials.json
+credentials.json

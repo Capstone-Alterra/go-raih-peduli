@@ -21,7 +21,7 @@ func New(model volunteer.Repository) volunteer.Usecase {
 	}
 }
 
-func (svc *service) FindAll(page, size int, title, skill string) []dtos.ResVolunteer {
+func (svc *service) FindAll(page, size int, title, skill, city string) []dtos.ResVolunteer {
 	var volunteers []dtos.ResVolunteer
 
 	var volunteersEnt []volunteer.VolunteerVacancies
@@ -30,6 +30,8 @@ func (svc *service) FindAll(page, size int, title, skill string) []dtos.ResVolun
 		volunteersEnt = svc.model.SelectByTitle(page, size, title)
 	} else if skill != "" {
 		volunteersEnt = svc.model.SelectBySkill(page, size, skill)
+	} else if city != "" {
+		volunteersEnt = svc.model.SelectByCity(page, size, skill)
 	} else {
 		volunteersEnt = svc.model.Paginate(page, size)
 	}
@@ -95,7 +97,7 @@ func (svc *service) Remove(volunteerID int) bool {
 	return true
 }
 
-func (svc *service) Create(newVolunteer dtos.InputVolunteer, UserID int, file multipart.File) (*dtos.ResVolunteer, error){
+func (svc *service) Create(newVolunteer dtos.InputVolunteer, UserID int, file multipart.File) (*dtos.ResVolunteer, error) {
 	volun := volunteer.VolunteerVacancies{}
 
 	var url string = ""
@@ -112,7 +114,6 @@ func (svc *service) Create(newVolunteer dtos.InputVolunteer, UserID int, file mu
 	}
 
 	volun.UserID = UserID
-	volun.Status = "Pending"
 	volun.Photo = url
 	err := smapping.FillStruct(&volun, smapping.MapFields(newVolunteer))
 
@@ -124,12 +125,46 @@ func (svc *service) Create(newVolunteer dtos.InputVolunteer, UserID int, file mu
 	}
 
 	resVolun := dtos.ResVolunteer{}
+	resVolun.Photo = url
 	errRes := smapping.FillStruct(&resVolun, smapping.MapFields(result))
-	
+
 	if errRes != nil {
 		log.Error(errRes)
 		return nil, errors.New("Use Case : failed to mapping response")
 	}
 
 	return &resVolun, nil
+}
+
+func (svc *service) Register(newApply dtos.ApplyVolunteer, userID int, file multipart.File) bool {
+	registrar := volunteer.VolunteerRelations{}
+
+	var url string = ""
+
+	if file != nil {
+		imageURL, err := svc.model.UploadFile(file, "")
+
+		if err != nil {
+			logrus.Error(err)
+			return false
+		}
+
+		url = imageURL
+	}
+
+	registrar.UserID = userID
+	err := smapping.FillStruct(&registrar, smapping.MapFields(newApply))
+	if err != nil {
+		log.Error(err)
+		return false
+	}
+
+	registrar.Resume = url
+
+	err = svc.model.Register(&registrar)
+	if err != nil {
+		return false
+	}
+
+	return true
 }
