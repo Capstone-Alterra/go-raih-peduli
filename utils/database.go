@@ -61,7 +61,7 @@ func ConnectMongo() *mongo.Database {
 	config := config.LoadMongoConfig()
 
 	clientOptions := options.Client()
-    clientOptions.ApplyURI(fmt.Sprintf("mongodb://%s:%s", config.MONGO_HOST, config.MONGO_PORT))
+    clientOptions.ApplyURI(config.MONGO_URI)
     client, err := mongo.Connect(context.Background(), clientOptions)
     if err != nil {
         return nil

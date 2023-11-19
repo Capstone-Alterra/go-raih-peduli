@@ -36,9 +36,8 @@ type RedisConfig struct {
 }
 
 type MongoConfig struct {
+	MONGO_URI string
 	MONGO_DB_NAME string
-	MONGO_HOST string
-	MONGO_PORT string
 }
 
 type CloudStorageConfig struct {
@@ -108,16 +107,12 @@ func LoadRedisConfig() *RedisConfig {
 func LoadMongoConfig() *MongoConfig {
 	var res = new(MongoConfig)
 
+	if val, found := os.LookupEnv("MONGO_URI"); found {
+		res.MONGO_URI = val
+	}
+
 	if val, found := os.LookupEnv("MONGO_DB_NAME"); found {
 		res.MONGO_DB_NAME = val
-	}
-
-	if val, found := os.LookupEnv("MONGO_HOST"); found {
-		res.MONGO_HOST = val
-	}
-
-	if val, found := os.LookupEnv("MONGO_PORT"); found {
-		res.MONGO_PORT = val
 	}
 
 	return res
