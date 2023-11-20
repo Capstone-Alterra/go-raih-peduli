@@ -8,6 +8,8 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
+
+	"github.com/sirupsen/logrus"
 )
 
 type controller struct {
@@ -33,9 +35,11 @@ func (ctl *controller) GetBookmarksByUserID() echo.HandlerFunc {
 			size = 10
 		}
 
-		userID := ctx.Get("user_id")
+		userID := ctx.Get("user_id").(int)
 
-		bookmarks := ctl.service.FindAll(size, userID.(int))
+		logrus.Info(userID)
+
+		bookmarks := ctl.service.FindAll(size, userID)
 
 		if bookmarks == nil {
 			return ctx.JSON(404, helpers.Response("there is no bookmarks"))
@@ -53,9 +57,11 @@ func (ctl *controller) BookmarkAPost() echo.HandlerFunc {
 
 		ctx.Bind(&input)
 
-		userID := ctx.Get("user_id")
+		userID := ctx.Get("user_id").(int)
 
-		_, err := ctl.service.SetBookmark(input, userID.(int))
+		logrus.Info(userID)
+
+		_, err := ctl.service.SetBookmark(input, userID)
 
 		if err != nil {
 			return ctx.JSON(500, helpers.Response(err.Error()))
@@ -68,6 +74,10 @@ func (ctl *controller) BookmarkAPost() echo.HandlerFunc {
 func (ctl *controller) UnBookmarkAPost() echo.HandlerFunc {
 	return func (ctx echo.Context) error  {
 		bookmarkID := ctx.Param("id")
+		
+		userID := ctx.Get("user_id").(int)
+
+		logrus.Info(userID)
 
 		bookmark := ctl.service.FindByID(bookmarkID)
 		
