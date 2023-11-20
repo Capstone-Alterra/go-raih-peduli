@@ -4,10 +4,13 @@ import (
 	"io"
 	"os"
 
+	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
 )
 
 func InitConfig() *ProgramConfig {
+	godotenv.Load()
+
 	var res = new(ProgramConfig)
 	res = loadConfig()
 
@@ -32,6 +35,11 @@ type RedisConfig struct {
 	REDIS_PORT string
 }
 
+type MongoConfig struct {
+	MONGO_URI string
+	MONGO_DB_NAME string
+}
+
 type CloudStorageConfig struct {
 	GOOGLE_APPLICATION_CREDENTIALS string
 	CLOUD_PROJECT_ID               string
@@ -48,6 +56,12 @@ type ProgramConfig struct {
 	REFRESH_SECRET string
 	SERVER_PORT    string
 	OTP_SECRET     string
+}
+
+type SMTPConfig struct {
+	SMTP_USER string
+	SMTP_PASS string
+	SMTP_PORT string
 }
 
 func LoadDBConfig() *DatabaseConfig {
@@ -85,6 +99,20 @@ func LoadRedisConfig() *RedisConfig {
 
 	if val, found := os.LookupEnv("REDIS_PORT"); found {
 		res.REDIS_PORT = val
+	}
+
+	return res
+}
+
+func LoadMongoConfig() *MongoConfig {
+	var res = new(MongoConfig)
+
+	if val, found := os.LookupEnv("MONGO_URI"); found {
+		res.MONGO_URI = val
+	}
+
+	if val, found := os.LookupEnv("MONGO_DB_NAME"); found {
+		res.MONGO_DB_NAME = val
 	}
 
 	return res
@@ -130,6 +158,24 @@ func LoadMidtransConfig() *MidtransConfig {
 
 	if val, found := os.LookupEnv("MT_CLIENT_KEY"); found {
 		res.MT_CLIENT_KEY = val
+	}
+
+	return res
+}
+
+func LoadSMTPConfig() *SMTPConfig {
+	var res = new(SMTPConfig)
+
+	if val, found := os.LookupEnv("SMTP_USER"); found {
+		res.SMTP_USER = val
+	}
+
+	if val, found := os.LookupEnv("SMTP_PASS"); found {
+		res.SMTP_PASS = val
+	}
+
+	if val, found := os.LookupEnv("SMTP_PORT"); found {
+		res.SMTP_PORT = val
 	}
 
 	return res

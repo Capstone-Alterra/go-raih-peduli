@@ -54,7 +54,7 @@ func (mdl *model) SelectByID(fundraiseID int) (*fundraise.Fundraise, error) {
 }
 
 func (mdl *model) Update(fundraise fundraise.Fundraise) (int, error) {
-	result := mdl.db.Save(&fundraise)
+	result := mdl.db.Table("fundraises").Updates(&fundraise)
 
 	if result.Error != nil {
 		return 0, result.Error

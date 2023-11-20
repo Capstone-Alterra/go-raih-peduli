@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"raihpeduli/config"
 	"raihpeduli/helpers"
+	"raihpeduli/middlewares"
 	"raihpeduli/routes"
 	"raihpeduli/utils"
 
@@ -37,6 +38,11 @@ import (
 	tr "raihpeduli/features/transaction/repository"
 	tu "raihpeduli/features/transaction/usecase"
 
+	"raihpeduli/features/bookmark"
+	bh "raihpeduli/features/bookmark/handler"
+	br "raihpeduli/features/bookmark/repository"
+	bu "raihpeduli/features/bookmark/usecase"
+
 	"github.com/labstack/echo/v4"
 )
 
@@ -51,6 +57,9 @@ func main() {
 	routes.Volunteers(e, VolunteerHandler(), jwtService, *cfg)
 	routes.News(e, NewsHandler(), jwtService, *cfg)
 	routes.Transactions(e, TransactionHandler(), jwtService, *cfg)
+	routes.Bookmarks(e, BookmarkHandler(), jwtService, *cfg)
+
+	middlewares.LogMiddlewares(e)
 
 	e.Start(fmt.Sprintf(":%s", cfg.SERVER_PORT))
 }
@@ -81,16 +90,19 @@ func UserHandler() user.Handler {
 }
 
 func AuthHandler() auth.Handler {
+	smtpConfig := config.LoadSMTPConfig()
 	config := config.InitConfig()
 
 	db := utils.InitDB()
 	jwt := helpers.NewJWT(*config)
 	hash := helpers.NewHash()
 	generator := helpers.NewGenerator()
+	validation := helpers.NewValidationRequest()
+	converter := helpers.NewConverter()
 	redis := utils.ConnectRedis()
 
-	repo := ar.New(db, redis)
-	uc := au.New(repo, jwt, hash, generator)
+	repo := ar.New(db, redis, smtpConfig)
+	uc := au.New(repo, jwt, hash, generator, validation, converter)
 	return ah.New(uc)
 }
 
@@ -125,4 +137,14 @@ func TransactionHandler() transaction.Handler {
 	midtrans := helpers.NewMidtransRequest()
 	tc := tu.New(repo, generator, midtrans, coreAPIClient)
 	return th.New(tc)
+}
+
+func BookmarkHandler() bookmark.Handler {
+	db := utils.InitDB()
+	mongoDB := utils.ConnectMongo()
+	collection := mongoDB.Collection("bookmarks")
+
+	repo := br.New(db, collection)
+	uc := bu.New(repo)
+	return bh.New(uc)
 }

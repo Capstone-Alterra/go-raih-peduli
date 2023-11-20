@@ -8,7 +8,6 @@ import (
 	"strconv"
 
 	"github.com/labstack/gommon/log"
-	"github.com/mashingan/smapping"
 	"github.com/sirupsen/logrus"
 )
 
@@ -17,21 +16,25 @@ type service struct {
 	jwt       helpers.JWTInterface
 	hash      helpers.HashInterface
 	generator helpers.GeneratorInterface
+	validator helpers.ValidationInterface
+	converter helpers.ConverterInterface
 }
 
-func New(model auth.Repository, jwt helpers.JWTInterface, hash helpers.HashInterface, generator helpers.GeneratorInterface) auth.Usecase {
+func New(model auth.Repository, jwt helpers.JWTInterface, hash helpers.HashInterface, generator helpers.GeneratorInterface, validator helpers.ValidationInterface, converter helpers.ConverterInterface) auth.Usecase {
 	return &service{
 		model:     model,
 		jwt:       jwt,
 		hash:      hash,
 		generator: generator,
+		validator: validator,
+		converter: converter,
 	}
 }
 
 func (svc *service) Register(newData dtos.InputUser) (*dtos.ResUser, error) {
 	newUser := auth.User{}
 
-	err := smapping.FillStruct(&newUser, smapping.MapFields(newData))
+	err := svc.converter.Convert(&newUser, newData)
 	if err != nil {
 		log.Error(err)
 		return nil, err
@@ -58,13 +61,11 @@ func (svc *service) Register(newData dtos.InputUser) (*dtos.ResUser, error) {
 
 	resCustomer := dtos.ResUser{}
 
-	resCustomer.RoleID = userModel.RoleID
-	resCustomer.Email = userModel.Email
-	resCustomer.ID = userModel.ID
-	resCustomer.Fullname = userModel.Fullname
-	resCustomer.Address = userModel.Address
-	resCustomer.PhoneNumber = userModel.PhoneNumber
-	resCustomer.Gender = userModel.Gender
+	err = svc.converter.Convert(&resCustomer, userModel)
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
 
 	userID := strconv.Itoa(userModel.ID)
 	roleID := strconv.Itoa(resCustomer.RoleID)
@@ -90,16 +91,35 @@ func (svc *service) Login(data dtos.RequestLogin) (*dtos.LoginResponse, error) {
 		return nil, errors.New("invalid password")
 	}
 
-	tokenData := svc.jwt.GenerateJWT(strconv.Itoa(user.ID), strconv.Itoa(user.RoleID))
-	return &dtos.LoginResponse{
-		Name:         user.Fullname,
-		Email:        user.Email,
-		Role:         user.RoleID,
-		AccessToken:  tokenData["access_token"].(string),
-		RefreshToken: tokenData["refresh_token"].(string),
-	}, nil
+	resUser := dtos.LoginResponse{}
+
+	err = svc.converter.Convert(&resUser, user)
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+
+	userID := strconv.Itoa(user.ID)
+	roleID := strconv.Itoa(resUser.RoleID)
+	tokenData := svc.jwt.GenerateJWT(userID, roleID)
+
+	if tokenData == nil {
+		log.Error("Token process failed")
+	}
+
+	resUser.AccessToken = tokenData["access_token"].(string)
+	resUser.RefreshToken = tokenData["refresh_token"].(string)
+
+	return &resUser, nil
 }
 
-func (svc *service) InsertVerification(email string, verificationKey string) error {
-	return svc.model.InsertVerification(email, verificationKey)
+func (svc *service) ResendOTP(email string) bool {
+	otp := svc.generator.GenerateRandomOTP()
+
+	err := svc.model.SendOTPByEmail(email, otp)
+	if err != nil {
+		return false
+	}
+
+	return true
 }

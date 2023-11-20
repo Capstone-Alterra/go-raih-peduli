@@ -147,21 +147,16 @@ func (svc *service) Modify(fundraiseData dtos.InputFundraise, file multipart.Fil
 	return true
 }
 
-func (svc *service) ModifyStatus(fundraiseData dtos.InputFundraiseStatus, oldData dtos.ResFundraise) bool {
+func (svc *service) ModifyStatus(input dtos.InputFundraiseStatus, oldData dtos.ResFundraise) bool {
 	var newFundraise fundraise.Fundraise
 
-	if err := smapping.FillStruct(&newFundraise, smapping.MapFields(fundraiseData)); err != nil {
+	if err := smapping.FillStruct(&newFundraise, smapping.MapFields(oldData)); err != nil {
 		logrus.Error(err)
 		return false
 	}
-	newFundraise.ID = oldData.ID
-	newFundraise.Title = oldData.Title
-	newFundraise.Description = oldData.Description
-	newFundraise.Photo = oldData.Photo
-	newFundraise.Target = oldData.Target
-	newFundraise.StartDate = oldData.StartDate
-	newFundraise.EndDate = oldData.EndDate
-	newFundraise.UserID = oldData.UserID
+
+	newFundraise.Status = input.Status
+
 	_, err := svc.model.Update(newFundraise)
 
 	if err != nil {
