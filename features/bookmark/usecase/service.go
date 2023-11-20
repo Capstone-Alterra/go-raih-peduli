@@ -8,6 +8,7 @@ import (
 	"github.com/mashingan/smapping"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type service struct {
@@ -40,18 +41,16 @@ func (svc *service) FindByID(bookmarkID string) *bson.M {
 	return bookmark
 }
 
-func (svc *service) SetBookmark(input dtos.InputBookmarkPost, userID int) (bool, error) {
+func (svc *service) SetBookmark(input dtos.InputBookmarkPost, ownerID int) (bool, error) {
 	var post any
 	var document any
 	var err error
 
-	bookmarked, _ := svc.model.SelectByPostAndUserID(input.PostID, userID, input.PostType)
+	bookmarked, _ := svc.model.SelectByPostAndOwnerID(input.PostID, ownerID, input.PostType)
 	
 	if bookmarked != nil {
 		return false, errors.New("this post has already been bookmarked by this user")
 	}
-
-	logrus.Info(bookmarked)
 
 	switch(input.PostType) {
 		case "news":
@@ -59,21 +58,21 @@ func (svc *service) SetBookmark(input dtos.InputBookmarkPost, userID int) (bool,
 			document = &bookmark.NewsBookmark{
 				PostID: input.PostID,
 				PostType: input.PostType,
-				UserID: userID,
+				OwnerID: ownerID,
 			}
 		case "fundraise":
 			post, err = svc.model.SelectFundraiseByID(input.PostID)
 			document = &bookmark.FundraiseBookmark{
 				PostID: input.PostID,
 				PostType: input.PostType,
-				UserID: userID,
+				OwnerID: ownerID,
 			}
 		case "vacancy":
 			post, err = svc.model.SelectVolunteerByID(input.PostID)
 			document = &bookmark.VacancyBookmark{
 				PostID: input.PostID,
 				PostType: input.PostType,
-				UserID: userID,
+				OwnerID: ownerID,
 			}
 		default: 
 			return false, errors.New("unknown post type. choose between 'news', 'fundraise' or 'vacancy'")
@@ -96,13 +95,29 @@ func (svc *service) SetBookmark(input dtos.InputBookmarkPost, userID int) (bool,
 	return true, nil
 }
 
-func (svc *service) UnsetBookmark(bookmarkID string) bool {
-	_, err := svc.model.DeleteByID(bookmarkID)
+func (svc *service) UnsetBookmark(bookmarkID string, bookmark *primitive.M, ownerID int) (bool, error) {
+	bsonData, err := bson.Marshal(bookmark)
+	if err != nil {
+		return false, err
+	}
+
+	var result dtos.ResOwnerID
+	err = bson.Unmarshal(bsonData, &result)
+
+	if err != nil {
+		return false, err
+	}
+
+	if result.OwnerID != ownerID {
+		return false, errors.New("this user can't unbookmark this bookmarked post because of a mistmach of user id")
+	}
+
+	_, err = svc.model.DeleteByID(bookmarkID)
 
 	if err != nil {
 		logrus.Error(err)
-		return false
+		return false, err
 	}
 
-	return true
+	return true, nil
 }

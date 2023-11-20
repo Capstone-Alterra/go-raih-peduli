@@ -5,13 +5,14 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Repository interface {
-	Paginate(size, userID int) (*dtos.ResBookmark, error)
+	Paginate(size, ownerID int) (*dtos.ResBookmark, error)
 	Insert(document any) (bool, error)
 	SelectByID(bookmarkID string) (*bson.M, error)
-	SelectByPostAndUserID(postID int, userID int, postType string) (*bson.M, error) 
+	SelectByPostAndOwnerID(postID int, ownerID int, postType string) (*bson.M, error) 
 	SelectFundraiseByID(fundraiseID int) (*Fundraise, error)
 	SelectNewsByID(newsID int) (*News, error)
 	SelectVolunteerByID(volunteerID int) (*VolunteerVacancy, error)
@@ -21,8 +22,8 @@ type Repository interface {
 type Usecase interface {
 	FindAll(size, userID int) *dtos.ResBookmark
 	FindByID(bookmarkID string) *bson.M
-	SetBookmark(input dtos.InputBookmarkPost, userID int) (bool, error)
-	UnsetBookmark(bookmarkID string) bool
+	SetBookmark(input dtos.InputBookmarkPost, ownerID int) (bool, error)
+	UnsetBookmark(bookmarkID string, bookmark *primitive.M, ownerID int) (bool, error)
 }
 
 type Handler interface {
