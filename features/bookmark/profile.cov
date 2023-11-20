@@ -1,0 +1,27 @@
+mode: set
+raihpeduli/features/bookmark/usecase/service.go:18.54,22.2 1 1
+raihpeduli/features/bookmark/usecase/service.go:24.65,27.16 2 1
+raihpeduli/features/bookmark/usecase/service.go:27.16,29.3 1 1
+raihpeduli/features/bookmark/usecase/service.go:31.2,31.18 1 1
+raihpeduli/features/bookmark/usecase/service.go:34.57,37.16 2 1
+raihpeduli/features/bookmark/usecase/service.go:37.16,39.3 1 1
+raihpeduli/features/bookmark/usecase/service.go:41.2,41.17 1 1
+raihpeduli/features/bookmark/usecase/service.go:44.90,51.23 5 1
+raihpeduli/features/bookmark/usecase/service.go:51.23,53.3 1 1
+raihpeduli/features/bookmark/usecase/service.go:55.2,55.25 1 1
+raihpeduli/features/bookmark/usecase/service.go:56.15,62.5 2 0
+raihpeduli/features/bookmark/usecase/service.go:63.20,69.5 2 1
+raihpeduli/features/bookmark/usecase/service.go:70.18,76.5 2 0
+raihpeduli/features/bookmark/usecase/service.go:77.11,78.98 1 1
+raihpeduli/features/bookmark/usecase/service.go:81.2,81.16 1 1
+raihpeduli/features/bookmark/usecase/service.go:81.16,83.3 1 1
+raihpeduli/features/bookmark/usecase/service.go:85.2,85.80 1 1
+raihpeduli/features/bookmark/usecase/service.go:85.80,87.3 1 0
+raihpeduli/features/bookmark/usecase/service.go:89.2,91.16 2 1
+raihpeduli/features/bookmark/usecase/service.go:91.16,93.3 1 1
+raihpeduli/features/bookmark/usecase/service.go:95.2,95.18 1 1
+raihpeduli/features/bookmark/usecase/service.go:98.104,104.31 4 1
+raihpeduli/features/bookmark/usecase/service.go:104.31,106.3 1 1
+raihpeduli/features/bookmark/usecase/service.go:108.2,110.16 2 1
+raihpeduli/features/bookmark/usecase/service.go:110.16,113.3 2 1
+raihpeduli/features/bookmark/usecase/service.go:115.2,115.18 1 1
