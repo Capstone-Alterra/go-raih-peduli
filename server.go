@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"raihpeduli/config"
 	"raihpeduli/helpers"
+	"raihpeduli/middlewares"
 	"raihpeduli/routes"
 	"raihpeduli/utils"
 
@@ -57,6 +58,8 @@ func main() {
 	routes.News(e, NewsHandler(), jwtService, *cfg)
 	routes.Transactions(e, TransactionHandler(), jwtService, *cfg)
 	routes.Bookmarks(e, BookmarkHandler(), jwtService, *cfg)
+
+	middlewares.LogMiddlewares(e)
 
 	e.Start(fmt.Sprintf(":%s", cfg.SERVER_PORT))
 }
