@@ -24,6 +24,7 @@ type ResFundraise struct {
 	Target      int32     `json:"target"`
 	StartDate   time.Time `json:"start_date" bson:"start_date"`
 	EndDate     time.Time `json:"end_date" bson:"end_date"`
+	Status		string	  `json:"status"`
 
 }
 
