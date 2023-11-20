@@ -96,23 +96,16 @@ func (svc *service) SetBookmark(input dtos.InputBookmarkPost, ownerID int) (bool
 }
 
 func (svc *service) UnsetBookmark(bookmarkID string, bookmark *primitive.M, ownerID int) (bool, error) {
-	bsonData, err := bson.Marshal(bookmark)
-	if err != nil {
-		return false, err
-	}
+	bsonData, _ := bson.Marshal(bookmark)
 
 	var result dtos.ResOwnerID
-	err = bson.Unmarshal(bsonData, &result)
-
-	if err != nil {
-		return false, err
-	}
+	bson.Unmarshal(bsonData, &result)
 
 	if result.OwnerID != ownerID {
 		return false, errors.New("this user can't unbookmark this bookmarked post because of a mistmach of user id")
 	}
 
-	_, err = svc.model.DeleteByID(bookmarkID)
+	_, err := svc.model.DeleteByID(bookmarkID)
 
 	if err != nil {
 		logrus.Error(err)
