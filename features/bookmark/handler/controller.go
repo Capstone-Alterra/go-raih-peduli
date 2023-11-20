@@ -8,8 +8,6 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
-
-	"github.com/sirupsen/logrus"
 )
 
 type controller struct {
@@ -73,18 +71,18 @@ func (ctl *controller) UnBookmarkAPost() echo.HandlerFunc {
 		
 		userID := ctx.Get("user_id").(int)
 
-		logrus.Info(userID)
-
 		bookmark := ctl.service.FindByID(bookmarkID)
+
+		
 		
 		if bookmark == nil {
 			return ctx.JSON(404, helpers.Response("post not found"))
 		}
 
-		delete := ctl.service.UnsetBookmark(bookmarkID)
+		delete, err := ctl.service.UnsetBookmark(bookmarkID, bookmark, userID)
 
 		if !delete {
-			return ctx.JSON(500, helpers.Response("something went wrong"))
+			return ctx.JSON(500, helpers.Response(err.Error()))
 		}
 
 		return ctx.JSON(200, helpers.Response("bookmark success deleted", nil))

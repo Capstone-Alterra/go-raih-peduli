@@ -4,6 +4,10 @@ import (
 	"time"
 )
 
+type ResOwnerID struct {
+	OwnerID int `bson:"owner_id"`
+}
+
 type ResBookmark struct {
 	Fundraise []ResFundraise `json:"fundraise"`
 	News []ResNews `json:"news"`

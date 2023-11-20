@@ -8,6 +8,7 @@ import (
 	"github.com/mashingan/smapping"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type service struct {
@@ -94,13 +95,29 @@ func (svc *service) SetBookmark(input dtos.InputBookmarkPost, ownerID int) (bool
 	return true, nil
 }
 
-func (svc *service) UnsetBookmark(bookmarkID string) bool {
-	_, err := svc.model.DeleteByID(bookmarkID)
+func (svc *service) UnsetBookmark(bookmarkID string, bookmark *primitive.M, ownerID int) (bool, error) {
+	bsonData, err := bson.Marshal(bookmark)
+	if err != nil {
+		return false, err
+	}
+
+	var result dtos.ResOwnerID
+	err = bson.Unmarshal(bsonData, &result)
+
+	if err != nil {
+		return false, err
+	}
+
+	if result.OwnerID != ownerID {
+		return false, errors.New("this user can't unbookmark this bookmarked post because of a mistmach of user id")
+	}
+
+	_, err = svc.model.DeleteByID(bookmarkID)
 
 	if err != nil {
 		logrus.Error(err)
-		return false
+		return false, err
 	}
 
-	return true
+	return true, nil
 }
