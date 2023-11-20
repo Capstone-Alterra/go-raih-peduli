@@ -40,18 +40,16 @@ func (svc *service) FindByID(bookmarkID string) *bson.M {
 	return bookmark
 }
 
-func (svc *service) SetBookmark(input dtos.InputBookmarkPost, userID int) (bool, error) {
+func (svc *service) SetBookmark(input dtos.InputBookmarkPost, ownerID int) (bool, error) {
 	var post any
 	var document any
 	var err error
 
-	bookmarked, _ := svc.model.SelectByPostAndUserID(input.PostID, userID, input.PostType)
+	bookmarked, _ := svc.model.SelectByPostAndOwnerID(input.PostID, ownerID, input.PostType)
 	
 	if bookmarked != nil {
 		return false, errors.New("this post has already been bookmarked by this user")
 	}
-
-	logrus.Info(bookmarked)
 
 	switch(input.PostType) {
 		case "news":
@@ -59,21 +57,21 @@ func (svc *service) SetBookmark(input dtos.InputBookmarkPost, userID int) (bool,
 			document = &bookmark.NewsBookmark{
 				PostID: input.PostID,
 				PostType: input.PostType,
-				UserID: userID,
+				OwnerID: ownerID,
 			}
 		case "fundraise":
 			post, err = svc.model.SelectFundraiseByID(input.PostID)
 			document = &bookmark.FundraiseBookmark{
 				PostID: input.PostID,
 				PostType: input.PostType,
-				UserID: userID,
+				OwnerID: ownerID,
 			}
 		case "vacancy":
 			post, err = svc.model.SelectVolunteerByID(input.PostID)
 			document = &bookmark.VacancyBookmark{
 				PostID: input.PostID,
 				PostType: input.PostType,
-				UserID: userID,
+				OwnerID: ownerID,
 			}
 		default: 
 			return false, errors.New("unknown post type. choose between 'news', 'fundraise' or 'vacancy'")

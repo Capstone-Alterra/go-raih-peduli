@@ -14,7 +14,7 @@ type NewsBookmark struct {
 	Photo       string `bson:"photo"`
 	
 	PostType	string `bson:"post_type"`
-	UserID 		int    `bson:"user_id"`
+	OwnerID 	int    `bson:"owner_id"`
 }
 
 type FundraiseBookmark struct {
@@ -28,7 +28,7 @@ type FundraiseBookmark struct {
 	Status      string    `bson:"status"`
 
 	PostType	string    `bson:"post_type"`
-	UserID      int 	  `bson:"user_id"`
+	OwnerID     int 	  `bson:"owner_id"`
 }
 
 type VacancyBookmark struct {
@@ -45,7 +45,7 @@ type VacancyBookmark struct {
 	Photo               string    `bson:"photo"`
 	
 	PostType			string    `bson:"post_type"`
-	UserID    			int 	  `bson:"user_id"`
+	OwnerID    			int 	  `bson:"owner_id"`
 }
 
 type PostBookmark struct {

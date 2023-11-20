@@ -25,13 +25,12 @@ func New(db *gorm.DB, collection *mongo.Collection) bookmark.Repository {
 	}
 }
 
-func (mdl *model) Paginate(size, userID int) (*dtos.ResBookmark, error) {
+func (mdl *model) Paginate(size, ownerID int) (*dtos.ResBookmark, error) {
 	var bookmarkedPosts dtos.ResBookmark
 
 	opts := options.Find().SetLimit(int64(size))
 
-	cursor, err := mdl.collection.Find(context.Background(), bson.M{"user_id": userID, "post_type": "fundraise"}, opts)
-	logrus.Error(err)
+	cursor, err := mdl.collection.Find(context.Background(), bson.M{"owner_id": ownerID, "post_type": "fundraise"}, opts)
 	
 	var fundraises []dtos.ResFundraise
 	if err = cursor.All(context.TODO(), &fundraises); err != nil {
@@ -39,8 +38,7 @@ func (mdl *model) Paginate(size, userID int) (*dtos.ResBookmark, error) {
 		return nil, err
 	}
 	
-	cursor, err = mdl.collection.Find(context.Background(), bson.M{"user_id": userID, "post_type": "news"}, opts)
-	logrus.Error(err)
+	cursor, err = mdl.collection.Find(context.Background(), bson.M{"owner_id": ownerID, "post_type": "news"}, opts)
 	
 	var news []dtos.ResNews
 	if err = cursor.All(context.TODO(), &news); err != nil {
@@ -48,8 +46,7 @@ func (mdl *model) Paginate(size, userID int) (*dtos.ResBookmark, error) {
 		return nil, err
 	}
 	
-	cursor, err = mdl.collection.Find(context.Background(), bson.M{"user_id": userID, "post_type": "vacancy"}, opts)
-	logrus.Error(err)
+	cursor, err = mdl.collection.Find(context.Background(), bson.M{"owner_id": ownerID, "post_type": "vacancy"}, opts)
 	
 	var vacancies []dtos.ResVolunteerVacancy
 	if err = cursor.All(context.TODO(), &vacancies); err != nil {
@@ -72,10 +69,10 @@ func (mdl *model) Insert(document any) (bool, error) {
 	return true, nil
 }
 
-func (mdl *model) SelectByPostAndUserID(postID int, userID int, postType string) (*bson.M, error) {
+func (mdl *model) SelectByPostAndOwnerID(postID int, ownerID int, postType string) (*bson.M, error) {
 	var result bson.M
 
-	if err := mdl.collection.FindOne(context.Background(), bson.M{"user_id": userID, "post_id": postID, "post_type": postType}).Decode(&result); err != nil {
+	if err := mdl.collection.FindOne(context.Background(), bson.M{"owner_id": ownerID, "post_id": postID, "post_type": postType}).Decode(&result); err != nil {
 		return nil, err
 	}
 

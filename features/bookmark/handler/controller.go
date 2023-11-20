@@ -37,8 +37,6 @@ func (ctl *controller) GetBookmarksByUserID() echo.HandlerFunc {
 
 		userID := ctx.Get("user_id").(int)
 
-		logrus.Info(userID)
-
 		bookmarks := ctl.service.FindAll(size, userID)
 
 		if bookmarks == nil {
@@ -58,8 +56,6 @@ func (ctl *controller) BookmarkAPost() echo.HandlerFunc {
 		ctx.Bind(&input)
 
 		userID := ctx.Get("user_id").(int)
-
-		logrus.Info(userID)
 
 		_, err := ctl.service.SetBookmark(input, userID)
 
