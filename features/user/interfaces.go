@@ -16,10 +16,11 @@ type Repository interface {
 	SendOTPByEmail(email string, otp string) error
 	InsertVerification(email string, verificationKey string) error
 	ValidateVerification(verificationKey string) string
+	GetTotalData() int64
 }
 
 type Usecase interface {
-	FindAll(page, size int) []dtos.ResUser
+	FindAll(page, size int) ([]dtos.ResUser, int64)
 	FindByID(customerID int) *dtos.ResUser
 	Create(newUser dtos.InputUser) (*dtos.ResUser, []string, error)
 	Modify(customerData dtos.InputUser, customerID int) bool

@@ -162,3 +162,16 @@ func (mdl *model) SendOTPByEmail(email string, otp string) error {
 
 	return nil
 }
+
+func (mdl *model) GetTotalData() int64 {
+	var totalData int64
+
+	result := mdl.db.Table("users").Where("deleted_at IS NULL").Count(&totalData)
+
+	if result.Error != nil {
+		log.Error(result.Error)
+		return 0
+	}
+
+	return totalData
+}

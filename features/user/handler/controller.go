@@ -25,21 +25,43 @@ func (ctl *controller) GetUsers() echo.HandlerFunc {
 		pagination := dtos.Pagination{}
 		ctx.Bind(&pagination)
 
-		page := pagination.Page
-		size := pagination.Size
-
-		if page <= 0 || size <= 0 {
-			return ctx.JSON(400, helper.Response("Please provide query `page` and `size` in number!"))
+		if pagination.Page < 1 || pagination.Size < 1 {
+			pagination.Page = 1
+			pagination.Size = 20
 		}
 
-		users := ctl.service.FindAll(page, size)
+		page := pagination.Page
+		size := pagination.Size
+		users, totalData := ctl.service.FindAll(page, size)
 
 		if users == nil {
 			return ctx.JSON(404, helper.Response("There is No Users!"))
 		}
 
+		paginationResponse := dtos.PaginationResponse{}
+
+		if pagination.Size >= int(totalData) {
+			paginationResponse.PreviousPage = -1
+			paginationResponse.NextPage = -1
+		} else if pagination.Size < int(totalData) && pagination.Page == 1 {
+			paginationResponse.PreviousPage = -1
+			paginationResponse.NextPage = pagination.Page + 1
+		} else {
+			paginationResponse.PreviousPage = pagination.Page - 1
+			paginationResponse.NextPage = pagination.Page + 1
+		}
+
+		paginationResponse.TotalData = totalData
+		paginationResponse.CurrentPage = pagination.Page
+		paginationResponse.TotalPage = (int(totalData) + pagination.Size - 1) / pagination.Size
+
+		if paginationResponse.CurrentPage == paginationResponse.TotalPage {
+			paginationResponse.NextPage = -1
+		}
+
 		return ctx.JSON(200, helper.Response("Success!", map[string]any{
-			"data": users,
+			"data":       users,
+			"pagination": paginationResponse,
 		}))
 	}
 }
