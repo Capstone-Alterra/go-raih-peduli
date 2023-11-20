@@ -51,6 +51,8 @@ func (svc *service) SetBookmark(input dtos.InputBookmarkPost, userID int) (bool,
 		return false, errors.New("this post has already been bookmarked by this user")
 	}
 
+	logrus.Info(bookmarked)
+
 	switch(input.PostType) {
 		case "news":
 			post, err = svc.model.SelectNewsByID(input.PostID)
