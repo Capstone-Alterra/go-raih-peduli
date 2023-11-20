@@ -5,6 +5,7 @@ import (
 	"raihpeduli/features/bookmark"
 	"raihpeduli/features/bookmark/dtos"
 
+	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -30,23 +31,29 @@ func (mdl *model) Paginate(size, userID int) (*dtos.ResBookmark, error) {
 	opts := options.Find().SetLimit(int64(size))
 
 	cursor, err := mdl.collection.Find(context.Background(), bson.M{"user_id": userID, "post_type": "fundraise"}, opts)
+	logrus.Error(err)
 	
 	var fundraises []dtos.ResFundraise
 	if err = cursor.All(context.TODO(), &fundraises); err != nil {
+		logrus.Error(err)
 		return nil, err
 	}
 	
 	cursor, err = mdl.collection.Find(context.Background(), bson.M{"user_id": userID, "post_type": "news"}, opts)
+	logrus.Error(err)
 	
 	var news []dtos.ResNews
 	if err = cursor.All(context.TODO(), &news); err != nil {
+		logrus.Error(err)
 		return nil, err
 	}
 	
 	cursor, err = mdl.collection.Find(context.Background(), bson.M{"user_id": userID, "post_type": "vacancy"}, opts)
-
+	logrus.Error(err)
+	
 	var vacancies []dtos.ResVolunteerVacancy
 	if err = cursor.All(context.TODO(), &vacancies); err != nil {
+		logrus.Error(err)
 		return nil, err
 	}
 
@@ -71,6 +78,8 @@ func (mdl *model) SelectByPostAndUserID(postID int, userID int, postType string)
 	if err := mdl.collection.FindOne(context.Background(), bson.M{"user_id": userID, "post_id": postID, "post_type": postType}).Decode(&result); err != nil {
 		return nil, err
 	}
+
+	logrus.Info(result)
 
 	return &result, nil
 }
