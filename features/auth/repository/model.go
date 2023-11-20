@@ -52,30 +52,6 @@ func (mdl *model) SelectByEmail(email string) (*auth.User, error) {
 	return &user, nil
 }
 
-func (mdl *model) GetNameAdmin(id int) (string, error) {
-	var fullname string
-
-	result := mdl.db.Table("admins").Where("user_id = ?", id).Select("fullname").Scan(&fullname)
-	if result.Error != nil {
-		log.Error(result.Error)
-		return "", result.Error
-	}
-
-	return fullname, nil
-}
-
-func (mdl *model) GetNameCustomer(id int) (string, error) {
-	var fullname string
-
-	result := mdl.db.Table("customers").Where("user_id = ?", id).Select("fullname").Scan(&fullname)
-	if result.Error != nil {
-		log.Error(result.Error)
-		return "", result.Error
-	}
-
-	return fullname, nil
-}
-
 func (mdl *model) Register(newUser *auth.User) (*auth.User, error) {
 	result := mdl.db.Table("users").Create(newUser)
 

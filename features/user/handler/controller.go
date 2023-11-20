@@ -1,14 +1,12 @@
 package handler
 
 import (
-	"raihpeduli/helpers"
 	helper "raihpeduli/helpers"
 	"strconv"
 
 	"raihpeduli/features/user"
 	"raihpeduli/features/user/dtos"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 )
 
@@ -21,8 +19,6 @@ func New(service user.Usecase) user.Handler {
 		service: service,
 	}
 }
-
-var validate *validator.Validate
 
 func (ctl *controller) GetUsers() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
@@ -74,21 +70,16 @@ func (ctl *controller) CreateUser() echo.HandlerFunc {
 
 		ctx.Bind(&input)
 
-		validate = validator.New(validator.WithRequiredStructEnabled())
-
-		err := validate.Struct(input)
-
-		if err != nil {
-			errMap := helpers.ErrorMapValidation(err)
-			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any{
+		user, errMap, err := ctl.service.Create(input)
+		if errMap != nil {
+			return ctx.JSON(400, helper.Response("missing some data", map[string]any{
 				"error": errMap,
 			}))
 		}
 
-		user, errCreate := ctl.service.Create(input)
-		if errCreate != nil {
+		if err != nil {
 			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any{
-				"error": errCreate.Error(),
+				"error": err.Error(),
 			}))
 		}
 
@@ -115,16 +106,6 @@ func (ctl *controller) UpdateUser() echo.HandlerFunc {
 		}
 
 		ctx.Bind(&input)
-
-		validate = validator.New(validator.WithRequiredStructEnabled())
-		err := validate.Struct(input)
-
-		if err != nil {
-			errMap := helpers.ErrorMapValidation(err)
-			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any{
-				"error": errMap,
-			}))
-		}
 
 		update := ctl.service.Modify(input, userID)
 
@@ -166,20 +147,9 @@ func (ctl *controller) VerifyEmail() echo.HandlerFunc {
 
 		ctx.Bind(&input)
 
-		validate = validator.New(validator.WithRequiredStructEnabled())
-
-		err := validate.Struct(input)
-
-		if err != nil {
-			errMap := helpers.ErrorMapValidation(err)
-			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any{
-				"error": errMap,
-			}))
-		}
-
 		verifyOTP := ctl.service.ValidateVerification(input.OTP)
-		if verifyOTP != true {
-			return ctx.JSON(500, helper.Response("Incorrect / Expired OTP"))
+		if !verifyOTP {
+			return ctx.JSON(400, helper.Response("Incorrect / Expired OTP"))
 		}
 
 		return ctx.JSON(200, helper.Response("Success verify email!"))
@@ -207,20 +177,9 @@ func (ctl *controller) VerifyOTP() echo.HandlerFunc {
 
 		ctx.Bind(&input)
 
-		validate = validator.New(validator.WithRequiredStructEnabled())
-
-		err := validate.Struct(input)
-
-		if err != nil {
-			errMap := helpers.ErrorMapValidation(err)
-			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any{
-				"error": errMap,
-			}))
-		}
-
 		token := ctl.service.VerifyOTP(input.OTP)
 		if token == "" {
-			return ctx.JSON(500, helper.Response("Incorrect / Expired OTP"))
+			return ctx.JSON(400, helper.Response("Incorrect / Expired OTP"))
 		}
 
 		return ctx.JSON(200, helper.Response("Success verify email!", map[string]any{
@@ -235,18 +194,7 @@ func (ctl *controller) ResetPassword() echo.HandlerFunc {
 
 		ctx.Bind(&input)
 
-		validate = validator.New(validator.WithRequiredStructEnabled())
-
-		err := validate.Struct(input)
-
-		if err != nil {
-			errMap := helpers.ErrorMapValidation(err)
-			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any{
-				"error": errMap,
-			}))
-		}
-
-		err = ctl.service.ResetPassword(input)
+		err := ctl.service.ResetPassword(input)
 
 		if err != nil {
 			return ctx.JSON(500, helper.Response("Something Went Wrong!"))

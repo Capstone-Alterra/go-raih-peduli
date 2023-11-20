@@ -12,7 +12,6 @@ type Repository interface {
 	SelectByID(customerID int) *User
 	SelectByEmail(email string) (*User, error)
 	UpdateUser(user User) int64
-	UpdateUserstatus(user User) error
 	DeleteByID(customerID int) int64
 	SendOTPByEmail(email string, otp string) error
 	InsertVerification(email string, verificationKey string) error
@@ -22,7 +21,7 @@ type Repository interface {
 type Usecase interface {
 	FindAll(page, size int) []dtos.ResUser
 	FindByID(customerID int) *dtos.ResUser
-	Create(newUser dtos.InputUser) (*dtos.ResUser, error)
+	Create(newUser dtos.InputUser) (*dtos.ResUser, []string, error)
 	Modify(customerData dtos.InputUser, customerID int) bool
 	Remove(customerID int) bool
 	ValidateVerification(verificationKey string) bool

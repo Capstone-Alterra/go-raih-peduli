@@ -13,18 +13,20 @@ import (
 )
 
 type service struct {
-	model     user.Repository
-	jwt       helpers.JWTInterface
-	hash      helpers.HashInterface
-	generator helpers.GeneratorInterface
+	model      user.Repository
+	jwt        helpers.JWTInterface
+	hash       helpers.HashInterface
+	generator  helpers.GeneratorInterface
+	validation helpers.ValidationInterface
 }
 
-func New(model user.Repository, jwt helpers.JWTInterface, hash helpers.HashInterface, generator helpers.GeneratorInterface) user.Usecase {
+func New(model user.Repository, jwt helpers.JWTInterface, hash helpers.HashInterface, generator helpers.GeneratorInterface, validation helpers.ValidationInterface) user.Usecase {
 	return &service{
-		model:     model,
-		jwt:       jwt,
-		hash:      hash,
-		generator: generator,
+		model:      model,
+		jwt:        jwt,
+		hash:       hash,
+		generator:  generator,
+		validation: validation,
 	}
 }
 
@@ -63,56 +65,58 @@ func (svc *service) FindByID(userID int) *dtos.ResUser {
 	return &res
 }
 
-func (svc *service) Create(newData dtos.InputUser) (*dtos.ResUser, error) {
+func (svc *service) Create(newData dtos.InputUser) (*dtos.ResUser, []string, error) {
+	if errMap := svc.validation.ValidateRequest(newData); errMap != nil {
+		return nil, errMap, nil
+	}
+
 	newUser := user.User{}
 
 	err := smapping.FillStruct(&newUser, smapping.MapFields(newData))
 	if err != nil {
 		log.Error(err)
-		return nil, err
+		return nil, nil, err
 	}
 
 	checkUser, err := svc.model.SelectByEmail(newUser.Email)
 	if checkUser != nil {
 		logrus.Print("User already exists")
-		return nil, errors.New("User already exists")
+		return nil, nil, errors.New("User already exists")
 	}
 
 	newUser.Password = svc.hash.HashPassword(newUser.Password)
 	userModel, err := svc.model.InsertUser(&newUser)
 	if userModel == nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	otp := svc.generator.GenerateRandomOTP()
 
 	err = svc.model.SendOTPByEmail(userModel.Email, otp)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	resCustomer := dtos.ResUser{}
+	resUser := dtos.ResUser{}
 
-	resCustomer.RoleID = userModel.RoleID
-	resCustomer.Email = userModel.Email
-	resCustomer.ID = userModel.ID
-	resCustomer.Fullname = userModel.Fullname
-	resCustomer.Address = userModel.Address
-	resCustomer.PhoneNumber = userModel.PhoneNumber
-	resCustomer.Gender = userModel.Gender
+	err = smapping.FillStruct(&resUser, smapping.MapFields(userModel))
+	if err != nil {
+		log.Error(err)
+		return nil, nil, err
+	}
 
 	userID := strconv.Itoa(userModel.ID)
-	roleID := strconv.Itoa(resCustomer.RoleID)
+	roleID := strconv.Itoa(resUser.RoleID)
 	tokenData := svc.jwt.GenerateJWT(userID, roleID)
 
 	if tokenData == nil {
 		log.Error("Token process failed")
 	}
 
-	resCustomer.AccessToken = tokenData["access_token"].(string)
-	resCustomer.RefreshToken = tokenData["refresh_token"].(string)
+	resUser.AccessToken = tokenData["access_token"].(string)
+	resUser.RefreshToken = tokenData["refresh_token"].(string)
 
-	return &resCustomer, nil
+	return &resUser, nil, nil
 }
 
 func (svc *service) Modify(userData dtos.InputUser, userID int) bool {
@@ -124,6 +128,7 @@ func (svc *service) Modify(userData dtos.InputUser, userID int) bool {
 		return false
 	}
 
+	newUser.ID = userID
 	rowsAffected := svc.model.UpdateUser(newUser)
 
 	if rowsAffected == 0 {
@@ -173,7 +178,6 @@ func (svc *service) ForgetPassword(data dtos.ForgetPassword) error {
 		return err
 	}
 
-	user.IsVerified = false
 	rowsAffected := svc.model.UpdateUser(*user)
 
 	if rowsAffected == 0 {
@@ -216,12 +220,7 @@ func (svc *service) ResetPassword(newData dtos.ResetPassword) error {
 		return err
 	}
 
-	if user.IsVerified {
-		return errors.New("Cannot reset password")
-	}
-
 	user.Password = svc.hash.HashPassword(newData.Password)
-	user.IsVerified = true
 	rowsAffected := svc.model.UpdateUser(*user)
 
 	if rowsAffected == 0 {

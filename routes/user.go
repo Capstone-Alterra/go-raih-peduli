@@ -20,6 +20,6 @@ func Users(e *echo.Echo, handler user.Handler, jwt helpers.JWTInterface, config 
 	users.POST("/reset-password", handler.ResetPassword(), m.AuthorizeJWT(jwt, 1, config.OTP_SECRET))
 
 	users.GET("/:id", handler.UserDetails())
-	users.PUT("/:id", handler.UpdateUser())
+	users.PATCH("/:id", handler.UpdateUser())
 	users.DELETE("/:id", handler.DeleteUser())
 }

@@ -107,23 +107,13 @@ func (mdl *model) SelectByEmail(email string) (*user.User, error) {
 }
 
 func (mdl *model) UpdateUser(user user.User) int64 {
-	result := mdl.db.Save(&user)
+	result := mdl.db.Updates(&user)
 
 	if result.Error != nil {
 		log.Error(result.Error)
 	}
 
 	return result.RowsAffected
-}
-
-func (mdl *model) UpdateUserstatus(user user.User) error {
-	result := mdl.db.Save(&user)
-
-	if result.Error != nil {
-		return result.Error
-	}
-
-	return nil
 }
 
 func (mdl *model) DeleteByID(userID int) int64 {

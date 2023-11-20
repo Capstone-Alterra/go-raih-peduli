@@ -1,11 +1,12 @@
 package dtos
 
 type LoginResponse struct {
-	Fullname     string `json:"fullname"`
-	Email        string `json:"email"`
-	RoleID       int    `json:"role_id"`
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
+	Fullname       string `json:"fullname"`
+	Email          string `json:"email"`
+	RoleID         int    `json:"role_id"`
+	ProfilePicture string `json:"profile_picture"`
+	AccessToken    string `json:"access_token"`
+	RefreshToken   string `json:"refresh_token"`
 }
 
 type ResUser struct {
@@ -16,6 +17,4 @@ type ResUser struct {
 	PhoneNumber string `json:"phone_number"`
 	Gender      string `json:"gender"`
 	Email       string `json:"email"`
-	// AccessToken  string `json:"access_token"`
-	// RefreshToken string `json:"refresh_token"`
 }

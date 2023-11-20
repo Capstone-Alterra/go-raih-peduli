@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/labstack/gommon/log"
+	"github.com/mashingan/smapping"
 	"github.com/sirupsen/logrus"
 )
 
@@ -17,54 +18,57 @@ type service struct {
 	hash      helpers.HashInterface
 	generator helpers.GeneratorInterface
 	validator helpers.ValidationInterface
-	converter helpers.ConverterInterface
 }
 
-func New(model auth.Repository, jwt helpers.JWTInterface, hash helpers.HashInterface, generator helpers.GeneratorInterface, validator helpers.ValidationInterface, converter helpers.ConverterInterface) auth.Usecase {
+func New(model auth.Repository, jwt helpers.JWTInterface, hash helpers.HashInterface, generator helpers.GeneratorInterface, validator helpers.ValidationInterface) auth.Usecase {
 	return &service{
 		model:     model,
 		jwt:       jwt,
 		hash:      hash,
 		generator: generator,
 		validator: validator,
-		converter: converter,
 	}
 }
 
-func (svc *service) Register(newData dtos.InputUser) (*dtos.ResUser, error) {
-	newUser := auth.User{}
+func (svc *service) Register(newData dtos.InputUser) (*dtos.ResUser, []string, error) {
+	errMap := svc.validator.ValidateRequest(newData)
+	if errMap != nil {
+		return nil, errMap, nil
+	}
 
-	err := svc.converter.Convert(&newUser, newData)
+	newUser := auth.User{}
+	err := smapping.FillStruct(&newUser, smapping.MapFields(newData))
 	if err != nil {
 		log.Error(err)
-		return nil, err
+		return nil, nil, err
 	}
 
 	checkUser, err := svc.model.SelectByEmail(newUser.Email)
 	if checkUser != nil {
 		logrus.Print("User already exists")
-		return nil, errors.New("User already exists")
+		return nil, nil, errors.New("User already exists")
 	}
 
 	newUser.Password = svc.hash.HashPassword(newUser.Password)
+	newUser.ProfilePicture = "https://storage.googleapis.com/raih_peduli/user/user.png"
 	userModel, err := svc.model.Register(&newUser)
 	if userModel == nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	otp := svc.generator.GenerateRandomOTP()
 
 	err = svc.model.SendOTPByEmail(userModel.Email, otp)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	resCustomer := dtos.ResUser{}
 
-	err = svc.converter.Convert(&resCustomer, userModel)
+	err = smapping.FillStruct(&resCustomer, smapping.MapFields(userModel))
 	if err != nil {
 		log.Error(err)
-		return nil, err
+		return nil, nil, err
 	}
 
 	userID := strconv.Itoa(userModel.ID)
@@ -73,12 +77,10 @@ func (svc *service) Register(newData dtos.InputUser) (*dtos.ResUser, error) {
 
 	if tokenData == nil {
 		log.Error("Token process failed")
+		return nil, nil, errors.New("generate token failed")
 	}
 
-	// resCustomer.AccessToken = tokenData["access_token"].(string)
-	// resCustomer.RefreshToken = tokenData["refresh_token"].(string)
-
-	return &resCustomer, nil
+	return &resCustomer, nil, nil
 }
 
 func (svc *service) Login(data dtos.RequestLogin) (*dtos.LoginResponse, error) {
@@ -93,7 +95,7 @@ func (svc *service) Login(data dtos.RequestLogin) (*dtos.LoginResponse, error) {
 
 	resUser := dtos.LoginResponse{}
 
-	err = svc.converter.Convert(&resUser, user)
+	err = smapping.FillStruct(&resUser, smapping.MapFields(user))
 	if err != nil {
 		log.Error(err)
 		return nil, err
@@ -105,6 +107,7 @@ func (svc *service) Login(data dtos.RequestLogin) (*dtos.LoginResponse, error) {
 
 	if tokenData == nil {
 		log.Error("Token process failed")
+		return nil, errors.New("generate token failed")
 	}
 
 	resUser.AccessToken = tokenData["access_token"].(string)

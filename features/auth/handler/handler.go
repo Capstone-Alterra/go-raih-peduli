@@ -4,9 +4,7 @@ import (
 	"raihpeduli/features/auth"
 	"raihpeduli/features/auth/dtos"
 	"raihpeduli/helpers"
-	helper "raihpeduli/helpers"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 )
 
@@ -20,9 +18,7 @@ func New(service auth.Usecase) auth.Handler {
 	}
 }
 
-var validate *validator.Validate
-
-func (ctl *controller) LoginCustomer() echo.HandlerFunc {
+func (ctl *controller) Login() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		loginData := dtos.RequestLogin{}
 
@@ -47,25 +43,20 @@ func (ctl *controller) RegisterUser() echo.HandlerFunc {
 
 		ctx.Bind(&input)
 
-		validate = validator.New(validator.WithRequiredStructEnabled())
-
-		err := validate.Struct(input)
-
-		if err != nil {
-			errMap := helpers.ErrorMapValidation(err)
-			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any{
+		user, errMap, err := ctl.service.Register(input)
+		if errMap != nil {
+			return ctx.JSON(400, helpers.Response("missing some data", map[string]any{
 				"error": errMap,
 			}))
 		}
 
-		user, errCreate := ctl.service.Register(input)
-		if errCreate != nil {
-			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any{
-				"error": errCreate.Error(),
+		if err != nil {
+			return ctx.JSON(400, helpers.Response("Bad Request!", map[string]any{
+				"error": err.Error(),
 			}))
 		}
 
-		return ctx.JSON(200, helper.Response("Success!", map[string]any{
+		return ctx.JSON(200, helpers.Response("Success!", map[string]any{
 			"data": user,
 		}))
 	}
@@ -79,9 +70,9 @@ func (ctl *controller) ResendOTP() echo.HandlerFunc {
 
 		result := ctl.service.ResendOTP(input.Email)
 		if !result {
-			return ctx.JSON(500, helper.Response("Something Went Wrong!"))
+			return ctx.JSON(500, helpers.Response("Something Went Wrong!"))
 		}
 
-		return ctx.JSON(200, helper.Response("OTP has been sent via email"))
+		return ctx.JSON(200, helpers.Response("OTP has been sent via email"))
 	}
 }

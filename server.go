@@ -82,10 +82,11 @@ func UserHandler() user.Handler {
 	jwt := helpers.NewJWT(*config)
 	hash := helpers.NewHash()
 	generator := helpers.NewGenerator()
+	validation := helpers.NewValidationRequest()
 	redis := utils.ConnectRedis()
 
 	repo := ur.New(db, redis)
-	uc := uu.New(repo, jwt, hash, generator)
+	uc := uu.New(repo, jwt, hash, generator, validation)
 	return uh.New(uc)
 }
 
@@ -98,11 +99,10 @@ func AuthHandler() auth.Handler {
 	hash := helpers.NewHash()
 	generator := helpers.NewGenerator()
 	validation := helpers.NewValidationRequest()
-	converter := helpers.NewConverter()
 	redis := utils.ConnectRedis()
 
 	repo := ar.New(db, redis, smtpConfig)
-	uc := au.New(repo, jwt, hash, generator, validation, converter)
+	uc := au.New(repo, jwt, hash, generator, validation)
 	return ah.New(uc)
 }
 
