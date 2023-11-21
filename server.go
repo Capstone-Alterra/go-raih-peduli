@@ -76,16 +76,19 @@ func FundraiseHandler() fundraise.Handler {
 }
 
 func UserHandler() user.Handler {
+	cloud := config.LoadCloudStorageConfig()
 	config := config.InitConfig()
 
 	db := utils.InitDB()
 	jwt := helpers.NewJWT(*config)
 	hash := helpers.NewHash()
 	generator := helpers.NewGenerator()
+	validation := helpers.NewValidationRequest()
 	redis := utils.ConnectRedis()
+	clStorage := helpers.NewCloudStorage(cloud.CLOUD_PROJECT_ID, cloud.CLOUD_BUCKET_NAME, "users/")
 
-	repo := ur.New(db, redis)
-	uc := uu.New(repo, jwt, hash, generator)
+	repo := ur.New(db, redis, clStorage)
+	uc := uu.New(repo, jwt, hash, generator, validation)
 	return uh.New(uc)
 }
 
@@ -98,11 +101,10 @@ func AuthHandler() auth.Handler {
 	hash := helpers.NewHash()
 	generator := helpers.NewGenerator()
 	validation := helpers.NewValidationRequest()
-	converter := helpers.NewConverter()
 	redis := utils.ConnectRedis()
 
 	repo := ar.New(db, redis, smtpConfig)
-	uc := au.New(repo, jwt, hash, generator, validation, converter)
+	uc := au.New(repo, jwt, hash, generator, validation)
 	return ah.New(uc)
 }
 

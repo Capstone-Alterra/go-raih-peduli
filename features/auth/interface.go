@@ -9,8 +9,6 @@ import (
 type Repository interface {
 	Login(email string) (*User, error)
 	Register(newUser *User) (*User, error)
-	GetNameAdmin(id int) (string, error)
-	GetNameCustomer(id int) (string, error)
 	SelectByEmail(email string) (*User, error)
 	SendOTPByEmail(email string, otp string) error
 	InsertVerification(email string, verificationKey string) error
@@ -18,12 +16,12 @@ type Repository interface {
 
 type Usecase interface {
 	Login(dtos.RequestLogin) (*dtos.LoginResponse, error)
-	Register(newUser dtos.InputUser) (*dtos.ResUser, error)
+	Register(newUser dtos.InputUser) (*dtos.ResUser, []string, error)
 	ResendOTP(email string) bool
 }
 
 type Handler interface {
-	LoginCustomer() echo.HandlerFunc
+	Login() echo.HandlerFunc
 	RegisterUser() echo.HandlerFunc
 	ResendOTP() echo.HandlerFunc
 }

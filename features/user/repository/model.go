@@ -1,12 +1,16 @@
 package repository
 
 import (
+	"mime/multipart"
 	"os"
+	"raihpeduli/config"
 	"raihpeduli/features/user"
+	"raihpeduli/helpers"
 	"strconv"
 	"time"
 
 	"github.com/go-redis/redis"
+	"github.com/google/uuid"
 	"github.com/labstack/gommon/log"
 	"github.com/sirupsen/logrus"
 	"github.com/wneessen/go-mail"
@@ -16,12 +20,14 @@ import (
 type model struct {
 	db         *gorm.DB
 	connection *redis.Client
+	clStorage  helpers.CloudStorageInterface
 }
 
-func New(db *gorm.DB, rdClient *redis.Client) user.Repository {
+func New(db *gorm.DB, rdClient *redis.Client, clStorage helpers.CloudStorageInterface) user.Repository {
 	return &model{
 		db:         db,
 		connection: rdClient,
+		clStorage:  clStorage,
 	}
 }
 
@@ -107,23 +113,13 @@ func (mdl *model) SelectByEmail(email string) (*user.User, error) {
 }
 
 func (mdl *model) UpdateUser(user user.User) int64 {
-	result := mdl.db.Save(&user)
+	result := mdl.db.Updates(&user)
 
 	if result.Error != nil {
 		log.Error(result.Error)
 	}
 
 	return result.RowsAffected
-}
-
-func (mdl *model) UpdateUserstatus(user user.User) error {
-	result := mdl.db.Save(&user)
-
-	if result.Error != nil {
-		return result.Error
-	}
-
-	return nil
 }
 
 func (mdl *model) DeleteByID(userID int) int64 {
@@ -171,4 +167,31 @@ func (mdl *model) SendOTPByEmail(email string, otp string) error {
 	}
 
 	return nil
+}
+
+func (mdl *model) GetTotalData() int64 {
+	var totalData int64
+
+	result := mdl.db.Table("users").Where("deleted_at IS NULL").Count(&totalData)
+
+	if result.Error != nil {
+		log.Error(result.Error)
+		return 0
+	}
+
+	return totalData
+}
+
+func (mdl *model) UploadFile(file multipart.File, objectName string) (string, error) {
+	config := config.LoadCloudStorageConfig()
+	randomChar := uuid.New().String()
+	if objectName == "" {
+		objectName = randomChar
+	}
+
+	if err := mdl.clStorage.UploadFile(file, objectName); err != nil {
+		return "", err
+	}
+
+	return "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/users/" + objectName, nil
 }
