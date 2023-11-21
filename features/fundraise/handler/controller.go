@@ -28,6 +28,7 @@ var validate *validator.Validate
 func (ctl *controller) GetFundraises() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		pagination := dtos.Pagination{}
+		paginationResponse := dtos.PaginationResponse{}
 		ctx.Bind(&pagination)
 
 		page := pagination.Page
@@ -45,8 +46,21 @@ func (ctl *controller) GetFundraises() echo.HandlerFunc {
 			return ctx.JSON(404, helper.Response("fundraises not found"))
 		}
 
+		paginationResponse.TotalData = int64(len(fundraises))
+		paginationResponse.CurrentPage = page
+		if paginationResponse.CurrentPage == 1 {
+			paginationResponse.PreviousPage = -1
+			paginationResponse.NextPage = -1
+		} else {
+			paginationResponse.PreviousPage = pagination.Page - 1
+			paginationResponse.NextPage = pagination.Page + 1
+		}
+		paginationResponse.TotalPage = (len(fundraises) + size - 1) / size
+		
+
 		return ctx.JSON(200, helper.Response("success", map[string]any{
 			"data": fundraises,
+			"pagination": paginationResponse,
 		}))
 	}
 }

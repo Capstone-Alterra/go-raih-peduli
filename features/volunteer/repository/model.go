@@ -12,13 +12,13 @@ import (
 )
 
 type model struct {
-	db *gorm.DB
+	db        *gorm.DB
 	clStorage helpers.CloudStorageInterface
 }
 
 func New(db *gorm.DB, clStorage helpers.CloudStorageInterface) volunteer.Repository {
 	return &model{
-		db: db,
+		db:        db,
 		clStorage: clStorage,
 	}
 }
@@ -68,6 +68,21 @@ func (mdl *model) SelectBySkill(page, size int, title string) []volunteer.Volunt
 	return volunteers
 }
 
+func (mdl *model) SelectByCity(page, size int, city string) []volunteer.VolunteerVacancies {
+	var volunteers []volunteer.VolunteerVacancies
+
+	offset := (page - 1) * size
+
+	result := mdl.db.Where("city = ?", city).Offset(offset).Limit(size).Find(&volunteers)
+
+	if result.Error != nil {
+		log.Error(result.Error)
+		return nil
+	}
+
+	return volunteers
+}
+
 func (mdl *model) SelectByID(volunteerID int) *volunteer.VolunteerVacancies {
 	var volunteer volunteer.VolunteerVacancies
 	result := mdl.db.First(&volunteer, volunteerID)
@@ -101,14 +116,46 @@ func (mdl *model) DeleteByID(volunteerID int) int64 {
 	return result.RowsAffected
 }
 
-func (mdl *model) Insert(newVolunteer *volunteer.VolunteerVacancies) (*volunteer.VolunteerVacancies, error){
+func (mdl *model) Insert(newVolunteer *volunteer.VolunteerVacancies) (*volunteer.VolunteerVacancies, error) {
 	result := mdl.db.Create(newVolunteer)
-	
+
 	if result.Error != nil {
 		log.Error(result.Error)
 		return nil, result.Error
 	}
 	return newVolunteer, nil
+}
+
+func (mdl *model) Register(registrar *volunteer.VolunteerRelations) error {
+	result := mdl.db.Table("volunteer_relations").Create(registrar)
+
+	if result.Error != nil {
+		log.Error(result.Error)
+		return result.Error
+	}
+	return nil
+}
+
+func (mdl *model) SelectRegistrarByID(registrarID int) *volunteer.VolunteerRelations {
+	var registrar volunteer.VolunteerRelations
+	result := mdl.db.First(&registrar, registrarID)
+
+	if result.Error != nil {
+		log.Error(result.Error)
+		return nil
+	}
+
+	return &registrar
+}
+
+func (mdl *model) UpdateStatusRegistrar(registrar volunteer.VolunteerRelations) int64 {
+	result := mdl.db.Table("volunteer_relations").Updates(&registrar)
+
+	if result.Error != nil {
+		log.Error(result.Error)
+	}
+
+	return result.RowsAffected
 }
 
 func (mdl *model) UploadFile(file multipart.File, objectName string) (string, error) {
@@ -122,5 +169,57 @@ func (mdl *model) UploadFile(file multipart.File, objectName string) (string, er
 		return "", err
 	}
 
-	return "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/fundraises/" + objectName, nil
+	return "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/volunteer/" + objectName, nil
+}
+
+func (mdl *model) GetTotalData() int64 {
+	var totalData int64
+
+	result := mdl.db.Table("volunteer_vacancies").Where("deleted_at IS NULL").Count(&totalData)
+
+	if result.Error != nil {
+		log.Error(result.Error)
+		return 0
+	}
+
+	return totalData
+}
+
+func (mdl *model) GetTotalDataByTitle(title string) int64 {
+	var totalData int64
+
+	result := mdl.db.Table("volunteer_vacancies").Where("title = ? AND deleted_at IS NULL").Count(&totalData)
+
+	if result.Error != nil {
+		log.Error(result.Error)
+		return 0
+	}
+
+	return totalData
+}
+
+func (mdl *model) GetTotalDataBySkill(skill string) int64 {
+	var totalData int64
+
+	result := mdl.db.Table("volunteer_vacancies").Where("skill = ? AND deleted_at IS NULL").Count(&totalData)
+
+	if result.Error != nil {
+		log.Error(result.Error)
+		return 0
+	}
+
+	return totalData
+}
+
+func (mdl *model) GetTotalDataByCity(city string) int64 {
+	var totalData int64
+
+	result := mdl.db.Table("volunteer_vacancies").Where("city = ? AND deleted_at IS NULL").Count(&totalData)
+
+	if result.Error != nil {
+		log.Error(result.Error)
+		return 0
+	}
+
+	return totalData
 }

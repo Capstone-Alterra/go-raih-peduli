@@ -19,10 +19,11 @@ type Repository interface {
 type Usecase interface {
 	Login(dtos.RequestLogin) (*dtos.LoginResponse, error)
 	Register(newUser dtos.InputUser) (*dtos.ResUser, error)
-	InsertVerification(email string, verificationKey string) error
+	ResendOTP(email string) bool
 }
 
 type Handler interface {
 	LoginCustomer() echo.HandlerFunc
 	RegisterUser() echo.HandlerFunc
+	ResendOTP() echo.HandlerFunc
 }

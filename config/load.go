@@ -4,10 +4,13 @@ import (
 	"io"
 	"os"
 
+	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
 )
 
 func InitConfig() *ProgramConfig {
+	godotenv.Load()
+
 	var res = new(ProgramConfig)
 	res = loadConfig()
 
@@ -32,10 +35,20 @@ type RedisConfig struct {
 	REDIS_PORT string
 }
 
+type MongoConfig struct {
+	MONGO_URI string
+	MONGO_DB_NAME string
+}
+
 type CloudStorageConfig struct {
 	GOOGLE_APPLICATION_CREDENTIALS string
 	CLOUD_PROJECT_ID               string
 	CLOUD_BUCKET_NAME              string
+}
+
+type MidtransConfig struct {
+	MT_SERVER_KEY string
+	MT_CLIENT_KEY string
 }
 
 type ProgramConfig struct {
@@ -43,6 +56,12 @@ type ProgramConfig struct {
 	REFRESH_SECRET string
 	SERVER_PORT    string
 	OTP_SECRET     string
+}
+
+type SMTPConfig struct {
+	SMTP_USER string
+	SMTP_PASS string
+	SMTP_PORT string
 }
 
 func LoadDBConfig() *DatabaseConfig {
@@ -85,6 +104,20 @@ func LoadRedisConfig() *RedisConfig {
 	return res
 }
 
+func LoadMongoConfig() *MongoConfig {
+	var res = new(MongoConfig)
+
+	if val, found := os.LookupEnv("MONGO_URI"); found {
+		res.MONGO_URI = val
+	}
+
+	if val, found := os.LookupEnv("MONGO_DB_NAME"); found {
+		res.MONGO_DB_NAME = val
+	}
+
+	return res
+}
+
 func LoadCloudStorageConfig() *CloudStorageConfig {
 	var res = new(CloudStorageConfig)
 
@@ -111,6 +144,38 @@ func LoadCloudStorageConfig() *CloudStorageConfig {
 
 	if val, found := os.LookupEnv("CLOUD_BUCKET_NAME"); found {
 		res.CLOUD_BUCKET_NAME = val
+	}
+
+	return res
+}
+
+func LoadMidtransConfig() *MidtransConfig {
+	var res = new(MidtransConfig)
+
+	if val, found := os.LookupEnv("MT_SERVER_KEY"); found {
+		res.MT_SERVER_KEY = val
+	}
+
+	if val, found := os.LookupEnv("MT_CLIENT_KEY"); found {
+		res.MT_CLIENT_KEY = val
+	}
+
+	return res
+}
+
+func LoadSMTPConfig() *SMTPConfig {
+	var res = new(SMTPConfig)
+
+	if val, found := os.LookupEnv("SMTP_USER"); found {
+		res.SMTP_USER = val
+	}
+
+	if val, found := os.LookupEnv("SMTP_PASS"); found {
+		res.SMTP_PASS = val
+	}
+
+	if val, found := os.LookupEnv("SMTP_PORT"); found {
+		res.SMTP_PORT = val
 	}
 
 	return res
