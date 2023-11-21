@@ -14,11 +14,13 @@ type Repository interface {
 	Update(fundraise Fundraise) (int, error)
 	DeleteByID(fundraiseID int) (int, error)
 	UploadFile(file multipart.File, objectName string) (string, error)
+	SelectBookmarkedFundraiseID(ownerID int) (map[int]string, error)
+	SelectBookmarkByFundraiseAndOwnerID(fundraiseID, ownerID int) (string, error)
 }
 
 type Usecase interface {
-	FindAll(page int, size int, title string) []dtos.ResFundraise
-	FindByID(fundraiseID int) *dtos.ResFundraise
+	FindAll(page int, size int, title string, ownerID int) []dtos.ResFundraise
+	FindByID(fundraiseID, ownerID int) *dtos.ResFundraise
 	Create(newFundraise dtos.InputFundraise, userID int, file multipart.File) (*dtos.ResFundraise, []string, error)
 	Modify(fundraiseData dtos.InputFundraise, file multipart.File, oldData dtos.ResFundraise) bool
 	ModifyStatus(fundraiseData dtos.InputFundraiseStatus, oldData dtos.ResFundraise) bool
