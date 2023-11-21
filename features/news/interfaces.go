@@ -14,6 +14,8 @@ type Repository interface {
 	Update(news News) (int, error)
 	DeleteByID(newsID int) (int, error)
 	UploadFile(file multipart.File, objectName string) (string, error)
+	SelectBookmarkedNewsID(ownerID int) (map[int]string, error)
+	SelectBoockmarkByNewsAndOwnerID(newsID, ownerID int) (string, error)
 }
 
 type Usecase interface {

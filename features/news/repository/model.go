@@ -1,24 +1,31 @@
 package repository
 
 import (
+	"context"
 	"mime/multipart"
 	"raihpeduli/config"
 	"raihpeduli/features/news"
 	"raihpeduli/helpers"
 
 	"github.com/google/uuid"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"gorm.io/gorm"
 )
 
 type model struct {
-	db        *gorm.DB
-	clStorage helpers.CloudStorageInterface
+	db         *gorm.DB
+	clStorage  helpers.CloudStorageInterface
+	collection *mongo.Collection
 }
 
-func New(db *gorm.DB, clStorage helpers.CloudStorageInterface) news.Repository {
+func New(db *gorm.DB, clStorage helpers.CloudStorageInterface, collection *mongo.Collection) news.Repository {
 	return &model{
-		db:        db,
-		clStorage: clStorage,
+		db:         db,
+		clStorage:  clStorage,
+		collection: collection,
 	}
 }
 
@@ -85,4 +92,39 @@ func (mdl *model) UploadFile(file multipart.File, objectName string) (string, er
 	}
 
 	return "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/news/" + objectName, nil
+}
+
+func (mdl *model) SelectBookmarkedNewsID(ownerID int) (map[int]string, error) {
+	opts := options.Find().SetProjection(bson.M{"post_id": 1, "_id": 1})
+	cursor, err := mdl.collection.Find(context.Background(), bson.M{"owner_id": ownerID, "post_type": "news"}, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []bson.M
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		return nil, err
+	}
+
+	var mapPostIDs = map[int]string{}
+
+	for _, data := range results {
+		postID := int(data["post_id"].(int32))
+		mapPostIDs[postID] = data["_id"].(primitive.ObjectID).Hex()
+	}
+
+	return mapPostIDs, nil
+}
+
+func (mdl *model) SelectBoockmarkByNewsAndOwnerID(newsID, ownerID int) (string, error) {
+	opts := options.FindOne().SetProjection(bson.M{"_id": 1})
+
+	var result bson.M
+	if err := mdl.collection.FindOne(context.Background(), bson.M{"owner_id": ownerID, "post_id": newsID, "post_type": "news"}, opts).Decode(&result); err != nil {
+		return "", err
+	}
+
+	objectIDString := result["_id"].(primitive.ObjectID).Hex()
+
+	return objectIDString, nil
 }

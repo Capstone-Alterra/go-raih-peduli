@@ -128,8 +128,10 @@ func NewsHandler() news.Handler {
 	config := config.LoadCloudStorageConfig()
 
 	clStorage := helpers.NewCloudStorage(config.CLOUD_PROJECT_ID, config.CLOUD_BUCKET_NAME, "news/")
+	mongoDB := utils.ConnectMongo()
+	collection := mongoDB.Collection("bookmarks")
 
-	repo := nr.New(db, clStorage)
+	repo := nr.New(db, clStorage, collection)
 	uc := nu.New(repo)
 	return nh.New(uc)
 }
