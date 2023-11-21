@@ -109,6 +109,9 @@ func (svc *service) Create(newFundraise dtos.InputFundraise, userID int, file mu
 		}
 
 		url = imageURL
+	} else {
+		config := config.LoadCloudStorageConfig()
+		url = "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/fundraises/default"
 	}
 
 	fundraise.UserID = userID
@@ -146,6 +149,11 @@ func (svc *service) Modify(fundraiseData dtos.InputFundraise, file multipart.Fil
 		if len(oldFilename) > urlLength {
 			oldFilename = oldFilename[urlLength:]
 		}
+
+		if oldFilename == "default" {
+			oldFilename = ""
+		}
+
 		imageURL, err := svc.model.UploadFile(file, oldFilename)
 
 		if err != nil {
