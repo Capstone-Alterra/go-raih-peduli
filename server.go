@@ -128,6 +128,7 @@ func NewsHandler() news.Handler {
 	config := config.LoadCloudStorageConfig()
 
 	clStorage := helpers.NewCloudStorage(config.CLOUD_PROJECT_ID, config.CLOUD_BUCKET_NAME, "news/")
+
 	repo := nr.New(db, clStorage)
 	uc := nu.New(repo)
 	return nh.New(uc)

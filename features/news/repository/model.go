@@ -45,7 +45,7 @@ func (mdl *model) Insert(newNews news.News) (int, error) {
 
 func (mdl *model) SelectByID(newsID int) (*news.News, error) {
 	var news news.News
-	
+
 	if err := mdl.db.First(&news, newsID).Error; err != nil {
 		return nil, err
 	}
@@ -67,7 +67,7 @@ func (mdl *model) DeleteByID(newsID int) (int, error) {
 	result := mdl.db.Delete(&news.News{}, newsID)
 
 	if result.Error != nil {
-		return 0, result.Error	
+		return 0, result.Error
 	}
 
 	return int(result.RowsAffected), nil

@@ -16,7 +16,7 @@ type ResFundraise struct {
 	EndDate     time.Time `json:"end_date"`
 	Status      string    `json:"status"`
 	UserID      int       `json:"user_id"`
-	BookmarkID  *string	  `json:"bookmark_id"`	
+	BookmarkID  *string   `json:"bookmark_id"`
 
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`

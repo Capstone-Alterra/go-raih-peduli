@@ -40,7 +40,7 @@ func (ctl *controller) GetFundraises() echo.HandlerFunc {
 			size = 10
 		}
 
-		userID := 0 
+		userID := 0
 
 		if ctx.Get("user_id") != nil {
 			userID = ctx.Get("user_id").(int)
@@ -62,10 +62,9 @@ func (ctl *controller) GetFundraises() echo.HandlerFunc {
 			paginationResponse.NextPage = pagination.Page + 1
 		}
 		paginationResponse.TotalPage = (len(fundraises) + size - 1) / size
-		
 
 		return ctx.JSON(200, helper.Response("success", map[string]any{
-			"data": fundraises,
+			"data":       fundraises,
 			"pagination": paginationResponse,
 		}))
 	}
@@ -79,7 +78,7 @@ func (ctl *controller) FundraiseDetails() echo.HandlerFunc {
 			return ctx.JSON(400, helper.Response(err.Error()))
 		}
 
-		userID := 0 
+		userID := 0
 
 		if ctx.Get("user_id") != nil {
 			userID = ctx.Get("user_id").(int)

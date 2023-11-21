@@ -27,6 +27,8 @@ var validate *validator.Validate
 func (ctl *controller) GetNews() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		pagination := dtos.Pagination{}
+		paginationResponse := dtos.PaginationResponse{}
+
 		ctx.Bind(&pagination)
 
 		page := pagination.Page
@@ -43,8 +45,20 @@ func (ctl *controller) GetNews() echo.HandlerFunc {
 			return ctx.JSON(404, helper.Response("There is No Newss!"))
 		}
 
+		paginationResponse.TotalData = int64(len(newss))
+		paginationResponse.CurrentPage = page
+		if paginationResponse.CurrentPage == 1 {
+			paginationResponse.PreviousPage = -1
+			paginationResponse.NextPage = -1
+		} else {
+			paginationResponse.PreviousPage = pagination.Page - 1
+			paginationResponse.NextPage = pagination.Page + 1
+		}
+		paginationResponse.TotalPage = (len(newss) + size - 1) / size
+
 		return ctx.JSON(200, helper.Response("Success!", map[string]any{
-			"data": newss,
+			"data":       newss,
+			"pagination": paginationResponse,
 		}))
 	}
 }
@@ -159,7 +173,6 @@ func (ctl *controller) UpdateNews() echo.HandlerFunc {
 	}
 
 }
-
 
 func (ctl *controller) DeleteNews() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
