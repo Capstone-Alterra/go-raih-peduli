@@ -50,7 +50,7 @@ func (svc *service) Register(newData dtos.InputUser) (*dtos.ResUser, []string, e
 	}
 
 	newUser.Password = svc.hash.HashPassword(newUser.Password)
-	newUser.ProfilePicture = "https://storage.googleapis.com/raih_peduli/user/user.png"
+	newUser.ProfilePicture = "https://storage.googleapis.com/raih_peduli/users/user.png"
 	userModel, err := svc.model.Register(&newUser)
 	if userModel == nil {
 		return nil, nil, err

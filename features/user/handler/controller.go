@@ -116,11 +116,7 @@ func (ctl *controller) UpdateUser() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		input := dtos.InputUpdate{}
 
-		userID, errParam := strconv.Atoi(ctx.Param("id"))
-
-		if errParam != nil {
-			return ctx.JSON(400, helper.Response(errParam.Error()))
-		}
+		userID := ctx.Get("user_id").(int)
 
 		user := ctl.service.FindByID(userID)
 

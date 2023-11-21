@@ -129,7 +129,9 @@ func (svc *service) Modify(userData dtos.InputUpdate, file multipart.File, oldDa
 	var urlLength int = len("https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/users/")
 
 	if file != nil {
-		if len(oldFilename) > urlLength {
+		if oldFilename == "https://storage.googleapis.com/raih_peduli/users/user.png" {
+			oldFilename = ""
+		} else if len(oldFilename) > urlLength {
 			oldFilename = oldFilename[urlLength:]
 		}
 		imageURL, err := svc.model.UploadFile(file, oldFilename)
