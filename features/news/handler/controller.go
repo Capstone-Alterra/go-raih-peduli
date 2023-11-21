@@ -112,7 +112,13 @@ func (ctl *controller) CreateNews() echo.HandlerFunc {
 
 			file = formFile
 		}
-		news, err := ctl.service.Create(input, userID.(int), file)
+		news, errMap, err := ctl.service.Create(input, userID.(int), file)
+
+		if errMap != nil {
+			return ctx.JSON(400, helper.Response("missing some data", map[string]any{
+				"error": errMap,
+			}))
+		}
 
 		if err != nil {
 			return ctx.JSON(500, helper.Response(err.Error(), nil))

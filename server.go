@@ -126,13 +126,14 @@ func VolunteerHandler() volunteer.Handler {
 func NewsHandler() news.Handler {
 	db := utils.InitDB()
 	config := config.LoadCloudStorageConfig()
+	validation := helpers.NewValidationRequest()
 
 	clStorage := helpers.NewCloudStorage(config.CLOUD_PROJECT_ID, config.CLOUD_BUCKET_NAME, "news/")
 	mongoDB := utils.ConnectMongo()
 	collection := mongoDB.Collection("bookmarks")
 
 	repo := nr.New(db, clStorage, collection)
-	uc := nu.New(repo)
+	uc := nu.New(repo, validation)
 	return nh.New(uc)
 }
 

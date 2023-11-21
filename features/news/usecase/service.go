@@ -1,10 +1,12 @@
 package usecase
 
 import (
+	"errors"
 	"mime/multipart"
 	"raihpeduli/config"
 	"raihpeduli/features/news"
 	"raihpeduli/features/news/dtos"
+	"raihpeduli/helpers"
 
 	"github.com/labstack/gommon/log"
 	"github.com/mashingan/smapping"
@@ -12,12 +14,14 @@ import (
 )
 
 type service struct {
-	model news.Repository
+	model      news.Repository
+	validation helpers.ValidationInterface
 }
 
-func New(model news.Repository) news.Usecase {
+func New(model news.Repository, validation helpers.ValidationInterface) news.Usecase {
 	return &service{
-		model: model,
+		model:      model,
+		validation: validation,
 	}
 }
 
@@ -61,7 +65,11 @@ func (svc *service) FindByID(newsID int) *dtos.ResNews {
 	return &res
 }
 
-func (svc *service) Create(newNews dtos.InputNews, userID int, file multipart.File) (*dtos.ResNews, error) {
+func (svc *service) Create(newNews dtos.InputNews, userID int, file multipart.File) (*dtos.ResNews, []string, error) {
+	if errMap := svc.validation.ValidateRequest(newNews); errMap != nil {
+		return nil, errMap, errors.New("error")
+	}
+
 	news := news.News{}
 	var url string
 
@@ -69,7 +77,7 @@ func (svc *service) Create(newNews dtos.InputNews, userID int, file multipart.Fi
 		imgURL, err := svc.model.UploadFile(file, "")
 
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		url = imgURL
@@ -79,21 +87,21 @@ func (svc *service) Create(newNews dtos.InputNews, userID int, file multipart.Fi
 	err := smapping.FillStruct(&news, smapping.MapFields(newNews))
 	if err != nil {
 		log.Error(err)
-		return nil, err
+		return nil, nil, err
 	}
 
 	if _, err := svc.model.Insert(news); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	resNews := dtos.ResNews{}
 	resNews.UserID = userID
 	resNews.Photo = url
 	if err := smapping.FillStruct(&resNews, smapping.MapFields(newNews)); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return &resNews, nil
+	return &resNews, nil, nil
 }
 
 func (svc *service) Modify(newsData dtos.InputNews, file multipart.File, oldData dtos.ResNews) bool {
