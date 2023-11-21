@@ -24,21 +24,39 @@ func New(model fundraise.Repository, validation helpers.ValidationInterface) fun
 	}
 }
 
-func (svc *service) FindAll(page int, size int, title string) []dtos.ResFundraise {
+func (svc *service) FindAll(page int, size int, title string, ownerID int) []dtos.ResFundraise {
 	var fundraises []dtos.ResFundraise
+	var bookmarkIDs map[int]string
 
-	entites, err := svc.model.Paginate(page, size, title)
+	entities, err := svc.model.Paginate(page, size, title)
+
+	if ownerID != 0 {
+		bookmarkIDs, err = svc.model.SelectBookmarkedFundraiseID(ownerID)
+
+		if err != nil {
+			logrus.Error(err)
+			return nil
+		}
+	}
 
 	if err != nil {
 		logrus.Error(err)
 		return nil
 	}
 
-	for _, fundraise := range entites {
+	for _, fundraise := range entities {
 		var data dtos.ResFundraise
 
 		if err := smapping.FillStruct(&data, smapping.MapFields(fundraise)); err != nil {
 			logrus.Error(err)
+		}
+
+		if bookmarkIDs != nil {
+			bookmarkID, ok := bookmarkIDs[data.ID]
+
+			if ok {
+				data.BookmarkID = &bookmarkID
+			}
 		}
 
 		fundraises = append(fundraises, data)
@@ -47,13 +65,23 @@ func (svc *service) FindAll(page int, size int, title string) []dtos.ResFundrais
 	return fundraises
 }
 
-func (svc *service) FindByID(fundraiseID int) *dtos.ResFundraise {
+func (svc *service) FindByID(fundraiseID, ownerID int) *dtos.ResFundraise {
 	var res dtos.ResFundraise
 	fundraise, err := svc.model.SelectByID(fundraiseID)
 
 	if err != nil {
 		logrus.Error(err)
 		return nil
+	}
+
+	var bookmarkID string
+
+	if ownerID != 0 {
+		bookmarkID, err = svc.model.SelectBookmarkByFundraiseAndOwnerID(fundraiseID, ownerID)
+
+		if bookmarkID != "" {
+			res.BookmarkID = &bookmarkID
+		}
 	}
 
 	if err := smapping.FillStruct(&res, smapping.MapFields(fundraise)); err != nil {
@@ -81,6 +109,9 @@ func (svc *service) Create(newFundraise dtos.InputFundraise, userID int, file mu
 		}
 
 		url = imageURL
+	} else {
+		config := config.LoadCloudStorageConfig()
+		url = "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/fundraises/default"
 	}
 
 	fundraise.UserID = userID
@@ -118,6 +149,11 @@ func (svc *service) Modify(fundraiseData dtos.InputFundraise, file multipart.Fil
 		if len(oldFilename) > urlLength {
 			oldFilename = oldFilename[urlLength:]
 		}
+
+		if oldFilename == "default" {
+			oldFilename = ""
+		}
+
 		imageURL, err := svc.model.UploadFile(file, oldFilename)
 
 		if err != nil {

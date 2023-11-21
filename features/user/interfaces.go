@@ -1,6 +1,7 @@
 package user
 
 import (
+	"mime/multipart"
 	"raihpeduli/features/user/dtos"
 
 	"github.com/labstack/echo/v4"
@@ -12,18 +13,19 @@ type Repository interface {
 	SelectByID(customerID int) *User
 	SelectByEmail(email string) (*User, error)
 	UpdateUser(user User) int64
-	UpdateUserstatus(user User) error
 	DeleteByID(customerID int) int64
 	SendOTPByEmail(email string, otp string) error
 	InsertVerification(email string, verificationKey string) error
 	ValidateVerification(verificationKey string) string
+	GetTotalData() int64
+	UploadFile(file multipart.File, objectName string) (string, error)
 }
 
 type Usecase interface {
-	FindAll(page, size int) []dtos.ResUser
+	FindAll(page, size int) ([]dtos.ResUser, int64)
 	FindByID(customerID int) *dtos.ResUser
-	Create(newUser dtos.InputUser) (*dtos.ResUser, error)
-	Modify(customerData dtos.InputUser, customerID int) bool
+	Create(newUser dtos.InputUser) (*dtos.ResUser, []string, error)
+	Modify(customerData dtos.InputUpdate, file multipart.File, oldData dtos.ResUser) bool
 	Remove(customerID int) bool
 	ValidateVerification(verificationKey string) bool
 	ForgetPassword(email dtos.ForgetPassword) error

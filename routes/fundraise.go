@@ -12,11 +12,11 @@ import (
 func Fundraises(e *echo.Echo, handler fundraise.Handler, jwt helpers.JWTInterface, config config.ProgramConfig) {
 	fundraises := e.Group("/fundraises")
 
-	fundraises.GET("", handler.GetFundraises())
+	fundraises.GET("", handler.GetFundraises(), m.AuthorizeJWT(jwt, -1, config.SECRET))
 	fundraises.POST("", handler.CreateFundraise(), m.AuthorizeJWT(jwt, 0, config.SECRET))
 
-	fundraises.GET("/:id", handler.FundraiseDetails())
-	fundraises.PUT("/:id", handler.UpdateFundraise())
-	fundraises.PATCH("/:id", handler.UpdateFundraiseStatus())
-	fundraises.DELETE("/:id", handler.DeleteFundraise())
+	fundraises.GET("/:id", handler.FundraiseDetails(), m.AuthorizeJWT(jwt, -1, config.SECRET))
+	fundraises.PUT("/:id", handler.UpdateFundraise(), m.AuthorizeJWT(jwt, 2, config.SECRET))
+	fundraises.PATCH("/:id", handler.UpdateFundraiseStatus(), m.AuthorizeJWT(jwt, 2, config.SECRET))
+	fundraises.DELETE("/:id", handler.DeleteFundraise(), m.AuthorizeJWT(jwt, 2, config.SECRET))
 }

@@ -1,14 +1,13 @@
 package handler
 
 import (
-	"raihpeduli/helpers"
+	"mime/multipart"
 	helper "raihpeduli/helpers"
 	"strconv"
 
 	"raihpeduli/features/user"
 	"raihpeduli/features/user/dtos"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 )
 
@@ -22,28 +21,48 @@ func New(service user.Usecase) user.Handler {
 	}
 }
 
-var validate *validator.Validate
-
 func (ctl *controller) GetUsers() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		pagination := dtos.Pagination{}
 		ctx.Bind(&pagination)
 
-		page := pagination.Page
-		size := pagination.Size
-
-		if page <= 0 || size <= 0 {
-			return ctx.JSON(400, helper.Response("Please provide query `page` and `size` in number!"))
+		if pagination.Page < 1 || pagination.Size < 1 {
+			pagination.Page = 1
+			pagination.Size = 20
 		}
 
-		users := ctl.service.FindAll(page, size)
+		page := pagination.Page
+		size := pagination.Size
+		users, totalData := ctl.service.FindAll(page, size)
 
 		if users == nil {
 			return ctx.JSON(404, helper.Response("There is No Users!"))
 		}
 
+		paginationResponse := dtos.PaginationResponse{}
+
+		if pagination.Size >= int(totalData) {
+			paginationResponse.PreviousPage = -1
+			paginationResponse.NextPage = -1
+		} else if pagination.Size < int(totalData) && pagination.Page == 1 {
+			paginationResponse.PreviousPage = -1
+			paginationResponse.NextPage = pagination.Page + 1
+		} else {
+			paginationResponse.PreviousPage = pagination.Page - 1
+			paginationResponse.NextPage = pagination.Page + 1
+		}
+
+		paginationResponse.TotalData = totalData
+		paginationResponse.CurrentPage = pagination.Page
+		paginationResponse.TotalPage = (int(totalData) + pagination.Size - 1) / pagination.Size
+
+		if paginationResponse.CurrentPage == paginationResponse.TotalPage {
+			paginationResponse.NextPage = -1
+		}
+
 		return ctx.JSON(200, helper.Response("Success!", map[string]any{
-			"data": users,
+			"data":       users,
+			"pagination": paginationResponse,
 		}))
 	}
 }
@@ -74,21 +93,16 @@ func (ctl *controller) CreateUser() echo.HandlerFunc {
 
 		ctx.Bind(&input)
 
-		validate = validator.New(validator.WithRequiredStructEnabled())
-
-		err := validate.Struct(input)
-
-		if err != nil {
-			errMap := helpers.ErrorMapValidation(err)
-			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any{
+		user, errMap, err := ctl.service.Create(input)
+		if errMap != nil {
+			return ctx.JSON(400, helper.Response("missing some data", map[string]any{
 				"error": errMap,
 			}))
 		}
 
-		user, errCreate := ctl.service.Create(input)
-		if errCreate != nil {
+		if err != nil {
 			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any{
-				"error": errCreate.Error(),
+				"error": err.Error(),
 			}))
 		}
 
@@ -100,13 +114,9 @@ func (ctl *controller) CreateUser() echo.HandlerFunc {
 
 func (ctl *controller) UpdateUser() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		input := dtos.InputUser{}
+		input := dtos.InputUpdate{}
 
-		userID, errParam := strconv.Atoi(ctx.Param("id"))
-
-		if errParam != nil {
-			return ctx.JSON(400, helper.Response(errParam.Error()))
-		}
+		userID := ctx.Get("user_id").(int)
 
 		user := ctl.service.FindByID(userID)
 
@@ -116,17 +126,20 @@ func (ctl *controller) UpdateUser() echo.HandlerFunc {
 
 		ctx.Bind(&input)
 
-		validate = validator.New(validator.WithRequiredStructEnabled())
-		err := validate.Struct(input)
+		fileHeader, err := ctx.FormFile("profile_picture")
+		var file multipart.File
 
-		if err != nil {
-			errMap := helpers.ErrorMapValidation(err)
-			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any{
-				"error": errMap,
-			}))
+		if err == nil {
+			formFile, err := fileHeader.Open()
+
+			if err != nil {
+				return ctx.JSON(500, helper.Response("something went wrong"))
+			}
+
+			file = formFile
 		}
 
-		update := ctl.service.Modify(input, userID)
+		update := ctl.service.Modify(input, file, *user)
 
 		if !update {
 			return ctx.JSON(500, helper.Response("Something Went Wrong!"))
@@ -166,20 +179,9 @@ func (ctl *controller) VerifyEmail() echo.HandlerFunc {
 
 		ctx.Bind(&input)
 
-		validate = validator.New(validator.WithRequiredStructEnabled())
-
-		err := validate.Struct(input)
-
-		if err != nil {
-			errMap := helpers.ErrorMapValidation(err)
-			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any{
-				"error": errMap,
-			}))
-		}
-
 		verifyOTP := ctl.service.ValidateVerification(input.OTP)
-		if verifyOTP != true {
-			return ctx.JSON(500, helper.Response("Incorrect / Expired OTP"))
+		if !verifyOTP {
+			return ctx.JSON(400, helper.Response("Incorrect / Expired OTP"))
 		}
 
 		return ctx.JSON(200, helper.Response("Success verify email!"))
@@ -207,20 +209,9 @@ func (ctl *controller) VerifyOTP() echo.HandlerFunc {
 
 		ctx.Bind(&input)
 
-		validate = validator.New(validator.WithRequiredStructEnabled())
-
-		err := validate.Struct(input)
-
-		if err != nil {
-			errMap := helpers.ErrorMapValidation(err)
-			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any{
-				"error": errMap,
-			}))
-		}
-
 		token := ctl.service.VerifyOTP(input.OTP)
 		if token == "" {
-			return ctx.JSON(500, helper.Response("Incorrect / Expired OTP"))
+			return ctx.JSON(400, helper.Response("Incorrect / Expired OTP"))
 		}
 
 		return ctx.JSON(200, helper.Response("Success verify email!", map[string]any{
@@ -235,18 +226,7 @@ func (ctl *controller) ResetPassword() echo.HandlerFunc {
 
 		ctx.Bind(&input)
 
-		validate = validator.New(validator.WithRequiredStructEnabled())
-
-		err := validate.Struct(input)
-
-		if err != nil {
-			errMap := helpers.ErrorMapValidation(err)
-			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any{
-				"error": errMap,
-			}))
-		}
-
-		err = ctl.service.ResetPassword(input)
+		err := ctl.service.ResetPassword(input)
 
 		if err != nil {
 			return ctx.JSON(500, helper.Response("Something Went Wrong!"))

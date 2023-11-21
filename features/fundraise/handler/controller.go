@@ -40,7 +40,13 @@ func (ctl *controller) GetFundraises() echo.HandlerFunc {
 			size = 10
 		}
 
-		fundraises := ctl.service.FindAll(page, size, title)
+		userID := 0
+
+		if ctx.Get("user_id") != nil {
+			userID = ctx.Get("user_id").(int)
+		}
+
+		fundraises := ctl.service.FindAll(page, size, title, userID)
 
 		if fundraises == nil {
 			return ctx.JSON(404, helper.Response("fundraises not found"))
@@ -56,10 +62,9 @@ func (ctl *controller) GetFundraises() echo.HandlerFunc {
 			paginationResponse.NextPage = pagination.Page + 1
 		}
 		paginationResponse.TotalPage = (len(fundraises) + size - 1) / size
-		
 
 		return ctx.JSON(200, helper.Response("success", map[string]any{
-			"data": fundraises,
+			"data":       fundraises,
 			"pagination": paginationResponse,
 		}))
 	}
@@ -73,7 +78,13 @@ func (ctl *controller) FundraiseDetails() echo.HandlerFunc {
 			return ctx.JSON(400, helper.Response(err.Error()))
 		}
 
-		fundraise := ctl.service.FindByID(fundraiseID)
+		userID := 0
+
+		if ctx.Get("user_id") != nil {
+			userID = ctx.Get("user_id").(int)
+		}
+
+		fundraise := ctl.service.FindByID(fundraiseID, userID)
 
 		if fundraise == nil {
 			return ctx.JSON(404, helper.Response("fundraise not found"))
@@ -134,7 +145,7 @@ func (ctl *controller) UpdateFundraise() echo.HandlerFunc {
 			return ctx.JSON(400, helper.Response(err.Error()))
 		}
 
-		fundraise := ctl.service.FindByID(fundraiseID)
+		fundraise := ctl.service.FindByID(fundraiseID, 0)
 
 		if fundraise == nil {
 			return ctx.JSON(404, helper.Response("fundraise not found"))
@@ -184,7 +195,7 @@ func (ctl *controller) UpdateFundraiseStatus() echo.HandlerFunc {
 			return ctx.JSON(400, helper.Response(err.Error()))
 		}
 
-		fundraise := ctl.service.FindByID(fundraiseID)
+		fundraise := ctl.service.FindByID(fundraiseID, 0)
 
 		if fundraise == nil {
 			return ctx.JSON(404, helper.Response("fundraise not found"))
@@ -219,7 +230,7 @@ func (ctl *controller) DeleteFundraise() echo.HandlerFunc {
 			return ctx.JSON(400, helper.Response(err.Error()))
 		}
 
-		fundraise := ctl.service.FindByID(fundraiseID)
+		fundraise := ctl.service.FindByID(fundraiseID, 0)
 
 		if fundraise == nil {
 			return ctx.JSON(404, helper.Response("fundraise not found"))

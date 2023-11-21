@@ -70,22 +70,28 @@ func FundraiseHandler() fundraise.Handler {
 
 	db := utils.InitDB()
 	clStorage := helpers.NewCloudStorage(config.CLOUD_PROJECT_ID, config.CLOUD_BUCKET_NAME, "fundraises/")
-	repo := fr.New(db, clStorage)
+	mongoDB := utils.ConnectMongo()
+	collection := mongoDB.Collection("bookmarks")
+
+	repo := fr.New(db, clStorage, collection)
 	uc := fu.New(repo, validation)
 	return fh.New(uc)
 }
 
 func UserHandler() user.Handler {
+	cloud := config.LoadCloudStorageConfig()
 	config := config.InitConfig()
 
 	db := utils.InitDB()
 	jwt := helpers.NewJWT(*config)
 	hash := helpers.NewHash()
 	generator := helpers.NewGenerator()
+	validation := helpers.NewValidationRequest()
 	redis := utils.ConnectRedis()
+	clStorage := helpers.NewCloudStorage(cloud.CLOUD_PROJECT_ID, cloud.CLOUD_BUCKET_NAME, "users/")
 
-	repo := ur.New(db, redis)
-	uc := uu.New(repo, jwt, hash, generator)
+	repo := ur.New(db, redis, clStorage)
+	uc := uu.New(repo, jwt, hash, generator, validation)
 	return uh.New(uc)
 }
 
@@ -98,11 +104,10 @@ func AuthHandler() auth.Handler {
 	hash := helpers.NewHash()
 	generator := helpers.NewGenerator()
 	validation := helpers.NewValidationRequest()
-	converter := helpers.NewConverter()
 	redis := utils.ConnectRedis()
 
 	repo := ar.New(db, redis, smtpConfig)
-	uc := au.New(repo, jwt, hash, generator, validation, converter)
+	uc := au.New(repo, jwt, hash, generator, validation)
 	return ah.New(uc)
 }
 
@@ -121,10 +126,14 @@ func VolunteerHandler() volunteer.Handler {
 func NewsHandler() news.Handler {
 	db := utils.InitDB()
 	config := config.LoadCloudStorageConfig()
+	validation := helpers.NewValidationRequest()
 
 	clStorage := helpers.NewCloudStorage(config.CLOUD_PROJECT_ID, config.CLOUD_BUCKET_NAME, "news/")
-	repo := nr.New(db, clStorage)
-	uc := nu.New(repo)
+	mongoDB := utils.ConnectMongo()
+	collection := mongoDB.Collection("bookmarks")
+
+	repo := nr.New(db, clStorage, collection)
+	uc := nu.New(repo, validation)
 	return nh.New(uc)
 }
 
