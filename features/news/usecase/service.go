@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"errors"
+	"fmt"
 	"mime/multipart"
 	"raihpeduli/config"
 	"raihpeduli/features/news"
@@ -25,10 +26,20 @@ func New(model news.Repository, validation helpers.ValidationInterface) news.Use
 	}
 }
 
-func (svc *service) FindAll(page, size int, keyword string) []dtos.ResNews {
+func (svc *service) FindAll(page, size int, keyword string, ownerID int) []dtos.ResNews {
 	var newss []dtos.ResNews
+	var bookmarkIDs map[int]string
 
 	newsEnt, err := svc.model.Paginate(page, size, keyword)
+
+	if ownerID != 0 {
+		bookmarkIDs, err = svc.model.SelectBookmarkedNewsID(ownerID)
+		if err != nil {
+			log.Error(err)
+			return nil
+		}
+		fmt.Println(bookmarkIDs)
+	}
 
 	if err != nil {
 		log.Error(err)
@@ -42,13 +53,20 @@ func (svc *service) FindAll(page, size int, keyword string) []dtos.ResNews {
 			log.Error(err.Error())
 		}
 
+		if bookmarkIDs != nil {
+			bookmarkID, ok := bookmarkIDs[data.ID]
+			if ok {
+				data.BookmarkID = &bookmarkID
+			}
+		}
+
 		newss = append(newss, data)
 	}
 
 	return newss
 }
 
-func (svc *service) FindByID(newsID int) *dtos.ResNews {
+func (svc *service) FindByID(newsID, ownerID int) *dtos.ResNews {
 	var res dtos.ResNews
 	news, err := svc.model.SelectByID(newsID)
 
@@ -56,7 +74,14 @@ func (svc *service) FindByID(newsID int) *dtos.ResNews {
 		logrus.Error(err)
 		return nil
 	}
+	var bookmarkID string
+	if ownerID != 0 {
+		bookmarkID, err = svc.model.SelectBoockmarkByNewsAndOwnerID(newsID, ownerID)
 
+		if bookmarkID != "" {
+			res.BookmarkID = &bookmarkID
+		}
+	}
 	if err := smapping.FillStruct(&res, smapping.MapFields(news)); err != nil {
 		logrus.Error(err)
 		return nil

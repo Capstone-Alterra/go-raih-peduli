@@ -39,7 +39,13 @@ func (ctl *controller) GetNews() echo.HandlerFunc {
 			return ctx.JSON(400, helper.Response("Please provide query `page` and `size` in number!"))
 		}
 
-		newss := ctl.service.FindAll(page, size, keyword)
+		userID := 0
+
+		if ctx.Get("user_id") != nil {
+			userID = ctx.Get("user_id").(int)
+		}
+
+		newss := ctl.service.FindAll(page, size, keyword, userID)
 
 		if newss == nil {
 			return ctx.JSON(404, helper.Response("There is No Newss!"))
@@ -71,7 +77,13 @@ func (ctl *controller) NewsDetails() echo.HandlerFunc {
 			return ctx.JSON(400, helper.Response(err.Error()))
 		}
 
-		news := ctl.service.FindByID(newsID)
+		userID := 0
+
+		if ctx.Get("user_id") != nil {
+			userID = ctx.Get("user_id").(int)
+		}
+
+		news := ctl.service.FindByID(newsID, userID)
 
 		if news == nil {
 			return ctx.JSON(404, helper.Response("News Not Found!"))
@@ -140,7 +152,7 @@ func (ctl *controller) UpdateNews() echo.HandlerFunc {
 			return ctx.JSON(400, helper.Response(err.Error()))
 		}
 
-		news := ctl.service.FindByID(newsID)
+		news := ctl.service.FindByID(newsID, 0)
 
 		if news == nil {
 			return ctx.JSON(404, helper.Response("News Not Found!"))
@@ -188,7 +200,7 @@ func (ctl *controller) DeleteNews() echo.HandlerFunc {
 			return ctx.JSON(400, helper.Response(err.Error()))
 		}
 
-		news := ctl.service.FindByID(newsID)
+		news := ctl.service.FindByID(newsID, 0)
 
 		if news == nil {
 			return ctx.JSON(404, helper.Response("News Not Found!"))
