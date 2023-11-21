@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"mime/multipart"
 	helper "raihpeduli/helpers"
 	"strconv"
 
@@ -113,7 +114,7 @@ func (ctl *controller) CreateUser() echo.HandlerFunc {
 
 func (ctl *controller) UpdateUser() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		input := dtos.InputUser{}
+		input := dtos.InputUpdate{}
 
 		userID, errParam := strconv.Atoi(ctx.Param("id"))
 
@@ -129,7 +130,20 @@ func (ctl *controller) UpdateUser() echo.HandlerFunc {
 
 		ctx.Bind(&input)
 
-		update := ctl.service.Modify(input, userID)
+		fileHeader, err := ctx.FormFile("profile_picture")
+		var file multipart.File
+
+		if err == nil {
+			formFile, err := fileHeader.Open()
+
+			if err != nil {
+				return ctx.JSON(500, helper.Response("something went wrong"))
+			}
+
+			file = formFile
+		}
+
+		update := ctl.service.Modify(input, file, *user)
 
 		if !update {
 			return ctx.JSON(500, helper.Response("Something Went Wrong!"))

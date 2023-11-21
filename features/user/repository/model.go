@@ -1,12 +1,16 @@
 package repository
 
 import (
+	"mime/multipart"
 	"os"
+	"raihpeduli/config"
 	"raihpeduli/features/user"
+	"raihpeduli/helpers"
 	"strconv"
 	"time"
 
 	"github.com/go-redis/redis"
+	"github.com/google/uuid"
 	"github.com/labstack/gommon/log"
 	"github.com/sirupsen/logrus"
 	"github.com/wneessen/go-mail"
@@ -16,12 +20,14 @@ import (
 type model struct {
 	db         *gorm.DB
 	connection *redis.Client
+	clStorage  helpers.CloudStorageInterface
 }
 
-func New(db *gorm.DB, rdClient *redis.Client) user.Repository {
+func New(db *gorm.DB, rdClient *redis.Client, clStorage helpers.CloudStorageInterface) user.Repository {
 	return &model{
 		db:         db,
 		connection: rdClient,
+		clStorage:  clStorage,
 	}
 }
 
@@ -174,4 +180,18 @@ func (mdl *model) GetTotalData() int64 {
 	}
 
 	return totalData
+}
+
+func (mdl *model) UploadFile(file multipart.File, objectName string) (string, error) {
+	config := config.LoadCloudStorageConfig()
+	randomChar := uuid.New().String()
+	if objectName == "" {
+		objectName = randomChar
+	}
+
+	if err := mdl.clStorage.UploadFile(file, objectName); err != nil {
+		return "", err
+	}
+
+	return "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/users/" + objectName, nil
 }

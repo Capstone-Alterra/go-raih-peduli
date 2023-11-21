@@ -2,6 +2,8 @@ package usecase
 
 import (
 	"errors"
+	"mime/multipart"
+	"raihpeduli/config"
 	user "raihpeduli/features/user"
 	"raihpeduli/features/user/dtos"
 	"raihpeduli/helpers"
@@ -120,8 +122,25 @@ func (svc *service) Create(newData dtos.InputUser) (*dtos.ResUser, []string, err
 	return &resUser, nil, nil
 }
 
-func (svc *service) Modify(userData dtos.InputUser, userID int) bool {
-	newUser := user.User{}
+func (svc *service) Modify(userData dtos.InputUpdate, file multipart.File, oldData dtos.ResUser) bool {
+	var newUser user.User
+	var config = config.LoadCloudStorageConfig()
+	var oldFilename string = oldData.ProfilePicture
+	var urlLength int = len("https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/users/")
+
+	if file != nil {
+		if len(oldFilename) > urlLength {
+			oldFilename = oldFilename[urlLength:]
+		}
+		imageURL, err := svc.model.UploadFile(file, oldFilename)
+
+		if err != nil {
+			logrus.Error(err)
+			return false
+		}
+
+		userData.ProfilePicture = imageURL
+	}
 
 	err := smapping.FillStruct(&newUser, smapping.MapFields(userData))
 	if err != nil {
@@ -129,7 +148,7 @@ func (svc *service) Modify(userData dtos.InputUser, userID int) bool {
 		return false
 	}
 
-	newUser.ID = userID
+	newUser.ID = oldData.ID
 	rowsAffected := svc.model.UpdateUser(newUser)
 
 	if rowsAffected == 0 {
