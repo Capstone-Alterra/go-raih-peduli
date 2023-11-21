@@ -70,7 +70,10 @@ func FundraiseHandler() fundraise.Handler {
 
 	db := utils.InitDB()
 	clStorage := helpers.NewCloudStorage(config.CLOUD_PROJECT_ID, config.CLOUD_BUCKET_NAME, "fundraises/")
-	repo := fr.New(db, clStorage)
+	mongoDB := utils.ConnectMongo()
+	collection := mongoDB.Collection("bookmarks")
+
+	repo := fr.New(db, clStorage, collection)
 	uc := fu.New(repo, validation)
 	return fh.New(uc)
 }
