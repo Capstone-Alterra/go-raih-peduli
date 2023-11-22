@@ -5,6 +5,15 @@ type ResponseError struct {
 	Message string `json:"message"`
 }
 
+type Pagination struct {
+	TotalData    int `json:"total_data"`
+	CurrentPage  int `json:"current_page"`
+	NextPage     int `json:"next_page"`
+	PreviousPage int `json:"previous_page"`
+	PageSize     int `json:"page_size"`
+	TotalPage    int `json:"total_page"`
+}
+
 func Response(message string, datas ...map[string]any) map[string]any {
 
 	var res = map[string]any{
@@ -28,4 +37,23 @@ func BuildErrorResponse(message string) ResponseError {
 		Message: message,
 	}
 	return res
+}
+
+func PaginationResponse(page int, pageSize int, totalData int) Pagination {
+	var pagination Pagination
+
+	if pageSize >= totalData {
+		pagination.PreviousPage = -1
+		pagination.NextPage = -1
+	} else {
+		pagination.PreviousPage = max(page-1, -1)
+		pagination.NextPage = min(page+1, (totalData+pageSize-1)/pageSize)
+	}
+
+	pagination.TotalData = totalData
+	pagination.CurrentPage = page
+	pagination.TotalPage = (totalData + pageSize - 1) / pageSize
+	pagination.PageSize = pageSize
+
+	return pagination
 }
