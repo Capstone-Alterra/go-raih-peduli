@@ -24,6 +24,9 @@ type Repository interface {
 	GetTotalDataByTitle(title string) int64
 	GetTotalDataBySkill(title string) int64
 	GetTotalDataByCity(title string) int64
+	GetTotalVolunteerByVacancyID(vacancyID int) int64
+	SelectVolunteerByVacancyID(vacancyID int, name string, page, size int) []Volunteer
+	GetTotalVolunteer(vacancyID int, name string) int64
 }
 
 type Usecase interface {
@@ -34,6 +37,7 @@ type Usecase interface {
 	Create(newVolunteer dtos.InputVolunteer, UserID int, file multipart.File) (*dtos.ResVolunteer, []string, error)
 	Register(newApply dtos.ApplyVolunteer, userID int, file multipart.File) (bool, []string)
 	UpdateStatusRegistrar(status string, registrarID int) bool
+	FindAllVolunteerByVacancyID(page,size int, vacancyID int, name string) ([]dtos.ResRegistrantVacancy, int64)
 }
 
 type Handler interface {
@@ -44,4 +48,5 @@ type Handler interface {
 	CreateVolunteer() echo.HandlerFunc
 	ApplyVacancies() echo.HandlerFunc
 	UpdateStatusRegistrar() echo.HandlerFunc
+	GetVolunteerByVacancyID() echo.HandlerFunc
 }
