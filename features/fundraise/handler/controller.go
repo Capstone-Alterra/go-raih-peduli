@@ -2,7 +2,6 @@ package handler
 
 import (
 	"mime/multipart"
-	"raihpeduli/helpers"
 	helper "raihpeduli/helpers"
 	"strconv"
 
@@ -28,17 +27,10 @@ var validate *validator.Validate
 func (ctl *controller) GetFundraises() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		pagination := dtos.Pagination{}
-		paginationResponse := dtos.PaginationResponse{}
 		ctx.Bind(&pagination)
 
-		page := pagination.Page
-		size := pagination.Size
-		title := ctx.QueryParam("title")
-
-		if page <= 0 || size <= 0 {
-			page = 1
-			size = 10
-		}
+		searchAndFilter := dtos.SearchAndFilter{}
+		ctx.Bind(&searchAndFilter)
 
 		userID := 0
 
@@ -46,22 +38,40 @@ func (ctl *controller) GetFundraises() echo.HandlerFunc {
 			userID = ctx.Get("user_id").(int)
 		}
 
-		fundraises := ctl.service.FindAll(page, size, title, userID)
+		fundraises := ctl.service.FindAll(pagination, searchAndFilter, userID)
 
 		if fundraises == nil {
 			return ctx.JSON(404, helper.Response("fundraises not found"))
 		}
 
-		paginationResponse.TotalData = int64(len(fundraises))
-		paginationResponse.CurrentPage = page
-		if paginationResponse.CurrentPage == 1 {
+		page := pagination.Page
+		size := pagination.Size
+
+		if page <= 0 || size <= 0 {
+			page = 1
+			size = 10
+		}
+
+		paginationResponse := dtos.PaginationResponse{}
+
+		if size >= len(fundraises) {
 			paginationResponse.PreviousPage = -1
 			paginationResponse.NextPage = -1
+		} else if size < len(fundraises) && pagination.Page == 1 {
+			paginationResponse.PreviousPage = -1
+			paginationResponse.NextPage = pagination.Page + 1
 		} else {
 			paginationResponse.PreviousPage = pagination.Page - 1
 			paginationResponse.NextPage = pagination.Page + 1
 		}
+
+		paginationResponse.TotalData = int64(len(fundraises))
+		paginationResponse.CurrentPage = pagination.Page
 		paginationResponse.TotalPage = (len(fundraises) + size - 1) / size
+
+		if paginationResponse.CurrentPage == paginationResponse.TotalPage {
+			paginationResponse.NextPage = -1
+		}
 
 		return ctx.JSON(200, helper.Response("success", map[string]any{
 			"data":       fundraises,
@@ -120,7 +130,7 @@ func (ctl *controller) CreateFundraise() echo.HandlerFunc {
 		fundraise, errMap, err := ctl.service.Create(input, userID.(int), file)
 
 		if errMap != nil {
-			return ctx.JSON(400, helper.Response("missing some data", map[string]any{
+			return ctx.JSON(400, helper.Response("error missing some data", map[string]any{
 				"error": errMap,
 			}))
 		}
@@ -153,15 +163,6 @@ func (ctl *controller) UpdateFundraise() echo.HandlerFunc {
 
 		ctx.Bind(&input)
 
-		validate = validator.New(validator.WithRequiredStructEnabled())
-
-		if err := validate.Struct(input); err != nil {
-			errMap := helpers.ErrorMapValidation(err)
-			return ctx.JSON(400, helper.Response("error missing some data", map[string]any{
-				"error": errMap,
-			}))
-		}
-
 		fileHeader, err := ctx.FormFile("photo")
 		var file multipart.File
 
@@ -175,10 +176,16 @@ func (ctl *controller) UpdateFundraise() echo.HandlerFunc {
 			file = formFile
 		}
 
-		update := ctl.service.Modify(input, file, *fundraise)
+		errMap, err := ctl.service.Modify(input, file, *fundraise)
 
-		if !update {
-			return ctx.JSON(500, helper.Response("something went wrong"))
+		if errMap != nil {
+			return ctx.JSON(400, helper.Response("error missing some data", map[string]any{
+				"error": errMap,
+			}))
+		}
+
+		if err != nil {
+			return ctx.JSON(500, helper.Response(err.Error()))
 		}
 
 		return ctx.JSON(200, helper.Response("fundraise success updated"))
@@ -203,19 +210,16 @@ func (ctl *controller) UpdateFundraiseStatus() echo.HandlerFunc {
 
 		ctx.Bind(&input)
 
-		validate = validator.New(validator.WithRequiredStructEnabled())
+		errMap, err := ctl.service.ModifyStatus(input, *fundraise)
 
-		if err := validate.Struct(input); err != nil {
-			errMap := helpers.ErrorMapValidation(err)
+		if errMap != nil {
 			return ctx.JSON(400, helper.Response("error missing some data", map[string]any{
 				"error": errMap,
 			}))
 		}
 
-		update := ctl.service.ModifyStatus(input, *fundraise)
-
-		if !update {
-			return ctx.JSON(500, helper.Response("something went wrong"))
+		if err != nil {
+			return ctx.JSON(500, helper.Response(err.Error()))
 		}
 
 		return ctx.JSON(200, helper.Response("fundraise success updated"))
