@@ -25,7 +25,7 @@ func New(model fundraise.Repository, validation helpers.ValidationInterface) fun
 	}
 }
 
-func (svc *service) FindAll(pagination dtos.Pagination, searchAndFilter dtos.SearchAndFilter, ownerID int) []dtos.ResFundraise {
+func (svc *service) FindAll(pagination dtos.Pagination, searchAndFilter dtos.SearchAndFilter, ownerID int) ([]dtos.ResFundraise, int64) {
 	var fundraises []dtos.ResFundraise
 	var bookmarkIDs map[int]string
 
@@ -33,8 +33,8 @@ func (svc *service) FindAll(pagination dtos.Pagination, searchAndFilter dtos.Sea
 		pagination.Page = 1
 	}
 	
-	if pagination.Size == 0 {
-		pagination.Size = 10
+	if pagination.PageSize == 0 {
+		pagination.PageSize = 10
 	}
 
 	if searchAndFilter.MaxTarget == 0 {
@@ -48,13 +48,13 @@ func (svc *service) FindAll(pagination dtos.Pagination, searchAndFilter dtos.Sea
 
 		if err != nil {
 			logrus.Error(err)
-			return nil
+			return nil, 0
 		}
 	}
 
 	if err != nil {
 		logrus.Error(err)
-		return nil
+		return nil, 0
 	}
 
 	for _, fundraise := range entities {
@@ -75,7 +75,16 @@ func (svc *service) FindAll(pagination dtos.Pagination, searchAndFilter dtos.Sea
 		fundraises = append(fundraises, data)
 	}
 
-	return fundraises
+	var totalData int64 = 0
+
+	if searchAndFilter.Title != "" || searchAndFilter.MinTarget != 0 || searchAndFilter.MaxTarget != math.MaxInt32 {
+		totalData = svc.model.GetTotalDataBySearchAndFilter(searchAndFilter)
+	} else {
+		totalData = svc.model.GetTotalData()
+	}
+
+
+	return fundraises, totalData
 }
 
 func (svc *service) FindByID(fundraiseID, ownerID int) *dtos.ResFundraise {

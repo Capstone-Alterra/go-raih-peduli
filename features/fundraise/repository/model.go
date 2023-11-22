@@ -9,6 +9,7 @@ import (
 	"raihpeduli/helpers"
 
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -33,10 +34,10 @@ func New(db *gorm.DB, clStorage helpers.CloudStorageInterface, collection *mongo
 func (mdl *model) Paginate(pagination dtos.Pagination, searchAndFilter dtos.SearchAndFilter) ([]fundraise.Fundraise, error) {
 	var fundraises []fundraise.Fundraise
 
-	offset := (pagination.Page - 1) * pagination.Size
+	offset := (pagination.Page - 1) * pagination.PageSize
 	title := "%" + searchAndFilter.Title + "%"
 
-	if err := mdl.db.Offset(offset).Limit(pagination.Size).
+	if err := mdl.db.Offset(offset).Limit(pagination.PageSize).
 		Where("title LIKE ?", title).
 		Where("target >= ?", searchAndFilter.MinTarget).
 		Where("target <= ?", searchAndFilter.MaxTarget).
@@ -132,4 +133,37 @@ func (mdl *model) SelectBookmarkByFundraiseAndOwnerID(fundraiseID, ownerID int) 
 	objectIDString := result["_id"].(primitive.ObjectID).Hex()
 
 	return objectIDString, nil
+}
+
+func (mdl *model) GetTotalData() int64 {
+	var totalData int64
+
+	result := mdl.db.Table("fundraises").Where("deleted_at IS NULL").Count(&totalData)
+
+	if result.Error != nil {
+		logrus.Error(result.Error)
+		return 0
+	}
+
+	return totalData
+}
+
+func (mdl *model) GetTotalDataBySearchAndFilter(searchAndFilter dtos.SearchAndFilter) int64 {
+	var totalData int64
+
+	title := "%" + searchAndFilter.Title + "%"
+
+	result := mdl.db.Table("fundraises").
+		Where("deleted_at IS NULL").
+		Where("title LIKE ?", title).
+		Where("target >= ?", searchAndFilter.MinTarget).
+		Where("target <= ?", searchAndFilter.MaxTarget).
+		Count(&totalData)
+
+	if result.Error != nil {
+		logrus.Error(result.Error)
+		return 0
+	}
+
+	return totalData
 }
