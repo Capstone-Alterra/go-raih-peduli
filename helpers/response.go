@@ -43,8 +43,8 @@ func PaginationResponse(page int, pageSize int, totalData int) Pagination {
 	var pagination Pagination
 
 	if pageSize >= totalData {
-		pagination.PreviousPage = -1
-		pagination.NextPage = -1
+		pagination.PreviousPage = 0
+		pagination.NextPage = 0
 	} else {
 		pagination.PreviousPage = max(page-1, -1)
 		pagination.NextPage = min(page+1, (totalData+pageSize-1)/pageSize)
