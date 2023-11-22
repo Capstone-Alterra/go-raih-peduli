@@ -2,6 +2,7 @@ package handler
 
 import (
 	"mime/multipart"
+	"raihpeduli/helpers"
 	helper "raihpeduli/helpers"
 	"strconv"
 
@@ -38,40 +39,21 @@ func (ctl *controller) GetFundraises() echo.HandlerFunc {
 			userID = ctx.Get("user_id").(int)
 		}
 
-		fundraises := ctl.service.FindAll(pagination, searchAndFilter, userID)
+		fundraises, totalData := ctl.service.FindAll(pagination, searchAndFilter, userID)
 
 		if fundraises == nil {
 			return ctx.JSON(404, helper.Response("fundraises not found"))
 		}
 
 		page := pagination.Page
-		size := pagination.Size
+		pageSize := pagination.PageSize
 
-		if page <= 0 || size <= 0 {
+		if page <= 0 || pageSize <= 0 {
 			page = 1
-			size = 10
+			pageSize = 10
 		}
 
-		paginationResponse := dtos.PaginationResponse{}
-
-		if size >= len(fundraises) {
-			paginationResponse.PreviousPage = -1
-			paginationResponse.NextPage = -1
-		} else if size < len(fundraises) && pagination.Page == 1 {
-			paginationResponse.PreviousPage = -1
-			paginationResponse.NextPage = pagination.Page + 1
-		} else {
-			paginationResponse.PreviousPage = pagination.Page - 1
-			paginationResponse.NextPage = pagination.Page + 1
-		}
-
-		paginationResponse.TotalData = int64(len(fundraises))
-		paginationResponse.CurrentPage = pagination.Page
-		paginationResponse.TotalPage = (len(fundraises) + size - 1) / size
-
-		if paginationResponse.CurrentPage == paginationResponse.TotalPage {
-			paginationResponse.NextPage = -1
-		}
+		paginationResponse := helpers.PaginationResponse(page, pageSize, int(totalData))
 
 		return ctx.JSON(200, helper.Response("success", map[string]any{
 			"data":       fundraises,
