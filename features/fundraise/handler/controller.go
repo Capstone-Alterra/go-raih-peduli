@@ -54,10 +54,10 @@ func (ctl *controller) GetFundraises() echo.HandlerFunc {
 
 		paginationResponse := dtos.PaginationResponse{}
 
-		if pagination.Size >= len(fundraises) {
+		if size >= len(fundraises) {
 			paginationResponse.PreviousPage = -1
 			paginationResponse.NextPage = -1
-		} else if pagination.Size < len(fundraises) && pagination.Page == 1 {
+		} else if size < len(fundraises) && pagination.Page == 1 {
 			paginationResponse.PreviousPage = -1
 			paginationResponse.NextPage = pagination.Page + 1
 		} else {
@@ -67,7 +67,7 @@ func (ctl *controller) GetFundraises() echo.HandlerFunc {
 
 		paginationResponse.TotalData = int64(len(fundraises))
 		paginationResponse.CurrentPage = pagination.Page
-		paginationResponse.TotalPage = (len(fundraises) + pagination.Size - 1) / pagination.Size
+		paginationResponse.TotalPage = (len(fundraises) + size - 1) / size
 
 		if paginationResponse.CurrentPage == paginationResponse.TotalPage {
 			paginationResponse.NextPage = -1
