@@ -5,6 +5,7 @@ import (
 	"mime/multipart"
 	"raihpeduli/config"
 	"raihpeduli/features/fundraise"
+	"raihpeduli/features/fundraise/dtos"
 	"raihpeduli/helpers"
 
 	"github.com/google/uuid"
@@ -29,13 +30,17 @@ func New(db *gorm.DB, clStorage helpers.CloudStorageInterface, collection *mongo
 	}
 }
 
-func (mdl *model) Paginate(page int, size int, title string) ([]fundraise.Fundraise, error) {
+func (mdl *model) Paginate(pagination dtos.Pagination, searchAndFilter dtos.SearchAndFilter) ([]fundraise.Fundraise, error) {
 	var fundraises []fundraise.Fundraise
 
-	offset := (page - 1) * size
-	titleName := "%" + title + "%"
+	offset := (pagination.Page - 1) * pagination.Size
+	title := "%" + searchAndFilter.Title + "%"
 
-	if err := mdl.db.Offset(offset).Limit(size).Where("title LIKE ?", titleName).Find(&fundraises).Error; err != nil {
+	if err := mdl.db.Offset(offset).Limit(pagination.Size).
+		Where("title LIKE ?", title).
+		Where("target >= ?", searchAndFilter.MinTarget).
+		Where("target <= ?", searchAndFilter.MaxTarget).
+		Find(&fundraises).Error; err != nil {
 		return nil, err
 	}
 

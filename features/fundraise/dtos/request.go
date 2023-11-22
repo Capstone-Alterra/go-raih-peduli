@@ -19,3 +19,9 @@ type Pagination struct {
 	Page int `query:"page"`
 	Size int `query:"size"`
 }
+
+type SearchAndFilter struct {
+	Title string `query:"title"`
+	MinTarget int32 `query:"min_target"`
+	MaxTarget int32 `query:"max_target"`
+}
