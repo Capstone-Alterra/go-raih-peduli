@@ -17,7 +17,7 @@ type InputFundraiseStatus struct {
 
 type Pagination struct {
 	Page int `query:"page"`
-	Size int `query:"size"`
+	PageSize int `query:"page_size"`
 }
 
 type SearchAndFilter struct {
