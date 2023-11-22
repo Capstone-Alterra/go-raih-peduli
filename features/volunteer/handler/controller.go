@@ -257,3 +257,38 @@ func (ctl *controller) UpdateStatusRegistrar() echo.HandlerFunc {
 		return ctx.JSON(200, helper.Response("Registrar Success Updated!"))
 	}
 }
+
+func (ctl *controller) GetVolunteerByVacancyID() echo.HandlerFunc {
+	return func (ctx echo.Context) error {
+		pagination := dtos.Pagination{}
+
+		vacancyID, errParam := strconv.Atoi(ctx.Param("vacancy_id"))
+		if errParam != nil {
+			return ctx.JSON(400, helper.Response(errParam.Error()))
+		}
+		
+		ctx.Bind(&pagination)
+
+		if pagination.Page < 1 || pagination.Size < 1 {
+			pagination.Page = 1
+			pagination.Size = 20
+		}
+
+		page := pagination.Page
+		size := pagination.Size
+		name := ctx.QueryParam("name")
+
+		volunteers, totalData := ctl.service.FindAllVolunteerByVacancyID(page, size, vacancyID, name)
+
+		if volunteers == nil {
+			return ctx.JSON(404, helper.Response("There is No Volunteers!"))
+		}
+
+		paginationResponse := helpers.PaginationResponse(page, size, int(totalData))
+
+		return ctx.JSON(200, helper.Response("Success!", map[string]any{
+			"data":       volunteers,
+			"pagination": paginationResponse,
+		}))
+	}
+}

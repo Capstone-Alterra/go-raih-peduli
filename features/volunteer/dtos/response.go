@@ -20,9 +20,18 @@ type ResVolunteer struct {
 	SubDistrict         string         `json:"sub_district"`
 	Photo               string         `json:"photo"`
 	Status              string         `json:"status"`
+	TotalRegistrar 		int 		   `json:"total_registrar"`
 	CreatedAt           time.Time      `json:"created_at"`
 	UpdatedAt           time.Time      `json:"updated_at"`
 	DeletedAt           gorm.DeletedAt `json:"deleted_at"`
+}
+
+type ResRegistrantVacancy struct {
+	Fullname		string		`json:"fullname"`
+	Address			string		`json:"address"`
+	Nik				string		`json:"nik"`
+	Resume			string		`json:"resume"`
+	Status			string		`json:"status"`
 }
 
 type PaginationResponse struct {
