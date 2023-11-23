@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/labstack/gommon/log"
 	"github.com/sirupsen/logrus"
 )
 
@@ -70,7 +69,7 @@ func (j *JWT) GenerateTokenResetPassword(userID string, roleID string) string {
 	return validToken
 }
 
-func (j JWT) RefereshJWT(accessToken string, refreshToken *jwt.Token) map[string]any {
+func (j JWT) RefereshJWT(accessToken *jwt.Token, refreshToken *jwt.Token) map[string]any {
 	var result = map[string]any{}
 	expTime, err := refreshToken.Claims.GetExpirationTime()
 	if err != nil {
@@ -78,20 +77,13 @@ func (j JWT) RefereshJWT(accessToken string, refreshToken *jwt.Token) map[string
 		return nil
 	}
 	if refreshToken.Valid && expTime.Time.Compare(time.Now()) > 0 {
-		var newClaim = jwt.MapClaims{}
+		var newClaim = accessToken.Claims.(jwt.MapClaims)
 
-		newToken, err := jwt.ParseWithClaims(accessToken, newClaim, func(t *jwt.Token) (interface{}, error) {
-			return []byte(j.signKey), nil
-		})
-
-		if err != nil {
-			log.Error(err.Error())
-			return nil
-		}
-
-		newClaim = newToken.Claims.(jwt.MapClaims)
 		newClaim["iat"] = time.Now().Unix()
-		newClaim["exp"] = time.Now().Add(time.Hour * 1).Unix()
+		newClaim["exp"] = time.Now().Add(time.Minute * 10).Unix()
+
+		var newToken = jwt.NewWithClaims(accessToken.Method, newClaim)
+		newSignedToken, _ := newToken.SignedString(accessToken.Signature)
 
 		var newRefreshClaim = refreshToken.Claims.(jwt.MapClaims)
 		newRefreshClaim["exp"] = time.Now().Add(time.Hour * 24).Unix()
@@ -99,7 +91,7 @@ func (j JWT) RefereshJWT(accessToken string, refreshToken *jwt.Token) map[string
 		var newRefreshToken = jwt.NewWithClaims(refreshToken.Method, newRefreshClaim)
 		newSignedRefreshToken, _ := newRefreshToken.SignedString(refreshToken.Signature)
 
-		result["access_token"] = newToken.Raw
+		result["access_token"] = newSignedToken
 		result["refresh_token"] = newSignedRefreshToken
 		return result
 	}

@@ -278,12 +278,17 @@ func (svc *service) ResetPassword(newData dtos.ResetPassword) error {
 }
 
 func (svc *service) RefreshJWT(jwt dtos.RefreshJWT) (*dtos.ResJWT, error) {
-	parsedToken, err := svc.jwt.ValidateToken(jwt.RefreshToken, os.Getenv("SECRET"))
+	parsedAccessToken, err := svc.jwt.ValidateToken(jwt.AccessToken, os.Getenv("SECRET"))
 	if err != nil {
 		return nil, errors.New("validate token failed")
 	}
 
-	token := svc.jwt.RefereshJWT(jwt.AccessToken, parsedToken)
+	parsedRefreshToken, err := svc.jwt.ValidateToken(jwt.RefreshToken, os.Getenv("SECRET"))
+	if err != nil {
+		return nil, errors.New("validate token failed")
+	}
+
+	token := svc.jwt.RefereshJWT(parsedAccessToken, parsedRefreshToken)
 	if token == nil {
 		return nil, errors.New("refresh jwt failed")
 	}
