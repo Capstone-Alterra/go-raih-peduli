@@ -13,6 +13,7 @@ func Users(e *echo.Echo, handler user.Handler, jwt helpers.JWTInterface, config 
 	users := e.Group("/users")
 
 	users.GET("", handler.GetUsers())
+	users.GET("", handler.MyProfile(), m.AuthorizeJWT(jwt, 1, config.SECRET))
 	users.POST("", handler.CreateUser())
 	users.POST("/verify", handler.VerifyEmail())
 	users.POST("/forget-password", handler.ForgetPassword())

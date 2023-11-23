@@ -279,3 +279,18 @@ func (ctl *controller) ResetPassword() echo.HandlerFunc {
 		return ctx.JSON(200, helper.Response("Success Reset Password!"))
 	}
 }
+
+func (ctl *controller) MyProfile() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		userID := ctx.Get("user_id").(int)
+
+		user := ctl.service.FindByID(userID)
+		if user == nil {
+			return ctx.JSON(404, helper.Response("User Not Found!"))
+		}
+
+		return ctx.JSON(200, helper.Response("Success!", map[string]any{
+			"data": user,
+		}))
+	}
+}

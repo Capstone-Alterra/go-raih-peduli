@@ -45,4 +45,5 @@ type Handler interface {
 	ForgetPassword() echo.HandlerFunc
 	VerifyOTP() echo.HandlerFunc
 	ResetPassword() echo.HandlerFunc
+	MyProfile() echo.HandlerFunc
 }
