@@ -139,7 +139,51 @@ func (ctl *controller) UpdateUser() echo.HandlerFunc {
 			file = formFile
 		}
 
-		update := ctl.service.Modify(input, file, *user)
+		update, errMap := ctl.service.Modify(input, file, *user)
+		if errMap != nil {
+			return ctx.JSON(400, helper.Response("missing some data", map[string]any{
+				"error": errMap,
+			}))
+		}
+
+		if !update {
+			return ctx.JSON(500, helper.Response("Something Went Wrong!"))
+		}
+
+		return ctx.JSON(200, helper.Response("User Success Updated!"))
+	}
+}
+
+func (ctl *controller) UpdateProfilePicture() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		input := dtos.InputUpdateProfilePicture{}
+
+		userID := ctx.Get("user_id").(int)
+
+		user := ctl.service.FindByID(userID)
+
+		if user == nil {
+			return ctx.JSON(404, helper.Response("User Not Found!"))
+		}
+
+		fileHeader, err := ctx.FormFile("profile_picture")
+
+		if err == nil {
+			formFile, err := fileHeader.Open()
+
+			if err != nil {
+				return ctx.JSON(500, helper.Response("something went wrong"))
+			}
+
+			input.ProfilePicture = formFile
+		}
+
+		update, errMap := ctl.service.ModifyProfilePicture(input, *user)
+		if errMap != nil {
+			return ctx.JSON(400, helper.Response("missing some data", map[string]any{
+				"error": errMap,
+			}))
+		}
 
 		if !update {
 			return ctx.JSON(500, helper.Response("Something Went Wrong!"))
