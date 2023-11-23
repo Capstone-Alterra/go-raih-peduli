@@ -32,6 +32,14 @@ type StatusRegistrar struct {
 }
 
 type Pagination struct {
-	Page int `query:"page"`
-	Size int `query:"size"`
+	Page     int `query:"page"`
+	PageSize int `query:"page_size"`
+}
+
+type SearchAndFilter struct {
+	Title          string `query:"title"`
+	City           string `query:"city"`
+	Skill          string `query:"skill"`
+	MinParticipant int32  `query:"min_participant"`
+	MaxParticipant int32  `query:"max_participant"`
 }
