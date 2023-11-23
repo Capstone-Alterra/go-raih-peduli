@@ -5,6 +5,7 @@ import (
 	"raihpeduli/features/bookmark"
 	"raihpeduli/features/bookmark/dtos"
 	"raihpeduli/features/bookmark/mocks"
+	helperMocks "raihpeduli/helpers/mocks"
 	"testing"
 	"time"
 
@@ -14,7 +15,8 @@ import (
 
 func TestFindAll(t *testing.T) {
 	var repository = mocks.NewRepository(t)
-	var service = New(repository)
+	var validation = helperMocks.NewValidationInterface(t)
+	var service = New(repository, validation)
 
 	var bookmarked_news = []dtos.ResNews{}
 	var bookmarked_vacancies = []dtos.ResVolunteerVacancy{}
@@ -60,7 +62,8 @@ func TestFindAll(t *testing.T) {
 
 func TestFindByID(t *testing.T) {
 	var repository = mocks.NewRepository(t)
-	var service = New(repository)
+	var validation = helperMocks.NewValidationInterface(t)
+	var service = New(repository, validation)
 
 	var bookmarked_fundraise = bson.M{
 		"_id": "paowdpa1l2knj1i2kj3",
@@ -97,7 +100,8 @@ func TestFindByID(t *testing.T) {
 
 func TestSetBookmark(t *testing.T) {
 	var repository = mocks.NewRepository(t)
-	var service = New(repository)
+	var validation = helperMocks.NewValidationInterface(t)
+	var service = New(repository, validation)
 
 	var input = dtos.InputBookmarkPost{
 		PostID: 1,
@@ -146,33 +150,41 @@ func TestSetBookmark(t *testing.T) {
 	var ownerID = 1
 	var postType = "fundraise"
 
+	var errorValidation = []string{"PostID is required"}
+
 	t.Run("Success", func(t *testing.T) {
+		validation.On("ValidateRequest", input).Return(nil).Once()
 		repository.On("SelectByPostAndOwnerID", postID, ownerID, postType).Return(nil, errors.New("not found")).Once()
 		repository.On("SelectFundraiseByID", postID).Return(&fundraise, nil).Once()
 		repository.On("Insert", document).Return(true, nil).Once()
 
-		result, err := service.SetBookmark(input, ownerID)
+		result, errMap, err := service.SetBookmark(input, ownerID)
+		assert.Nil(t, errMap)
 		assert.Nil(t, err)
 		assert.True(t, result)
 		repository.AssertExpectations(t)
 	})
 
 	t.Run("Failed : Error When Insert", func(t *testing.T) {
+		validation.On("ValidateRequest", input).Return(nil).Once()
 		repository.On("SelectByPostAndOwnerID", postID, ownerID, postType).Return(nil, errors.New("not found")).Once()
 		repository.On("SelectFundraiseByID", postID).Return(&fundraise, nil).Once()
 		repository.On("Insert", document).Return(false, errors.New("error when insert")).Once()
 
-		result, err := service.SetBookmark(input, ownerID)
+		result, errMap, err := service.SetBookmark(input, ownerID)
+		assert.Nil(t, errMap)
 		assert.NotNil(t, err)
 		assert.False(t, result)
 		repository.AssertExpectations(t)
 	})
 
-	t.Run("Failed : Error When Insert", func(t *testing.T) {
+	t.Run("Failed : Error Fundraise Not Found", func(t *testing.T) {
+		validation.On("ValidateRequest", input).Return(nil).Once()
 		repository.On("SelectByPostAndOwnerID", postID, ownerID, postType).Return(nil, errors.New("not found")).Once()
 		repository.On("SelectFundraiseByID", postID).Return(nil, errors.New("not found")).Once()
 
-		result, err := service.SetBookmark(input, ownerID)
+		result, errMap, err := service.SetBookmark(input, ownerID)
+		assert.Nil(t, errMap)
 		assert.NotNil(t, err)
 		assert.False(t, result)
 		repository.AssertExpectations(t)
@@ -180,9 +192,11 @@ func TestSetBookmark(t *testing.T) {
 
 	t.Run("Failed : Unknown Post Type", func(t *testing.T) {
 		input.PostType = "unknown_post_type"
+		validation.On("ValidateRequest", input).Return(nil).Once()
 		repository.On("SelectByPostAndOwnerID", postID, ownerID, input.PostType).Return(nil, errors.New("not found")).Once()
 
-		result, err := service.SetBookmark(input, ownerID)
+		result, errMap, err := service.SetBookmark(input, ownerID)
+		assert.Nil(t, errMap)
 		assert.NotNil(t, err)
 		assert.False(t, result)
 		repository.AssertExpectations(t)
@@ -190,9 +204,22 @@ func TestSetBookmark(t *testing.T) {
 
 	t.Run("Failed : Post Already Bookmarked By This User", func(t *testing.T) {
 		input.PostType = "fundraise"
+		validation.On("ValidateRequest", input).Return(nil).Once()
 		repository.On("SelectByPostAndOwnerID", postID, ownerID, postType).Return(&bookmarked_fundraise, nil).Once()
 
-		result, err := service.SetBookmark(input, ownerID)
+		result, errMap, err := service.SetBookmark(input, ownerID)
+		assert.Nil(t, errMap)
+		assert.NotNil(t, err)
+		assert.False(t, result)
+		repository.AssertExpectations(t)
+	})
+
+	t.Run("Failed : Error When Validate Request", func(t *testing.T) {
+		input.PostID = 0
+		validation.On("ValidateRequest", input).Return(errorValidation).Once()
+
+		result, errMap, err := service.SetBookmark(input, ownerID)
+		assert.NotNil(t, errMap)
 		assert.NotNil(t, err)
 		assert.False(t, result)
 		repository.AssertExpectations(t)
@@ -201,7 +228,8 @@ func TestSetBookmark(t *testing.T) {
 
 func TestUnsetBookmark(t *testing.T) {
 	var repository = mocks.NewRepository(t)
-	var service = New(repository)
+	var validation = helperMocks.NewValidationInterface(t)
+	var service = New(repository, validation)
 
 	var bookmarked_fundraise = bson.M{
 		"_id": "awdopjakwpdopok123opk",
@@ -219,6 +247,7 @@ func TestUnsetBookmark(t *testing.T) {
 
 	var bookmarkID = "awdopjakwpdopok123opk"
 	var ownerID = 1
+
 
 	t.Run("Success", func(t *testing.T) {
 		repository.On("DeleteByID", bookmarkID).Return(1, nil).Once()
