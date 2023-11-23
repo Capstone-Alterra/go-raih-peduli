@@ -1,34 +1,47 @@
 package repository
 
 import (
+	"context"
 	"mime/multipart"
 	"raihpeduli/config"
 	"raihpeduli/features/fundraise"
+	"raihpeduli/features/fundraise/dtos"
 	"raihpeduli/helpers"
 
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"gorm.io/gorm"
 )
 
 type model struct {
 	db        *gorm.DB
 	clStorage helpers.CloudStorageInterface
+	collection *mongo.Collection
 }
 
-func New(db *gorm.DB, clStorage helpers.CloudStorageInterface) fundraise.Repository {
+func New(db *gorm.DB, clStorage helpers.CloudStorageInterface, collection *mongo.Collection) fundraise.Repository {
 	return &model{
 		db:        db,
 		clStorage: clStorage,
+		collection: collection,
 	}
 }
 
-func (mdl *model) Paginate(page int, size int, title string) ([]fundraise.Fundraise, error) {
+func (mdl *model) Paginate(pagination dtos.Pagination, searchAndFilter dtos.SearchAndFilter) ([]fundraise.Fundraise, error) {
 	var fundraises []fundraise.Fundraise
 
-	offset := (page - 1) * size
-	titleName := "%" + title + "%"
+	offset := (pagination.Page - 1) * pagination.PageSize
+	title := "%" + searchAndFilter.Title + "%"
 
-	if err := mdl.db.Offset(offset).Limit(size).Where("title LIKE ?", titleName).Find(&fundraises).Error; err != nil {
+	if err := mdl.db.Offset(offset).Limit(pagination.PageSize).
+		Where("title LIKE ?", title).
+		Where("target >= ?", searchAndFilter.MinTarget).
+		Where("target <= ?", searchAndFilter.MaxTarget).
+		Find(&fundraises).Error; err != nil {
 		return nil, err
 	}
 
@@ -85,4 +98,72 @@ func (mdl *model) UploadFile(file multipart.File, objectName string) (string, er
 	}
 
 	return "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/fundraises/" + objectName, nil
+}
+
+func (mdl *model) SelectBookmarkedFundraiseID(ownerID int) (map[int]string, error) {
+	opts := options.Find().SetProjection(bson.M{"post_id": 1, "_id": 1})
+	cursor, err := mdl.collection.Find(context.Background(), bson.M{"owner_id": ownerID, "post_type": "fundraise"}, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []bson.M
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		return nil, err
+	}
+
+	var mapPostIDs = map[int]string{}
+	
+	for _, data := range results {
+		postID := int(data["post_id"].(int32))
+		mapPostIDs[postID] = data["_id"].(primitive.ObjectID).Hex()
+	}
+
+	return mapPostIDs, nil
+}
+
+func (mdl *model) SelectBookmarkByFundraiseAndOwnerID(fundraiseID, ownerID int) (string, error) {
+	opts := options.FindOne().SetProjection(bson.M{"_id": 1})
+
+	var result bson.M
+	if err := mdl.collection.FindOne(context.Background(), bson.M{"owner_id": ownerID, "post_id": fundraiseID, "post_type": "fundraise"}, opts).Decode(&result); err != nil {
+		return "", err
+	}
+
+	objectIDString := result["_id"].(primitive.ObjectID).Hex()
+
+	return objectIDString, nil
+}
+
+func (mdl *model) GetTotalData() int64 {
+	var totalData int64
+
+	result := mdl.db.Table("fundraises").Where("deleted_at IS NULL").Count(&totalData)
+
+	if result.Error != nil {
+		logrus.Error(result.Error)
+		return 0
+	}
+
+	return totalData
+}
+
+func (mdl *model) GetTotalDataBySearchAndFilter(searchAndFilter dtos.SearchAndFilter) int64 {
+	var totalData int64
+
+	title := "%" + searchAndFilter.Title + "%"
+
+	result := mdl.db.Table("fundraises").
+		Where("deleted_at IS NULL").
+		Where("title LIKE ?", title).
+		Where("target >= ?", searchAndFilter.MinTarget).
+		Where("target <= ?", searchAndFilter.MaxTarget).
+		Count(&totalData)
+
+	if result.Error != nil {
+		logrus.Error(result.Error)
+		return 0
+	}
+
+	return totalData
 }

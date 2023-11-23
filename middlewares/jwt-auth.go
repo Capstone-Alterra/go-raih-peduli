@@ -15,6 +15,9 @@ func AuthorizeJWT(jwtService helpers.JWTInterface, role int, secret string) echo
 		return func(ctx echo.Context) error {
 			authHeader := ctx.Request().Header.Get("Authorization")
 			if authHeader == "" {
+				if role == -1 {
+					return next(ctx)
+				}
 				response := helpers.BuildErrorResponse("no token found")
 				return ctx.JSON(http.StatusBadRequest, response)
 			}
@@ -33,7 +36,7 @@ func AuthorizeJWT(jwtService helpers.JWTInterface, role int, secret string) echo
 				ctx.Set("user_id", userID)
 				ctx.Set("role_id", claims["role_id"])
 
-				if role == 0 {
+				if role == 0 || role == -1 || roleID == 3 {
 					return next(ctx)
 				}
 

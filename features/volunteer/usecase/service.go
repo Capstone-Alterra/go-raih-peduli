@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"errors"
+	"math"
 	"mime/multipart"
 	"raihpeduli/features/volunteer"
 	"raihpeduli/features/volunteer/dtos"
@@ -24,25 +25,14 @@ func New(model volunteer.Repository, validation helpers.ValidationInterface) vol
 	}
 }
 
-func (svc *service) FindAll(page, size int, title, skill, city string) ([]dtos.ResVolunteer, int64) {
+func (svc *service) FindAll(page, size int, searchAndFilter dtos.SearchAndFilter) ([]dtos.ResVolunteer, int64) {
 	var volunteers []dtos.ResVolunteer
 
-	var volunteersEnt []volunteer.VolunteerVacancies
-
-	var totalData int64
-	if title != "" {
-		volunteersEnt = svc.model.SelectByTitle(page, size, title)
-		totalData = svc.model.GetTotalDataByTitle(title)
-	} else if skill != "" {
-		volunteersEnt = svc.model.SelectBySkill(page, size, skill)
-		totalData = svc.model.GetTotalDataBySkill(skill)
-	} else if city != "" {
-		volunteersEnt = svc.model.SelectByCity(page, size, city)
-		totalData = svc.model.GetTotalDataByCity(city)
-	} else {
-		volunteersEnt = svc.model.Paginate(page, size)
-		totalData = svc.model.GetTotalData()
+	if searchAndFilter.MaxParticipant == 0 {
+		searchAndFilter.MaxParticipant = math.MaxInt32
 	}
+
+	volunteersEnt := svc.model.Paginate(page, size, searchAndFilter)
 
 	for _, volunteer := range volunteersEnt {
 		var data dtos.ResVolunteer
@@ -52,6 +42,14 @@ func (svc *service) FindAll(page, size int, title, skill, city string) ([]dtos.R
 		}
 
 		volunteers = append(volunteers, data)
+	}
+
+	var totalData int64 = 0
+
+	if searchAndFilter.Title != "" || searchAndFilter.Skill != "" || searchAndFilter.City != "" || searchAndFilter.MinParticipant != 0 || searchAndFilter.MaxParticipant != math.MaxInt32 {
+		totalData = svc.model.GetTotalDataVacanciesBySearchAndFilter(searchAndFilter)
+	} else {
+		totalData = svc.model.GetTotalDataVacancies()
 	}
 
 	return volunteers, totalData
@@ -70,6 +68,8 @@ func (svc *service) FindByID(volunteerID int) *dtos.ResVolunteer {
 		log.Error(err)
 		return nil
 	}
+
+	res.TotalRegistrar = int(svc.model.GetTotalVolunteerByVacancyID(res.ID))
 
 	return &res
 }
@@ -200,4 +200,27 @@ func (svc *service) Register(newApply dtos.ApplyVolunteer, userID int, file mult
 	}
 
 	return true, nil
+}
+
+func (svc *service) FindAllVolunteerByVacancyID(page, size int, vacancyID int, name string) ([]dtos.ResRegistrantVacancy, int64) {
+	var volunteers []dtos.ResRegistrantVacancy
+
+	volunteerEnt := svc.model.SelectVolunteerByVacancyID(vacancyID, name, page, size)
+	if volunteerEnt == nil {
+		return nil, 0
+	}
+
+	for _, volunteer := range volunteerEnt {
+		var data dtos.ResRegistrantVacancy
+
+		if err := smapping.FillStruct(&data, smapping.MapFields(volunteer)); err != nil {
+			log.Error(err.Error())
+		}
+
+		volunteers = append(volunteers, data)
+	}
+
+	totalData := svc.model.GetTotalVolunteer(vacancyID, name)
+
+	return volunteers, totalData
 }

@@ -70,7 +70,10 @@ func FundraiseHandler() fundraise.Handler {
 
 	db := utils.InitDB()
 	clStorage := helpers.NewCloudStorage(config.CLOUD_PROJECT_ID, config.CLOUD_BUCKET_NAME, "fundraises/")
-	repo := fr.New(db, clStorage)
+	mongoDB := utils.ConnectMongo()
+	collection := mongoDB.Collection("bookmarks")
+
+	repo := fr.New(db, clStorage, collection)
 	uc := fu.New(repo, validation)
 	return fh.New(uc)
 }
@@ -123,10 +126,14 @@ func VolunteerHandler() volunteer.Handler {
 func NewsHandler() news.Handler {
 	db := utils.InitDB()
 	config := config.LoadCloudStorageConfig()
+	validation := helpers.NewValidationRequest()
 
 	clStorage := helpers.NewCloudStorage(config.CLOUD_PROJECT_ID, config.CLOUD_BUCKET_NAME, "news/")
-	repo := nr.New(db, clStorage)
-	uc := nu.New(repo)
+	mongoDB := utils.ConnectMongo()
+	collection := mongoDB.Collection("bookmarks")
+
+	repo := nr.New(db, clStorage, collection)
+	uc := nu.New(repo, validation)
 	return nh.New(uc)
 }
 

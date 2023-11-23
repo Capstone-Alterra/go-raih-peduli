@@ -14,12 +14,14 @@ type Repository interface {
 	Update(news News) (int, error)
 	DeleteByID(newsID int) (int, error)
 	UploadFile(file multipart.File, objectName string) (string, error)
+	SelectBookmarkedNewsID(ownerID int) (map[int]string, error)
+	SelectBoockmarkByNewsAndOwnerID(newsID, ownerID int) (string, error)
 }
 
 type Usecase interface {
-	FindAll(page, size int, keyword string) []dtos.ResNews
-	FindByID(newsID int) *dtos.ResNews
-	Create(newNews dtos.InputNews, userID int, file multipart.File) (*dtos.ResNews, error)
+	FindAll(page, size int, keyword string, ownerID int) []dtos.ResNews
+	FindByID(newsID, ownerID int) *dtos.ResNews
+	Create(newNews dtos.InputNews, userID int, file multipart.File) (*dtos.ResNews, []string, error)
 	Modify(newsData dtos.InputNews, file multipart.File, oldData dtos.ResNews) bool
 	Remove(newsID int) bool
 }

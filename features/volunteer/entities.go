@@ -29,6 +29,14 @@ type VolunteerVacancies struct {
 	VolunteerRelationships []VolunteerRelations `gorm:"foreignKey:VolunteerID;references:ID"`
 }
 
+type Volunteer struct {
+	Fullname		string		`gorm:"type:varchar(255)"`
+	Address			string		`gorm:"type:varchar(255)"`
+	Nik				string		`gorm:"type:varchar(255)"`
+	Resume			string		`gorm:"type:varchar(255)"`
+	Status			string 		`gorm:"type:enum('pending','accepted','rejected')"`
+}
+
 
 type VolunteerRelations struct {
 	ID                  int    		`gorm:"type:int(11); primaryKey"`

@@ -27,6 +27,8 @@ var validate *validator.Validate
 func (ctl *controller) GetNews() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		pagination := dtos.Pagination{}
+		paginationResponse := dtos.PaginationResponse{}
+
 		ctx.Bind(&pagination)
 
 		page := pagination.Page
@@ -37,14 +39,32 @@ func (ctl *controller) GetNews() echo.HandlerFunc {
 			return ctx.JSON(400, helper.Response("Please provide query `page` and `size` in number!"))
 		}
 
-		newss := ctl.service.FindAll(page, size, keyword)
+		userID := 0
+
+		if ctx.Get("user_id") != nil {
+			userID = ctx.Get("user_id").(int)
+		}
+
+		newss := ctl.service.FindAll(page, size, keyword, userID)
 
 		if newss == nil {
 			return ctx.JSON(404, helper.Response("There is No Newss!"))
 		}
 
+		paginationResponse.TotalData = int64(len(newss))
+		paginationResponse.CurrentPage = page
+		if paginationResponse.CurrentPage == 1 {
+			paginationResponse.PreviousPage = -1
+			paginationResponse.NextPage = -1
+		} else {
+			paginationResponse.PreviousPage = pagination.Page - 1
+			paginationResponse.NextPage = pagination.Page + 1
+		}
+		paginationResponse.TotalPage = (len(newss) + size - 1) / size
+
 		return ctx.JSON(200, helper.Response("Success!", map[string]any{
-			"data": newss,
+			"data":       newss,
+			"pagination": paginationResponse,
 		}))
 	}
 }
@@ -57,7 +77,13 @@ func (ctl *controller) NewsDetails() echo.HandlerFunc {
 			return ctx.JSON(400, helper.Response(err.Error()))
 		}
 
-		news := ctl.service.FindByID(newsID)
+		userID := 0
+
+		if ctx.Get("user_id") != nil {
+			userID = ctx.Get("user_id").(int)
+		}
+
+		news := ctl.service.FindByID(newsID, userID)
 
 		if news == nil {
 			return ctx.JSON(404, helper.Response("News Not Found!"))
@@ -98,7 +124,13 @@ func (ctl *controller) CreateNews() echo.HandlerFunc {
 
 			file = formFile
 		}
-		news, err := ctl.service.Create(input, userID.(int), file)
+		news, errMap, err := ctl.service.Create(input, userID.(int), file)
+
+		if errMap != nil {
+			return ctx.JSON(400, helper.Response("missing some data", map[string]any{
+				"error": errMap,
+			}))
+		}
 
 		if err != nil {
 			return ctx.JSON(500, helper.Response(err.Error(), nil))
@@ -120,7 +152,7 @@ func (ctl *controller) UpdateNews() echo.HandlerFunc {
 			return ctx.JSON(400, helper.Response(err.Error()))
 		}
 
-		news := ctl.service.FindByID(newsID)
+		news := ctl.service.FindByID(newsID, 0)
 
 		if news == nil {
 			return ctx.JSON(404, helper.Response("News Not Found!"))
@@ -160,7 +192,6 @@ func (ctl *controller) UpdateNews() echo.HandlerFunc {
 
 }
 
-
 func (ctl *controller) DeleteNews() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		newsID, err := strconv.Atoi(ctx.Param("id"))
@@ -169,7 +200,7 @@ func (ctl *controller) DeleteNews() echo.HandlerFunc {
 			return ctx.JSON(400, helper.Response(err.Error()))
 		}
 
-		news := ctl.service.FindByID(newsID)
+		news := ctl.service.FindByID(newsID, 0)
 
 		if news == nil {
 			return ctx.JSON(404, helper.Response("News Not Found!"))

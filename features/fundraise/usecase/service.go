@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"errors"
+	"math"
 	"mime/multipart"
 	"raihpeduli/config"
 	"raihpeduli/features/fundraise"
@@ -24,36 +25,85 @@ func New(model fundraise.Repository, validation helpers.ValidationInterface) fun
 	}
 }
 
-func (svc *service) FindAll(page int, size int, title string) []dtos.ResFundraise {
+func (svc *service) FindAll(pagination dtos.Pagination, searchAndFilter dtos.SearchAndFilter, ownerID int) ([]dtos.ResFundraise, int64) {
 	var fundraises []dtos.ResFundraise
+	var bookmarkIDs map[int]string
 
-	entites, err := svc.model.Paginate(page, size, title)
+	if pagination.Page == 0 {
+		pagination.Page = 1
+	}
+	
+	if pagination.PageSize == 0 {
+		pagination.PageSize = 10
+	}
+
+	if searchAndFilter.MaxTarget == 0 {
+		searchAndFilter.MaxTarget = math.MaxInt32
+	}
+
+	entities, err := svc.model.Paginate(pagination, searchAndFilter)
+
+	if ownerID != 0 {
+		bookmarkIDs, err = svc.model.SelectBookmarkedFundraiseID(ownerID)
+
+		if err != nil {
+			logrus.Error(err)
+			return nil, 0
+		}
+	}
 
 	if err != nil {
 		logrus.Error(err)
-		return nil
+		return nil, 0
 	}
 
-	for _, fundraise := range entites {
+	for _, fundraise := range entities {
 		var data dtos.ResFundraise
 
 		if err := smapping.FillStruct(&data, smapping.MapFields(fundraise)); err != nil {
 			logrus.Error(err)
 		}
 
+		if bookmarkIDs != nil {
+			bookmarkID, ok := bookmarkIDs[data.ID]
+
+			if ok {
+				data.BookmarkID = &bookmarkID
+			}
+		}
+
 		fundraises = append(fundraises, data)
 	}
 
-	return fundraises
+	var totalData int64 = 0
+
+	if searchAndFilter.Title != "" || searchAndFilter.MinTarget != 0 || searchAndFilter.MaxTarget != math.MaxInt32 {
+		totalData = svc.model.GetTotalDataBySearchAndFilter(searchAndFilter)
+	} else {
+		totalData = svc.model.GetTotalData()
+	}
+
+
+	return fundraises, totalData
 }
 
-func (svc *service) FindByID(fundraiseID int) *dtos.ResFundraise {
+func (svc *service) FindByID(fundraiseID, ownerID int) *dtos.ResFundraise {
 	var res dtos.ResFundraise
 	fundraise, err := svc.model.SelectByID(fundraiseID)
 
 	if err != nil {
 		logrus.Error(err)
 		return nil
+	}
+
+	var bookmarkID string
+
+	if ownerID != 0 {
+		bookmarkID, err = svc.model.SelectBookmarkByFundraiseAndOwnerID(fundraiseID, ownerID)
+
+		if bookmarkID != "" {
+			res.BookmarkID = &bookmarkID
+		}
 	}
 
 	if err := smapping.FillStruct(&res, smapping.MapFields(fundraise)); err != nil {
@@ -81,6 +131,9 @@ func (svc *service) Create(newFundraise dtos.InputFundraise, userID int, file mu
 		}
 
 		url = imageURL
+	} else {
+		config := config.LoadCloudStorageConfig()
+		url = "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/fundraises/default"
 	}
 
 	fundraise.UserID = userID
@@ -107,7 +160,11 @@ func (svc *service) Create(newFundraise dtos.InputFundraise, userID int, file mu
 	return &res, nil, nil
 }
 
-func (svc *service) Modify(fundraiseData dtos.InputFundraise, file multipart.File, oldData dtos.ResFundraise) bool {
+func (svc *service) Modify(fundraiseData dtos.InputFundraise, file multipart.File, oldData dtos.ResFundraise) ([]string, error) {
+	if errMap := svc.validation.ValidateRequest(fundraiseData); errMap != nil {
+		return errMap, errors.New("error")
+	}
+
 	var newFundraise fundraise.Fundraise
 	var url string = ""
 	var config = config.LoadCloudStorageConfig()
@@ -118,11 +175,16 @@ func (svc *service) Modify(fundraiseData dtos.InputFundraise, file multipart.Fil
 		if len(oldFilename) > urlLength {
 			oldFilename = oldFilename[urlLength:]
 		}
+
+		if oldFilename == "default" {
+			oldFilename = ""
+		}
+
 		imageURL, err := svc.model.UploadFile(file, oldFilename)
 
 		if err != nil {
 			logrus.Error(err)
-			return false
+			return nil, err
 		}
 
 		url = imageURL
@@ -130,7 +192,7 @@ func (svc *service) Modify(fundraiseData dtos.InputFundraise, file multipart.Fil
 
 	if err := smapping.FillStruct(&newFundraise, smapping.MapFields(fundraiseData)); err != nil {
 		logrus.Error(err)
-		return false
+		return nil, err
 	}
 
 	newFundraise.Photo = url
@@ -141,18 +203,22 @@ func (svc *service) Modify(fundraiseData dtos.InputFundraise, file multipart.Fil
 
 	if err != nil {
 		logrus.Error(err)
-		return false
+		return nil, err
 	}
 
-	return true
+	return nil, nil
 }
 
-func (svc *service) ModifyStatus(input dtos.InputFundraiseStatus, oldData dtos.ResFundraise) bool {
+func (svc *service) ModifyStatus(input dtos.InputFundraiseStatus, oldData dtos.ResFundraise) ([]string, error) {
+	if errMap := svc.validation.ValidateRequest(input); errMap != nil {
+		return errMap, errors.New("error")
+	}
+
 	var newFundraise fundraise.Fundraise
 
 	if err := smapping.FillStruct(&newFundraise, smapping.MapFields(oldData)); err != nil {
 		logrus.Error(err)
-		return false
+		return nil, err
 	}
 
 	newFundraise.Status = input.Status
@@ -161,10 +227,10 @@ func (svc *service) ModifyStatus(input dtos.InputFundraiseStatus, oldData dtos.R
 
 	if err != nil {
 		logrus.Error(err)
-		return false
+		return nil, err
 	}
 
-	return true
+	return nil, nil
 }
 
 func (svc *service) Remove(fundraiseID int) bool {
