@@ -21,14 +21,6 @@ type ResLogin struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
-type PaginationResponse struct {
-	TotalData    int64 `json:"total_data"`
-	CurrentPage  int   `json:"current_page"`
-	PreviousPage int   `json:"previous_page"`
-	NextPage     int   `json:"next_page"`
-	TotalPage    int   `json:"total_page"`
-}
-
 type ResJWT struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
