@@ -76,3 +76,23 @@ func (ctl *controller) ResendOTP() echo.HandlerFunc {
 		return ctx.JSON(200, helpers.Response("OTP has been sent via email"))
 	}
 }
+
+func (ctl *controller) RefreshJWT() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		jwt := dtos.RefreshJWT{}
+		ctx.Bind(&jwt)
+
+		refershJWT, err := ctl.service.RefreshJWT(jwt)
+		if err != nil {
+			if err.Error() == "validate token failed" {
+				return ctx.JSON(400, helpers.Response("invalid jwt token"))
+			}
+
+			return ctx.JSON(500, helpers.Response("Something Went Wrong!"))
+		}
+
+		return ctx.JSON(200, helpers.Response("Success!", map[string]any{
+			"data": refershJWT,
+		}))
+	}
+}

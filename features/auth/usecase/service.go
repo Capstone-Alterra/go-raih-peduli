@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"errors"
+	"os"
 	"raihpeduli/features/auth"
 	"raihpeduli/features/auth/dtos"
 	"raihpeduli/helpers"
@@ -125,4 +126,27 @@ func (svc *service) ResendOTP(email string) bool {
 	}
 
 	return true
+}
+
+func (svc *service) RefreshJWT(jwt dtos.RefreshJWT) (*dtos.ResJWT, error) {
+	parsedAccessToken, err := svc.jwt.ValidateToken(jwt.AccessToken, os.Getenv("SECRET"))
+	if err != nil {
+		return nil, errors.New("validate token failed")
+	}
+
+	parsedRefreshToken, err := svc.jwt.ValidateToken(jwt.RefreshToken, os.Getenv("SECRET"))
+	if err != nil {
+		return nil, errors.New("validate token failed")
+	}
+
+	token := svc.jwt.RefereshJWT(parsedAccessToken, parsedRefreshToken)
+	if token == nil {
+		return nil, errors.New("refresh jwt failed")
+	}
+
+	var resJWT dtos.ResJWT
+	resJWT.AccessToken = token["access_token"].(string)
+	resJWT.RefreshToken = token["refresh_token"].(string)
+
+	return &resJWT, nil
 }

@@ -7,8 +7,9 @@ import (
 )
 
 func Auth(e *echo.Echo, handler auth.Handler) {
-	users := e.Group("/auth")
-	users.POST("/login", handler.Login())
-	users.POST("/register", handler.RegisterUser())
-	users.POST("/resend-otp", handler.ResendOTP())
+	auth := e.Group("/auth")
+	auth.POST("/login", handler.Login())
+	auth.POST("/register", handler.RegisterUser())
+	auth.POST("/resend-otp", handler.ResendOTP())
+	auth.POST("/refresh-jwt", handler.RefreshJWT())
 }
