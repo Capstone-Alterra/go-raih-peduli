@@ -25,12 +25,14 @@ type Usecase interface {
 	FindAll(page, size int) ([]dtos.ResUser, int64)
 	FindByID(customerID int) *dtos.ResUser
 	Create(newUser dtos.InputUser) (*dtos.ResUser, []string, error)
-	Modify(customerData dtos.InputUpdate, file multipart.File, oldData dtos.ResUser) bool
+	Modify(customerData dtos.InputUpdate, file multipart.File, oldData dtos.ResUser) (bool, []string)
+	ModifyProfilePicture(file dtos.InputUpdateProfilePicture, oldData dtos.ResUser) (bool, []string)
 	Remove(customerID int) bool
 	ValidateVerification(verificationKey string) bool
 	ForgetPassword(email dtos.ForgetPassword) error
 	VerifyOTP(verificationKey string) string
 	ResetPassword(newData dtos.ResetPassword) error
+	RefreshJWT(jwt dtos.RefreshJWT) (*dtos.ResJWT, error)
 }
 
 type Handler interface {
@@ -38,9 +40,12 @@ type Handler interface {
 	UserDetails() echo.HandlerFunc
 	CreateUser() echo.HandlerFunc
 	UpdateUser() echo.HandlerFunc
+	UpdateProfilePicture() echo.HandlerFunc
 	DeleteUser() echo.HandlerFunc
 	VerifyEmail() echo.HandlerFunc
 	ForgetPassword() echo.HandlerFunc
 	VerifyOTP() echo.HandlerFunc
 	ResetPassword() echo.HandlerFunc
+	MyProfile() echo.HandlerFunc
+	RefreshJWT() echo.HandlerFunc
 }

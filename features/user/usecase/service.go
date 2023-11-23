@@ -3,6 +3,7 @@ package usecase
 import (
 	"errors"
 	"mime/multipart"
+	"os"
 	"raihpeduli/config"
 	user "raihpeduli/features/user"
 	"raihpeduli/features/user/dtos"
@@ -122,32 +123,17 @@ func (svc *service) Create(newData dtos.InputUser) (*dtos.ResUser, []string, err
 	return &resUser, nil, nil
 }
 
-func (svc *service) Modify(userData dtos.InputUpdate, file multipart.File, oldData dtos.ResUser) bool {
-	var newUser user.User
-	var config = config.LoadCloudStorageConfig()
-	var oldFilename string = oldData.ProfilePicture
-	var urlLength int = len("https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/users/")
-
-	if file != nil {
-		if oldFilename == "https://storage.googleapis.com/raih_peduli/users/user.png" {
-			oldFilename = ""
-		} else if len(oldFilename) > urlLength {
-			oldFilename = oldFilename[urlLength:]
-		}
-		imageURL, err := svc.model.UploadFile(file, oldFilename)
-
-		if err != nil {
-			logrus.Error(err)
-			return false
-		}
-
-		userData.ProfilePicture = imageURL
+func (svc *service) Modify(userData dtos.InputUpdate, file multipart.File, oldData dtos.ResUser) (bool, []string) {
+	errMap := svc.validation.ValidateRequest(userData)
+	if errMap != nil {
+		return false, errMap
 	}
 
+	var newUser user.User
 	err := smapping.FillStruct(&newUser, smapping.MapFields(userData))
 	if err != nil {
 		log.Error(err)
-		return false
+		return false, nil
 	}
 
 	newUser.ID = oldData.ID
@@ -155,10 +141,48 @@ func (svc *service) Modify(userData dtos.InputUpdate, file multipart.File, oldDa
 
 	if rowsAffected == 0 {
 		log.Error("There is No Customer Updated!")
-		return false
+		return false, nil
 	}
 
-	return true
+	return true, nil
+}
+
+func (svc *service) ModifyProfilePicture(file dtos.InputUpdateProfilePicture, oldData dtos.ResUser) (bool, []string) {
+	errMap := svc.validation.ValidateRequest(file)
+	if errMap != nil {
+		return false, errMap
+	}
+
+	var newUser user.User
+	var config = config.LoadCloudStorageConfig()
+	var oldFilename string = oldData.ProfilePicture
+	var urlLength int = len("https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/users/")
+
+	if file.ProfilePicture != nil {
+		if oldFilename == "https://storage.googleapis.com/raih_peduli/users/user.png" {
+			oldFilename = ""
+		} else if len(oldFilename) > urlLength {
+			oldFilename = oldFilename[urlLength:]
+		}
+		imageURL, err := svc.model.UploadFile(file.ProfilePicture, oldFilename)
+
+		if err != nil {
+			logrus.Error(err)
+			return false, nil
+		}
+
+		newUser.ProfilePicture = imageURL
+	}
+
+	newUser.ID = oldData.ID
+	rowsAffected := svc.model.UpdateUser(newUser)
+
+	if rowsAffected == 0 {
+		log.Error("There is No Customer Updated!")
+		return false, nil
+	}
+
+	return true, nil
 }
 
 func (svc *service) Remove(userID int) bool {
@@ -251,4 +275,22 @@ func (svc *service) ResetPassword(newData dtos.ResetPassword) error {
 	}
 
 	return nil
+}
+
+func (svc *service) RefreshJWT(jwt dtos.RefreshJWT) (*dtos.ResJWT, error) {
+	parsedToken, err := svc.jwt.ValidateToken(jwt.RefreshToken, os.Getenv("SECRET"))
+	if err != nil {
+		return nil, errors.New("validate token failed")
+	}
+
+	token := svc.jwt.RefereshJWT(jwt.AccessToken, parsedToken)
+	if token == nil {
+		return nil, errors.New("refresh jwt failed")
+	}
+
+	var resJWT dtos.ResJWT
+	resJWT.AccessToken = token["access_token"].(string)
+	resJWT.RefreshToken = token["refresh_token"].(string)
+
+	return &resJWT, nil
 }
