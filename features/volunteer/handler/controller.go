@@ -28,8 +28,6 @@ var validate *validator.Validate
 func (ctl *controller) GetVolunteers() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		pagination := dtos.Pagination{}
-		paginationResponse := dtos.PaginationResponse{}
-
 		ctx.Bind(&pagination)
 
 		if pagination.Page < 1 || pagination.Size < 1 {
@@ -37,18 +35,19 @@ func (ctl *controller) GetVolunteers() echo.HandlerFunc {
 			pagination.Size = 20
 		}
 
+		searchAndFilter := dtos.SearchAndFilter{}
+		ctx.Bind(&searchAndFilter)
+
 		page := pagination.Page
 		size := pagination.Size
-		title := ctx.QueryParam("title")
-		skill := ctx.QueryParam("skill")
-		city := ctx.QueryParam("city")
 
-		volunteers, totalData := ctl.service.FindAll(page, size, title, skill, city)
+		volunteers, totalData := ctl.service.FindAll(page, size, searchAndFilter)
 
 		if volunteers == nil {
 			return ctx.JSON(404, helper.Response("There is No Volunteers!"))
 		}
 
+		paginationResponse := dtos.PaginationResponse{}
 		if pagination.Size >= int(totalData) {
 			paginationResponse.PreviousPage = -1
 			paginationResponse.NextPage = -1
@@ -259,14 +258,14 @@ func (ctl *controller) UpdateStatusRegistrar() echo.HandlerFunc {
 }
 
 func (ctl *controller) GetVolunteerByVacancyID() echo.HandlerFunc {
-	return func (ctx echo.Context) error {
+	return func(ctx echo.Context) error {
 		pagination := dtos.Pagination{}
 
 		vacancyID, errParam := strconv.Atoi(ctx.Param("vacancy_id"))
 		if errParam != nil {
 			return ctx.JSON(400, helper.Response(errParam.Error()))
 		}
-		
+
 		ctx.Bind(&pagination)
 
 		if pagination.Page < 1 || pagination.Size < 1 {
