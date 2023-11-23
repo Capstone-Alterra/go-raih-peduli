@@ -55,7 +55,13 @@ func (ctl *controller) BookmarkAPost() echo.HandlerFunc {
 
 		userID := ctx.Get("user_id").(int)
 
-		_, err := ctl.service.SetBookmark(input, userID)
+		_, errMap, err := ctl.service.SetBookmark(input, userID)
+
+		if errMap != nil {
+			return ctx.JSON(400, helpers.Response("error missing some data", map[string]any {
+				"error": errMap,
+			}))
+		}
 
 		if err != nil {
 			return ctx.JSON(500, helpers.Response(err.Error()))

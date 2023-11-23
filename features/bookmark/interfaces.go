@@ -22,7 +22,7 @@ type Repository interface {
 type Usecase interface {
 	FindAll(size, userID int) *dtos.ResBookmark
 	FindByID(bookmarkID string) *bson.M
-	SetBookmark(input dtos.InputBookmarkPost, ownerID int) (bool, error)
+	SetBookmark(input dtos.InputBookmarkPost, ownerID int) (bool, []string, error)
 	UnsetBookmark(bookmarkID string, bookmark *primitive.M, ownerID int) (bool, error)
 }
 
