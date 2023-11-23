@@ -18,7 +18,6 @@ func Users(e *echo.Echo, handler user.Handler, jwt helpers.JWTInterface, config 
 	users.POST("/forget-password", handler.ForgetPassword())
 	users.POST("/verify-otp", handler.VerifyOTP())
 	users.POST("/reset-password", handler.ResetPassword(), m.AuthorizeJWT(jwt, 1, config.OTP_SECRET))
-	users.POST("/refresh-jwt", handler.RefreshJWT())
 
 	users.GET("/:id", handler.UserDetails())
 	users.GET("/my-profile", handler.MyProfile(), m.AuthorizeJWT(jwt, 0, config.SECRET))

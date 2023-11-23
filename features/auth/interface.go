@@ -18,10 +18,12 @@ type Usecase interface {
 	Login(dtos.RequestLogin) (*dtos.LoginResponse, error)
 	Register(newUser dtos.InputUser) (*dtos.ResUser, []string, error)
 	ResendOTP(email string) bool
+	RefreshJWT(jwt dtos.RefreshJWT) (*dtos.ResJWT, error)
 }
 
 type Handler interface {
 	Login() echo.HandlerFunc
 	RegisterUser() echo.HandlerFunc
 	ResendOTP() echo.HandlerFunc
+	RefreshJWT() echo.HandlerFunc
 }

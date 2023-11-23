@@ -18,3 +18,8 @@ type ResUser struct {
 	Gender      string `json:"gender"`
 	Email       string `json:"email"`
 }
+
+type ResJWT struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+}

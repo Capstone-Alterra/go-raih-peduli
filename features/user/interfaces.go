@@ -32,7 +32,6 @@ type Usecase interface {
 	ForgetPassword(email dtos.ForgetPassword) error
 	VerifyOTP(verificationKey string) string
 	ResetPassword(newData dtos.ResetPassword) error
-	RefreshJWT(jwt dtos.RefreshJWT) (*dtos.ResJWT, error)
 }
 
 type Handler interface {
@@ -47,5 +46,4 @@ type Handler interface {
 	VerifyOTP() echo.HandlerFunc
 	ResetPassword() echo.HandlerFunc
 	MyProfile() echo.HandlerFunc
-	RefreshJWT() echo.HandlerFunc
 }

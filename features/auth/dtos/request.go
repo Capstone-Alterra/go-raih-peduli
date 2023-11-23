@@ -17,3 +17,8 @@ type InputUser struct {
 type ResendOTP struct {
 	Email string `json:"email" form:"email" validate:"required"`
 }
+
+type RefreshJWT struct {
+	AccessToken  string `json:"access_token" form:"access_token" valildate:"required"`
+	RefreshToken string `json:"refresh_token" form:"refresh_token" validate:"required"`
+}
