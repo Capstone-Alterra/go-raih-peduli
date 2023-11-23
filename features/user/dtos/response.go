@@ -28,3 +28,8 @@ type PaginationResponse struct {
 	NextPage     int   `json:"next_page"`
 	TotalPage    int   `json:"total_page"`
 }
+
+type ResJWT struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+}

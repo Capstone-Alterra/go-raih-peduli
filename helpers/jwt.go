@@ -110,7 +110,7 @@ func (j JWT) RefereshJWT(accessToken string, refreshToken *jwt.Token) map[string
 func (j *JWT) generateRefreshToken(userID string, roleID string) string {
 	var claims = jwt.MapClaims{}
 	claims["user_id"] = userID
-	claims["role_id"] = userID
+	claims["role_id"] = roleID
 	claims["iat"] = time.Now().Unix()
 	claims["exp"] = time.Now().Add(time.Hour * 24).Unix()
 

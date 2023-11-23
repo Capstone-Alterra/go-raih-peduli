@@ -2,6 +2,7 @@ package handler
 
 import (
 	"mime/multipart"
+	"raihpeduli/helpers"
 	helper "raihpeduli/helpers"
 	"strconv"
 
@@ -291,6 +292,26 @@ func (ctl *controller) MyProfile() echo.HandlerFunc {
 
 		return ctx.JSON(200, helper.Response("Success!", map[string]any{
 			"data": user,
+		}))
+	}
+}
+
+func (ctl *controller) RefreshJWT() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		jwt := dtos.RefreshJWT{}
+		ctx.Bind(&jwt)
+
+		refershJWT, err := ctl.service.RefreshJWT(jwt)
+		if err != nil {
+			if err.Error() == "validate token failed" {
+				return ctx.JSON(400, helpers.Response("invalid jwt token"))
+			}
+
+			return ctx.JSON(500, helpers.Response("Something Went Wrong!"))
+		}
+
+		return ctx.JSON(200, helpers.Response("Success!", map[string]any{
+			"data": refershJWT,
 		}))
 	}
 }

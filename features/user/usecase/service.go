@@ -3,6 +3,7 @@ package usecase
 import (
 	"errors"
 	"mime/multipart"
+	"os"
 	"raihpeduli/config"
 	user "raihpeduli/features/user"
 	"raihpeduli/features/user/dtos"
@@ -274,4 +275,22 @@ func (svc *service) ResetPassword(newData dtos.ResetPassword) error {
 	}
 
 	return nil
+}
+
+func (svc *service) RefreshJWT(jwt dtos.RefreshJWT) (*dtos.ResJWT, error) {
+	parsedToken, err := svc.jwt.ValidateToken(jwt.RefreshToken, os.Getenv("SECRET"))
+	if err != nil {
+		return nil, errors.New("validate token failed")
+	}
+
+	token := svc.jwt.RefereshJWT(jwt.AccessToken, parsedToken)
+	if token == nil {
+		return nil, errors.New("refresh jwt failed")
+	}
+
+	var resJWT dtos.ResJWT
+	resJWT.AccessToken = token["access_token"].(string)
+	resJWT.RefreshToken = token["refresh_token"].(string)
+
+	return &resJWT, nil
 }

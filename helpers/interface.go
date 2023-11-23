@@ -19,6 +19,7 @@ type JWTInterface interface {
 	GenerateTokenResetPassword(userID string, roleID string) string
 	ExtractToken(token *jwt.Token) any
 	ValidateToken(token string, secret string) (*jwt.Token, error)
+	RefereshJWT(accessToken string, refreshToken *jwt.Token) map[string]any
 }
 
 type HashInterface interface {
