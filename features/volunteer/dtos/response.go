@@ -33,11 +33,3 @@ type ResRegistrantVacancy struct {
 	Resume   string `json:"resume"`
 	Status   string `json:"status"`
 }
-
-type PaginationResponse struct {
-	TotalData    int64 `json:"total_data"`
-	CurrentPage  int   `json:"current_page"`
-	PreviousPage int   `json:"previous_page"`
-	NextPage     int   `json:"next_page"`
-	TotalPage    int   `json:"total_page"`
-}
