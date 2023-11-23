@@ -152,8 +152,9 @@ func BookmarkHandler() bookmark.Handler {
 	db := utils.InitDB()
 	mongoDB := utils.ConnectMongo()
 	collection := mongoDB.Collection("bookmarks")
+	validation := helpers.NewValidationRequest()
 
 	repo := br.New(db, collection)
-	uc := bu.New(repo)
+	uc := bu.New(repo, validation)
 	return bh.New(uc)
 }

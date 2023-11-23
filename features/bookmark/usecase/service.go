@@ -4,6 +4,7 @@ import (
 	"errors"
 	"raihpeduli/features/bookmark"
 	"raihpeduli/features/bookmark/dtos"
+	"raihpeduli/helpers"
 
 	"github.com/mashingan/smapping"
 	"github.com/sirupsen/logrus"
@@ -13,11 +14,13 @@ import (
 
 type service struct {
 	model bookmark.Repository
+	validation helpers.ValidationInterface
 }
 
-func New(model bookmark.Repository) bookmark.Usecase {
+func New(model bookmark.Repository, validation helpers.ValidationInterface) bookmark.Usecase {
 	return &service {
 		model: model,
+		validation: validation,
 	}
 }
 
@@ -41,15 +44,19 @@ func (svc *service) FindByID(bookmarkID string) *bson.M {
 	return bookmark
 }
 
-func (svc *service) SetBookmark(input dtos.InputBookmarkPost, ownerID int) (bool, error) {
+func (svc *service) SetBookmark(input dtos.InputBookmarkPost, ownerID int) (bool, []string, error) {
 	var post any
 	var document any
 	var err error
 
+	if errMap := svc.validation.ValidateRequest(input); errMap != nil {
+		return false, errMap, errors.New("error")
+	}
+
 	bookmarked, _ := svc.model.SelectByPostAndOwnerID(input.PostID, ownerID, input.PostType)
 	
 	if bookmarked != nil {
-		return false, errors.New("this post has already been bookmarked by this user")
+		return false, nil, errors.New("this post has already been bookmarked by this user")
 	}
 
 	switch(input.PostType) {
@@ -75,24 +82,24 @@ func (svc *service) SetBookmark(input dtos.InputBookmarkPost, ownerID int) (bool
 				OwnerID: ownerID,
 			}
 		default: 
-			return false, errors.New("unknown post type. choose between 'news', 'fundraise' or 'vacancy'")
+			return false, nil, errors.New("unknown post type. choose between 'news', 'fundraise' or 'vacancy'")
 	}
 
 	if err != nil {
-		return false, err
+		return false, nil, err
 	}
 	
 	if err := smapping.FillStruct(document, smapping.MapFields(post)); err != nil {
-		return false, err
+		return false, nil, err
 	}
 
 	_, err = svc.model.Insert(document)
 	
 	if err != nil {
-		return false, err
+		return false, nil, err
 	}
 
-	return true, nil
+	return true, nil, nil
 }
 
 func (svc *service) UnsetBookmark(bookmarkID string, bookmark *primitive.M, ownerID int) (bool, error) {
