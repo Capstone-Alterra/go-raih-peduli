@@ -7,18 +7,18 @@ import (
 )
 
 type Repository interface {
-	Paginate(page, size int) []Transaction
+	Paginate(page, size int, keyword string) []Transaction
 	PaginateUser(page, size, userID int) []Transaction
 	Insert(newTransaction Transaction) int64
 	SelectByID(transactionID int) *Transaction
 	Update(transaction Transaction) int64
 	DeleteByID(transactionID int) int64
-	GetTotalData() int64
-	GetTotalDataByUser(userID int) int64
+	GetTotalData(keyword string) int64
+	GetTotalDataByUser(userID int, keyword string) int64
 }
 
 type Usecase interface {
-	FindAll(page, size, roleID, userID int) ([]dtos.ResTransaction, int64)
+	FindAll(page, size, roleID, userID int, keyword string) ([]dtos.ResTransaction, int64)
 	FindByID(transactionID int) *dtos.ResTransaction
 	Create(userID int, newTransaction dtos.InputTransaction) (*dtos.ResTransaction, error)
 	Modify(transactionData dtos.InputTransaction, transactionID int) bool
