@@ -1,6 +1,7 @@
 package transaction
 
 import (
+	"raihpeduli/features/fundraise"
 	"raihpeduli/features/user"
 	"time"
 
@@ -22,6 +23,7 @@ type Transaction struct {
 	CreatedAt      time.Time
 
 	User user.User
+	Fundraise fundraise.Fundraise
 }
 
 type Status struct {
