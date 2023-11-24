@@ -58,6 +58,7 @@ func (mdl *model) PaginateMobile(pagination dtos.Pagination, searchAndFilter dto
 		Where("title LIKE ?", title).
 		Where("target >= ?", searchAndFilter.MinTarget).
 		Where("target <= ?", searchAndFilter.MaxTarget).
+		Where("status = ?", "accepted").
 		Find(&fundraises).Error; err != nil {
 		return nil, err
 	}
@@ -81,6 +82,18 @@ func (mdl *model) SelectByID(fundraiseID int) (*fundraise.Fundraise, error) {
 	}
 
 	return &fundraise, nil
+}
+
+func (mdl *model) TotalFundAcquired(fundraiseID int) (int32, error) {
+	var totalAcquired int32
+
+	mdl.db.Table("transactions").Select("sum(amount)").
+		Where("fundraise_id = ?", fundraiseID).
+		Where("status = 5").
+		Row().
+		Scan(&totalAcquired)
+
+	return totalAcquired, nil
 }
 
 func (mdl *model) Update(fundraise fundraise.Fundraise) (int, error) {
@@ -165,20 +178,51 @@ func (mdl *model) GetTotalData() int64 {
 	return totalData
 }
 
+func (mdl *model) GetTotalDataMobile() int64 {
+	var totalData int64
+
+	if err := mdl.db.Table("fundraises").
+		Where("deleted_at IS NULL").
+		Where("status = ?", "accepted").
+		Count(&totalData).Error; err != nil {
+			logrus.Error(err)
+			return 0
+	}
+
+	return totalData
+}
+
 func (mdl *model) GetTotalDataBySearchAndFilter(searchAndFilter dtos.SearchAndFilter) int64 {
 	var totalData int64
 
 	title := "%" + searchAndFilter.Title + "%"
 
-	result := mdl.db.Table("fundraises").
+	if err := mdl.db.Table("fundraises").
 		Where("deleted_at IS NULL").
 		Where("title LIKE ?", title).
 		Where("target >= ?", searchAndFilter.MinTarget).
 		Where("target <= ?", searchAndFilter.MaxTarget).
-		Count(&totalData)
+		Count(&totalData).Error; err != nil {
+		logrus.Error(err)
+		return 0
+	}
 
-	if result.Error != nil {
-		logrus.Error(result.Error)
+	return totalData
+}
+
+func (mdl *model) GetTotalDataBySearchAndFilterMobile(searchAndFilter dtos.SearchAndFilter) int64 {
+	var totalData int64
+
+	title := "%" + searchAndFilter.Title + "%"
+
+	if err := mdl.db.Table("fundraises").
+		Where("deleted_at IS NULL").
+		Where("title LIKE ?", title).
+		Where("target >= ?", searchAndFilter.MinTarget).
+		Where("target <= ?", searchAndFilter.MaxTarget).
+		Where("status = ?", "accepted").
+		Count(&totalData).Error; err != nil {
+		logrus.Error(err)
 		return 0
 	}
 

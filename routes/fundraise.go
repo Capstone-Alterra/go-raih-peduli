@@ -10,8 +10,15 @@ import (
 )
 
 func Fundraises(e *echo.Echo, handler fundraise.Handler, jwt helpers.JWTInterface, config config.ProgramConfig) {
-	fundraises := e.Group("/fundraises")
+	mobile := e.Group("/mobile/fundraises")
+	
+	mobile.GET("", handler.GetFundraises("mobile"), m.AuthorizeJWT(jwt, -1, config.SECRET))
+	mobile.POST("", handler.CreateFundraise(), m.AuthorizeJWT(jwt, 0, config.SECRET))
 
+	mobile.GET("/:id", handler.FundraiseDetails(), m.AuthorizeJWT(jwt, -1, config.SECRET))
+
+	fundraises := e.Group("/fundraises")
+	
 	fundraises.GET("", handler.GetFundraises(""), m.AuthorizeJWT(jwt, -1, config.SECRET))
 	fundraises.POST("", handler.CreateFundraise(), m.AuthorizeJWT(jwt, 0, config.SECRET))
 
