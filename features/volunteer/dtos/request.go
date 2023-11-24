@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-type InputVolunteer struct {
+type InputVacancy struct {
 	Title               string         `form:"title" validate:"required" json:"tittle"`
 	Description         string         `form:"description" validate:"required" json:"description"`
 	SkillsRequired      string         `form:"skills_required" validate:"required" json:"skills_required"`
@@ -20,7 +20,7 @@ type InputVolunteer struct {
 	Status              string         `json:"status" form:"status"`
 }
 
-type ApplyVolunteer struct {
+type ApplyVacancy struct {
 	VolunteerID int            `json:"volunteer_id" form:"volunteer_id" validate:"required"`
 	Skills      string         `json:"skills" form:"skills" validate:"required"`
 	Resume      multipart.File `json:"resume" form:"resume" validate:"required"`
