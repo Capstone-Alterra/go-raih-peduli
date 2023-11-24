@@ -48,6 +48,23 @@ func (mdl *model) Paginate(pagination dtos.Pagination, searchAndFilter dtos.Sear
 	return fundraises, nil
 }
 
+func (mdl *model) PaginateMobile(pagination dtos.Pagination, searchAndFilter dtos.SearchAndFilter) ([]fundraise.Fundraise, error) {
+	var fundraises []fundraise.Fundraise
+
+	offset := (pagination.Page - 1) * pagination.PageSize
+	title := "%" + searchAndFilter.Title + "%"
+
+	if err := mdl.db.Offset(offset).Limit(pagination.PageSize).
+		Where("title LIKE ?", title).
+		Where("target >= ?", searchAndFilter.MinTarget).
+		Where("target <= ?", searchAndFilter.MaxTarget).
+		Find(&fundraises).Error; err != nil {
+		return nil, err
+	}
+
+	return fundraises, nil
+}
+
 func (mdl *model) Insert(newFundraise fundraise.Fundraise) (int, error) {
 	if err := mdl.db.Create(&newFundraise).Error; err != nil {
 		return 0, err

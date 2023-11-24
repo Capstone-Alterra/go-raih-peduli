@@ -21,7 +21,7 @@ type Repository interface {
 }
 
 type Usecase interface {
-	FindAll(pagination dtos.Pagination, searchAndFilter dtos.SearchAndFilter, ownerID int) ([]dtos.ResFundraise, int64)
+	FindAll(pagination dtos.Pagination, searchAndFilter dtos.SearchAndFilter, ownerID int, suffix string) ([]dtos.ResFundraise, int64)
 	FindByID(fundraiseID, ownerID int) *dtos.ResFundraise
 	Create(newFundraise dtos.InputFundraise, userID int, file multipart.File) (*dtos.ResFundraise, []string, error)
 	Modify(fundraiseData dtos.InputFundraise, file multipart.File, oldData dtos.ResFundraise) ([]string , error)
@@ -30,7 +30,7 @@ type Usecase interface {
 }
 
 type Handler interface {
-	GetFundraises() echo.HandlerFunc
+	GetFundraises(suffix string) echo.HandlerFunc
 	FundraiseDetails() echo.HandlerFunc
 	CreateFundraise() echo.HandlerFunc
 	UpdateFundraise() echo.HandlerFunc

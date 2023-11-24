@@ -25,7 +25,7 @@ func New(model fundraise.Repository, validation helpers.ValidationInterface) fun
 	}
 }
 
-func (svc *service) FindAll(pagination dtos.Pagination, searchAndFilter dtos.SearchAndFilter, ownerID int) ([]dtos.ResFundraise, int64) {
+func (svc *service) FindAll(pagination dtos.Pagination, searchAndFilter dtos.SearchAndFilter, ownerID int, suffix string) ([]dtos.ResFundraise, int64) {
 	var fundraises []dtos.ResFundraise
 	var bookmarkIDs map[int]string
 
