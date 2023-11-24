@@ -34,6 +34,7 @@ type Volunteer struct {
 	Address			string		`gorm:"type:varchar(255)"`
 	Nik				string		`gorm:"type:varchar(255)"`
 	Resume			string		`gorm:"type:varchar(255)"`
+	Photo			string 		`gorm:"type:varchar(255)"`
 	Status			string 		`gorm:"type:enum('pending','accepted','rejected')"`
 }
 
@@ -45,5 +46,6 @@ type VolunteerRelations struct {
 	Skills 				string		`gorm:"type:varchar(255)"`
 	Reason  			string
 	Resume              string		`gorm:"type:varchar(255)"`
+	Photo				string 		`gorm:"type:varchar(255)"`
 	Status 				string 		`gorm:"type:enum('pending','accepted','rejected'); default: 'pending'"`
 }

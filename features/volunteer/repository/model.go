@@ -45,6 +45,28 @@ func (mdl *model) Paginate(page, size int, searchAndFilter dtos.SearchAndFilter)
 	return volunteers
 }
 
+func (mdl *model) PaginateMobile(page, size int, searchAndFilter dtos.SearchAndFilter) []volunteer.VolunteerVacancies {
+	var volunteers []volunteer.VolunteerVacancies
+
+	offset := (page - 1) * size
+
+	result := mdl.db.Offset(offset).Limit(size).
+		Where("title LIKE ?", "%"+searchAndFilter.Title+"%").
+		Where("city LIKE ?", "%"+searchAndFilter.City+"%").
+		Where("skills_required LIKE ?", "%"+searchAndFilter.Skill+"%").
+		Where("number_of_vacancies >= ?", searchAndFilter.MinParticipant).
+		Where("number_of_vacancies <= ?", searchAndFilter.MaxParticipant).
+		Where("status = ?", "accepted").
+		Find(&volunteers)
+
+	if result.Error != nil {
+		log.Error(result.Error)
+		return nil
+	}
+
+	return volunteers
+}
+
 func (mdl *model) SelectVacancyByID(volunteerID int) *volunteer.VolunteerVacancies {
 	var volunteer volunteer.VolunteerVacancies
 	result := mdl.db.First(&volunteer, volunteerID)
@@ -147,6 +169,22 @@ func (mdl *model) GetTotalDataVacancies() int64 {
 	return totalData
 }
 
+func (mdl *model) GetTotalDataVacanciesMobile() int64 {
+	var totalData int64
+
+	result := mdl.db.Table("volunteer_vacancies").
+	Where("deleted_at IS NULL").
+	Where("status = ?", "accepted").
+	Count(&totalData)
+
+	if result.Error != nil {
+		log.Error(result.Error)
+		return 0
+	}
+
+	return totalData
+}
+
 func (mdl *model) GetTotalDataVacanciesBySearchAndFilter(searchAndFilter dtos.SearchAndFilter) int64 {
 	var totalData int64
 
@@ -156,6 +194,26 @@ func (mdl *model) GetTotalDataVacanciesBySearchAndFilter(searchAndFilter dtos.Se
 		Where("skills_required LIKE ?", "%"+searchAndFilter.Skill+"%").
 		Where("number_of_vacancies >= ?", searchAndFilter.MinParticipant).
 		Where("number_of_vacancies <= ?", searchAndFilter.MaxParticipant).
+		Count(&totalData)
+
+	if result.Error != nil {
+		log.Error(result.Error)
+		return 0
+	}
+
+	return totalData
+}
+
+func (mdl *model) GetTotalDataVacanciesBySearchAndFilterMobile(searchAndFilter dtos.SearchAndFilter) int64 {
+	var totalData int64
+
+	result := mdl.db.Table("volunteer_vacancies").
+		Where("title LIKE ?", "%"+searchAndFilter.Title+"%").
+		Where("city LIKE ?", "%"+searchAndFilter.City+"%").
+		Where("skills_required LIKE ?", "%"+searchAndFilter.Skill+"%").
+		Where("number_of_vacancies >= ?", searchAndFilter.MinParticipant).
+		Where("number_of_vacancies <= ?", searchAndFilter.MaxParticipant).
+		Where("status = ?", "accepted").
 		Count(&totalData)
 
 	if result.Error != nil {
@@ -183,7 +241,8 @@ func (mdl *model) SelectVolunteersByVacancyID(vacancyID int, name string, page, 
 
 	offset := (page - 1) * size
 
-	result := mdl.db.Table("volunteer_relations AS vr").Select("users.fullname", "users.address", "users.nik", "vr.resume", "vr.status").
+	result := mdl.db.Table("volunteer_relations AS vr").
+		Select("users.fullname", "users.address", "users.nik", "vr.resume", "vr.status", "vr.photo").
 		Joins("JOIN users ON users.id = vr.user_id").
 		Where("vr.volunteer_id = ?", vacancyID).
 		Where("users.fullname LIKE ?", "%"+name+"%").
@@ -194,6 +253,22 @@ func (mdl *model) SelectVolunteersByVacancyID(vacancyID int, name string, page, 
 	}
 
 	return volunteers
+}
+
+func (mdl *model) SelectVolunteerDetails(vacancyID int, volunteerID int) *volunteer.Volunteer {
+	var volunteers volunteer.Volunteer
+
+	result := mdl.db.Table("volunteer_relations AS vr").
+		Select("users.fullname", "users.address", "users.nik", "vr.resume", "vr.status", "vr.photo").
+		Joins("JOIN users ON users.id = vr.user_id").
+		Where("vr.volunteer_id = ? AND vr.id = ?", vacancyID, volunteerID).
+		Find(&volunteers)
+	if result.Error != nil {
+		log.Error(result.Error)
+		return nil
+	}
+
+	return &volunteers
 }
 
 func (mdl *model) GetTotalVolunteers(vacancyID int, name string) int64 {

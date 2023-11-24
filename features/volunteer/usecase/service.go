@@ -26,14 +26,20 @@ func New(model volunteer.Repository, validation helpers.ValidationInterface) vol
 	}
 }
 
-func (svc *service) FindAllVacancies(page, size int, searchAndFilter dtos.SearchAndFilter) ([]dtos.ResVacancy, int64) {
+func (svc *service) FindAllVacancies(page, size int, searchAndFilter dtos.SearchAndFilter, suffix string) ([]dtos.ResVacancy, int64) {
 	var volunteers []dtos.ResVacancy
 
 	if searchAndFilter.MaxParticipant == 0 {
 		searchAndFilter.MaxParticipant = math.MaxInt32
 	}
 
-	volunteersEnt := svc.model.Paginate(page, size, searchAndFilter)
+	var volunteersEnt []volunteer.VolunteerVacancies
+
+	if suffix == "mobile" {
+		volunteersEnt = svc.model.PaginateMobile(page, size, searchAndFilter)
+	} else {
+		volunteersEnt = svc.model.PaginateMobile(page, size, searchAndFilter)
+	}
 
 	for _, volunteer := range volunteersEnt {
 		var data dtos.ResVacancy
@@ -48,9 +54,17 @@ func (svc *service) FindAllVacancies(page, size int, searchAndFilter dtos.Search
 	var totalData int64 = 0
 
 	if searchAndFilter.Title != "" || searchAndFilter.Skill != "" || searchAndFilter.City != "" || searchAndFilter.MinParticipant != 0 || searchAndFilter.MaxParticipant != math.MaxInt32 {
-		totalData = svc.model.GetTotalDataVacanciesBySearchAndFilter(searchAndFilter)
+		if suffix == "mobile" {
+			totalData = svc.model.GetTotalDataVacanciesBySearchAndFilterMobile(searchAndFilter)
+		} else {
+			totalData = svc.model.GetTotalDataVacanciesBySearchAndFilter(searchAndFilter)
+		}
 	} else {
-		totalData = svc.model.GetTotalDataVacancies()
+		if suffix == "mobile" {
+			totalData = svc.model.GetTotalDataVacanciesMobile()
+		} else {
+			totalData = svc.model.GetTotalDataVacancies()
+		}
 	}
 
 	return volunteers, totalData
@@ -215,6 +229,8 @@ func (svc *service) RegisterVacancy(newApply dtos.ApplyVacancy, userID int, file
 		}
 
 		url = imageURL
+	} else {
+		return false, nil
 	}
 
 	registrar.UserID = userID
@@ -224,7 +240,7 @@ func (svc *service) RegisterVacancy(newApply dtos.ApplyVacancy, userID int, file
 		return false, nil
 	}
 
-	registrar.Resume = url
+	registrar.Photo = url
 
 	err = svc.model.RegisterVacancy(&registrar)
 	if err != nil {
@@ -255,4 +271,21 @@ func (svc *service) FindAllVolunteersByVacancyID(page, size int, vacancyID int, 
 	totalData := svc.model.GetTotalVolunteers(vacancyID, name)
 
 	return volunteers, totalData
+}
+
+func (svc *service) FindDetailVolunteers(vacancyID, volunteerID int) *dtos.ResRegistrantVacancy {
+	res := dtos.ResRegistrantVacancy{}
+	volunteer := svc.model.SelectVolunteerDetails(vacancyID, volunteerID)
+
+	if volunteer == nil {
+		return nil
+	}
+
+	err := smapping.FillStruct(&res, smapping.MapFields(volunteer))
+	if err != nil {
+		log.Error("Failed mapping into dtos")
+		return nil
+	}
+	return &res
+
 }
