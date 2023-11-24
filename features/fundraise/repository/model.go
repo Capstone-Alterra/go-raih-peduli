@@ -66,12 +66,12 @@ func (mdl *model) PaginateMobile(pagination dtos.Pagination, searchAndFilter dto
 	return fundraises, nil
 }
 
-func (mdl *model) Insert(newFundraise fundraise.Fundraise) (int, error) {
+func (mdl *model) Insert(newFundraise fundraise.Fundraise) (*fundraise.Fundraise, error) {
 	if err := mdl.db.Create(&newFundraise).Error; err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	return newFundraise.ID, nil
+	return &newFundraise, nil
 }
 
 func (mdl *model) SelectByID(fundraiseID int) (*fundraise.Fundraise, error) {
@@ -96,24 +96,24 @@ func (mdl *model) TotalFundAcquired(fundraiseID int) (int32, error) {
 	return totalAcquired, nil
 }
 
-func (mdl *model) Update(fundraise fundraise.Fundraise) (int, error) {
+func (mdl *model) Update(fundraise fundraise.Fundraise) error {
 	result := mdl.db.Table("fundraises").Updates(&fundraise)
 
 	if result.Error != nil {
-		return 0, result.Error
+		return result.Error
 	}
 
-	return int(result.RowsAffected), nil
+	return nil
 }
 
-func (mdl *model) DeleteByID(fundraiseID int) (int, error) {
+func (mdl *model) DeleteByID(fundraiseID int) error {
 	result := mdl.db.Delete(&fundraise.Fundraise{}, fundraiseID)
 
 	if result.Error != nil {
-		return 0, result.Error
+		return result.Error
 	}
 
-	return int(result.RowsAffected), nil
+	return nil
 }
 
 func (mdl *model) UploadFile(file multipart.File, objectName string) (string, error) {
