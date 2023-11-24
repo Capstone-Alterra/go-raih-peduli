@@ -227,13 +227,13 @@ func (ctl *controller) UpdateStatusRegistrar() echo.HandlerFunc {
 
 		ctx.Bind(&input)
 
-		registrarID, errParam := strconv.Atoi(ctx.Param("id"))
+		volunteerID, err := strconv.Atoi(ctx.Param("volunteer_id"))
 
-		if errParam != nil {
-			return ctx.JSON(400, helpers.Response(errParam.Error()))
+		if err != nil {
+			return ctx.JSON(400, helpers.Response(err.Error()))
 		}
 
-		update := ctl.service.UpdateStatusRegistrar(input.Status, registrarID)
+		update := ctl.service.UpdateStatusRegistrar(input.Status, volunteerID)
 
 		if !update {
 			return ctx.JSON(500, helpers.Response("Something Went Wrong!"))
