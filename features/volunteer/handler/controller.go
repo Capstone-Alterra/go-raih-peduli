@@ -21,7 +21,7 @@ func New(service volunteer.Usecase) volunteer.Handler {
 	}
 }
 
-func (ctl *controller) GetVacancies() echo.HandlerFunc {
+func (ctl *controller) GetVacancies(suffix string) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		pagination := dtos.Pagination{}
 		ctx.Bind(&pagination)
@@ -37,7 +37,7 @@ func (ctl *controller) GetVacancies() echo.HandlerFunc {
 		page := pagination.Page
 		size := pagination.PageSize
 
-		volunteers, totalData := ctl.service.FindAllVacancies(page, size, searchAndFilter)
+		volunteers, totalData := ctl.service.FindAllVacancies(page, size, searchAndFilter, suffix)
 
 		if volunteers == nil {
 			return ctx.JSON(404, helpers.Response("there is no volunteers!"))
