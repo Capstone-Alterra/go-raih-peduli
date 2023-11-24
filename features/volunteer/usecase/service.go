@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math"
 	"mime/multipart"
+	"raihpeduli/config"
 	"raihpeduli/features/volunteer"
 	"raihpeduli/features/volunteer/dtos"
 	"raihpeduli/helpers"
@@ -25,8 +26,8 @@ func New(model volunteer.Repository, validation helpers.ValidationInterface) vol
 	}
 }
 
-func (svc *service) FindAll(page, size int, searchAndFilter dtos.SearchAndFilter) ([]dtos.ResVolunteer, int64) {
-	var volunteers []dtos.ResVolunteer
+func (svc *service) FindAllVacancies(page, size int, searchAndFilter dtos.SearchAndFilter) ([]dtos.ResVacancy, int64) {
+	var volunteers []dtos.ResVacancy
 
 	if searchAndFilter.MaxParticipant == 0 {
 		searchAndFilter.MaxParticipant = math.MaxInt32
@@ -35,7 +36,7 @@ func (svc *service) FindAll(page, size int, searchAndFilter dtos.SearchAndFilter
 	volunteersEnt := svc.model.Paginate(page, size, searchAndFilter)
 
 	for _, volunteer := range volunteersEnt {
-		var data dtos.ResVolunteer
+		var data dtos.ResVacancy
 
 		if err := smapping.FillStruct(&data, smapping.MapFields(volunteer)); err != nil {
 			log.Error(err.Error())
@@ -55,9 +56,9 @@ func (svc *service) FindAll(page, size int, searchAndFilter dtos.SearchAndFilter
 	return volunteers, totalData
 }
 
-func (svc *service) FindByID(volunteerID int) *dtos.ResVolunteer {
-	res := dtos.ResVolunteer{}
-	volunteer := svc.model.SelectByID(volunteerID)
+func (svc *service) FindVacancyByID(volunteerID int) *dtos.ResVacancy {
+	res := dtos.ResVacancy{}
+	volunteer := svc.model.SelectVacancyByID(volunteerID)
 
 	if volunteer == nil {
 		return nil
@@ -69,29 +70,56 @@ func (svc *service) FindByID(volunteerID int) *dtos.ResVolunteer {
 		return nil
 	}
 
-	res.TotalRegistrar = int(svc.model.GetTotalVolunteerByVacancyID(res.ID))
+	res.TotalRegistrar = int(svc.model.GetTotalVolunteersByVacancyID(res.ID))
 
 	return &res
 }
 
-func (svc *service) Modify(volunteerData dtos.InputVolunteer, volunteerID int) bool {
-	newVolunteer := volunteer.VolunteerVacancies{}
-
-	err := smapping.FillStruct(&newVolunteer, smapping.MapFields(volunteerData))
-	if err != nil {
-		log.Error(err)
-		return false
+func (svc *service) ModifyVacancy(vacancyData dtos.InputVacancy, file multipart.File, oldData dtos.ResVacancy) (bool, []string) {
+	errMap := svc.validation.ValidateRequest(vacancyData)
+	if errMap != nil {
+		return false, errMap
 	}
 
-	newVolunteer.ID = volunteerID
-	rowsAffected := svc.model.Update(newVolunteer)
+	var newVacancy volunteer.VolunteerVacancies
+	var url string = ""
+	var config = config.LoadCloudStorageConfig()
+	var oldFilename string = oldData.Photo
+	var urlLength int = len("https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/vacancies/")
+
+	if file != nil {
+		if oldFilename == "https://storage.googleapis.com/raih_peduli/vacancies/volunteer-vacancy.jpg" {
+			oldFilename = ""
+		} else if len(oldFilename) > urlLength {
+			oldFilename = oldFilename[urlLength:]
+		}
+
+		imageURL, err := svc.model.UploadFile(file, oldFilename)
+
+		if err != nil {
+			logrus.Error(err)
+			return false, nil
+		}
+
+		url = imageURL
+	}
+
+	err := smapping.FillStruct(&newVacancy, smapping.MapFields(vacancyData))
+	if err != nil {
+		log.Error(err)
+		return false, nil
+	}
+
+	newVacancy.ID = oldData.ID
+	newVacancy.Photo = url
+	rowsAffected := svc.model.UpdateVacancy(newVacancy)
 
 	if rowsAffected <= 0 {
 		log.Error("There is No Volunteer Updated!")
-		return false
+		return false, nil
 	}
 
-	return true
+	return true, nil
 }
 
 func (svc *service) UpdateStatusRegistrar(status string, registrarID int) bool {
@@ -111,8 +139,8 @@ func (svc *service) UpdateStatusRegistrar(status string, registrarID int) bool {
 	return true
 }
 
-func (svc *service) Remove(volunteerID int) bool {
-	rowsAffected := svc.model.DeleteByID(volunteerID)
+func (svc *service) RemoveVacancy(volunteerID int) bool {
+	rowsAffected := svc.model.DeleteVacancyByID(volunteerID)
 
 	if rowsAffected <= 0 {
 		log.Error("There is No Volunteer Deleted!")
@@ -122,13 +150,12 @@ func (svc *service) Remove(volunteerID int) bool {
 	return true
 }
 
-func (svc *service) Create(newVolunteer dtos.InputVolunteer, UserID int, file multipart.File) (*dtos.ResVolunteer, []string, error) {
+func (svc *service) CreateVacancy(newVolunteer dtos.InputVacancy, UserID int, file multipart.File) (*dtos.ResVacancy, []string, error) {
 	if errMap := svc.validation.ValidateRequest(newVolunteer); errMap != nil {
 		return nil, errMap, errors.New("validation error")
 	}
 
-	volun := volunteer.VolunteerVacancies{}
-
+	vacancy := volunteer.VolunteerVacancies{}
 	var url string = ""
 
 	if file != nil {
@@ -140,20 +167,25 @@ func (svc *service) Create(newVolunteer dtos.InputVolunteer, UserID int, file mu
 		}
 
 		url = imageURL
+	} else {
+		config := config.LoadCloudStorageConfig()
+		url = "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/vacancies/volunteer-vacancy.jpg"
 	}
 
-	volun.UserID = UserID
-	volun.Photo = url
-	err := smapping.FillStruct(&volun, smapping.MapFields(newVolunteer))
+	vacancy.UserID = UserID
+	vacancy.Photo = url
+	err := smapping.FillStruct(&vacancy, smapping.MapFields(newVolunteer))
+	if err != nil {
+		return nil, nil, err
+	}
 
-	result, err := svc.model.Insert(&volun)
-
+	result, err := svc.model.InsertVacancy(&vacancy)
 	if err != nil {
 		log.Error(err)
 		return nil, nil, errors.New("Use Case : failed to create volunteer")
 	}
 
-	resVolun := dtos.ResVolunteer{}
+	resVolun := dtos.ResVacancy{}
 	resVolun.Photo = url
 	errRes := smapping.FillStruct(&resVolun, smapping.MapFields(result))
 
@@ -165,7 +197,7 @@ func (svc *service) Create(newVolunteer dtos.InputVolunteer, UserID int, file mu
 	return &resVolun, nil, nil
 }
 
-func (svc *service) Register(newApply dtos.ApplyVolunteer, userID int, file multipart.File) (bool, []string) {
+func (svc *service) RegisterVacancy(newApply dtos.ApplyVacancy, userID int, file multipart.File) (bool, []string) {
 	if errMap := svc.validation.ValidateRequest(newApply); errMap != nil {
 		return false, errMap
 	}
@@ -194,7 +226,7 @@ func (svc *service) Register(newApply dtos.ApplyVolunteer, userID int, file mult
 
 	registrar.Resume = url
 
-	err = svc.model.Register(&registrar)
+	err = svc.model.RegisterVacancy(&registrar)
 	if err != nil {
 		return false, nil
 	}
@@ -202,10 +234,10 @@ func (svc *service) Register(newApply dtos.ApplyVolunteer, userID int, file mult
 	return true, nil
 }
 
-func (svc *service) FindAllVolunteerByVacancyID(page, size int, vacancyID int, name string) ([]dtos.ResRegistrantVacancy, int64) {
+func (svc *service) FindAllVolunteersByVacancyID(page, size int, vacancyID int, name string) ([]dtos.ResRegistrantVacancy, int64) {
 	var volunteers []dtos.ResRegistrantVacancy
 
-	volunteerEnt := svc.model.SelectVolunteerByVacancyID(vacancyID, name, page, size)
+	volunteerEnt := svc.model.SelectVolunteersByVacancyID(vacancyID, name, page, size)
 	if volunteerEnt == nil {
 		return nil, 0
 	}
@@ -220,7 +252,7 @@ func (svc *service) FindAllVolunteerByVacancyID(page, size int, vacancyID int, n
 		volunteers = append(volunteers, data)
 	}
 
-	totalData := svc.model.GetTotalVolunteer(vacancyID, name)
+	totalData := svc.model.GetTotalVolunteers(vacancyID, name)
 
 	return volunteers, totalData
 }

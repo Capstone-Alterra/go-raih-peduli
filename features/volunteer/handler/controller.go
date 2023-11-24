@@ -21,7 +21,7 @@ func New(service volunteer.Usecase) volunteer.Handler {
 	}
 }
 
-func (ctl *controller) GetVolunteers() echo.HandlerFunc {
+func (ctl *controller) GetVacancies() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		pagination := dtos.Pagination{}
 		ctx.Bind(&pagination)
@@ -37,7 +37,7 @@ func (ctl *controller) GetVolunteers() echo.HandlerFunc {
 		page := pagination.Page
 		size := pagination.PageSize
 
-		volunteers, totalData := ctl.service.FindAll(page, size, searchAndFilter)
+		volunteers, totalData := ctl.service.FindAllVacancies(page, size, searchAndFilter)
 
 		if volunteers == nil {
 			return ctx.JSON(404, helpers.Response("There is No Volunteers!"))
@@ -52,7 +52,7 @@ func (ctl *controller) GetVolunteers() echo.HandlerFunc {
 	}
 }
 
-func (ctl *controller) VolunteerDetails() echo.HandlerFunc {
+func (ctl *controller) VacancyDetails() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		volunteerID, err := strconv.Atoi(ctx.Param("id"))
 
@@ -60,7 +60,7 @@ func (ctl *controller) VolunteerDetails() echo.HandlerFunc {
 			return ctx.JSON(400, helpers.Response(err.Error()))
 		}
 
-		volunteer := ctl.service.FindByID(volunteerID)
+		volunteer := ctl.service.FindVacancyByID(volunteerID)
 
 		if volunteer == nil {
 			return ctx.JSON(404, helpers.Response("Volunteer Not Found!"))
@@ -72,37 +72,45 @@ func (ctl *controller) VolunteerDetails() echo.HandlerFunc {
 	}
 }
 
-func (ctl *controller) UpdateVolunteer() echo.HandlerFunc {
+func (ctl *controller) UpdateVacancy() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		input := dtos.InputVolunteer{}
+		input := dtos.InputVacancy{}
 
-		volunteerID, errParam := strconv.Atoi(ctx.Param("id"))
+		vacancyID, errParam := strconv.Atoi(ctx.Param("id"))
 
 		if errParam != nil {
 			return ctx.JSON(400, helpers.Response(errParam.Error()))
 		}
 
-		volunteer := ctl.service.FindByID(volunteerID)
+		vacancy := ctl.service.FindVacancyByID(vacancyID)
 
-		if volunteer == nil {
+		if vacancy == nil {
 			return ctx.JSON(404, helpers.Response("Volunteer Not Found!"))
 		}
 
 		ctx.Bind(&input)
 
-		// validate = validator.New(validator.WithRequiredStructEnabled())
-		// err := validate.Struct(input)
+		fileHeader, err := ctx.FormFile("photo")
+		var file multipart.File
 
-		// if err != nil {
-		// 	errMap := helperss.ErrorMapValidation(err)
-		// 	return ctx.JSON(400, helpers.Response("Bad Request!", map[string]any{
-		// 		"error": errMap,
-		// 	}))
-		// }
+		if err == nil {
+			formFile, err := fileHeader.Open()
 
-		update := ctl.service.Modify(input, volunteerID)
+			if err != nil {
+				return ctx.JSON(500, helpers.Response("something went wrong"))
+			}
 
-		if !update {
+			file = formFile
+		}
+
+		result, errMap := ctl.service.ModifyVacancy(input, file, *vacancy)
+		if errMap != nil {
+			return ctx.JSON(400, helpers.Response("error missing some data", map[string]any{
+				"error": errMap,
+			}))
+		}
+
+		if !result {
 			return ctx.JSON(500, helpers.Response("Something Went Wrong!"))
 		}
 
@@ -110,7 +118,7 @@ func (ctl *controller) UpdateVolunteer() echo.HandlerFunc {
 	}
 }
 
-func (ctl *controller) DeleteVolunteer() echo.HandlerFunc {
+func (ctl *controller) DeleteVacancy() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		volunteerID, err := strconv.Atoi(ctx.Param("id"))
 
@@ -118,13 +126,13 @@ func (ctl *controller) DeleteVolunteer() echo.HandlerFunc {
 			return ctx.JSON(400, helpers.Response(err.Error()))
 		}
 
-		volunteer := ctl.service.FindByID(volunteerID)
+		volunteer := ctl.service.FindVacancyByID(volunteerID)
 
 		if volunteer == nil {
 			return ctx.JSON(404, helpers.Response("Volunteer Not Found!"))
 		}
 
-		delete := ctl.service.Remove(volunteerID)
+		delete := ctl.service.RemoveVacancy(volunteerID)
 
 		if !delete {
 			return ctx.JSON(500, helpers.Response("Something Went Wrong!"))
@@ -134,9 +142,9 @@ func (ctl *controller) DeleteVolunteer() echo.HandlerFunc {
 	}
 }
 
-func (ctl *controller) CreateVolunteer() echo.HandlerFunc {
+func (ctl *controller) CreateVacancy() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		input := dtos.InputVolunteer{}
+		input := dtos.InputVacancy{}
 
 		ctx.Bind(&input)
 
@@ -155,7 +163,7 @@ func (ctl *controller) CreateVolunteer() echo.HandlerFunc {
 			file = formFile
 		}
 
-		volun, errMap, err := ctl.service.Create(input, userID.(int), file)
+		volun, errMap, err := ctl.service.CreateVacancy(input, userID.(int), file)
 
 		if errMap != nil {
 			return ctx.JSON(400, helpers.Response("missing some data", map[string]any{
@@ -177,9 +185,9 @@ func (ctl *controller) CreateVolunteer() echo.HandlerFunc {
 	}
 }
 
-func (ctl *controller) ApplyVacancies() echo.HandlerFunc {
+func (ctl *controller) ApplyVacancy() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		input := dtos.ApplyVolunteer{}
+		input := dtos.ApplyVacancy{}
 
 		ctx.Bind(&input)
 
@@ -198,7 +206,7 @@ func (ctl *controller) ApplyVacancies() echo.HandlerFunc {
 			file = formFile
 		}
 
-		result, errMap := ctl.service.Register(input, userID.(int), file)
+		result, errMap := ctl.service.RegisterVacancy(input, userID.(int), file)
 		if errMap != nil {
 			return ctx.JSON(400, helpers.Response("missing some data", map[string]any{
 				"error": errMap,
@@ -235,7 +243,7 @@ func (ctl *controller) UpdateStatusRegistrar() echo.HandlerFunc {
 	}
 }
 
-func (ctl *controller) GetVolunteerByVacancyID() echo.HandlerFunc {
+func (ctl *controller) GetVolunteersByVacancyID() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		pagination := dtos.Pagination{}
 
@@ -255,7 +263,7 @@ func (ctl *controller) GetVolunteerByVacancyID() echo.HandlerFunc {
 		size := pagination.PageSize
 		name := ctx.QueryParam("name")
 
-		volunteers, totalData := ctl.service.FindAllVolunteerByVacancyID(page, size, vacancyID, name)
+		volunteers, totalData := ctl.service.FindAllVolunteersByVacancyID(page, size, vacancyID, name)
 
 		if volunteers == nil {
 			return ctx.JSON(404, helpers.Response("There is No Volunteers!"))
