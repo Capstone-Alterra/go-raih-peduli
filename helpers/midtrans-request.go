@@ -24,9 +24,12 @@ func (mr *midtransRequest) CreateTransactionBank(IDTransaction string, PaymentTy
 	midtrans.Environment = midtrans.Sandbox
 
 	bankMap := map[string]string{
+		"4": "permata",
+		"5": "cimb",
 		"6": "bca",
 		"7": "bri",
 		"8": "bni",
+		"9": "mandiri",
 	}
 
 	if bank, ok := bankMap[PaymentType]; ok {
@@ -39,6 +42,12 @@ func (mr *midtransRequest) CreateTransactionBank(IDTransaction string, PaymentTy
 			midtransBank = midtrans.BankBri
 		case "bni":
 			midtransBank = midtrans.BankBni
+		case "mandiri":
+			midtransBank = midtrans.BankMandiri
+		case "cimb":
+			midtransBank = midtrans.BankCimb
+		case "permata":
+			midtransBank = midtrans.BankPermata
 		default:
 			midtransBank = midtrans.BankBca
 		}
@@ -107,6 +116,42 @@ func (mr *midtransRequest) CreateTransactionGopay(IDTransaction string, PaymentT
 	}
 
 	return callback_url, nil
+}
+
+func (mr *midtransRequest) CreateTransactionQris(IDTransaction string, PaymentType string, Amount int64) (string, error) {
+	mtconfig := config.LoadMidtransConfig()
+
+	midtrans.ServerKey = mtconfig.MT_SERVER_KEY
+	midtrans.ClientKey = mtconfig.MT_CLIENT_KEY
+	midtrans.Environment = midtrans.Sandbox
+
+	chargeReq := &coreapi.ChargeReq{
+		Qris: &coreapi.QrisDetails{
+			Acquirer: "gopay",
+		},
+		PaymentType: "qris",
+		TransactionDetails: midtrans.TransactionDetails{
+			OrderID:  IDTransaction,
+			GrossAmt: Amount,
+		},
+	}
+
+	chargeResp, err := coreapi.ChargeTransaction(chargeReq)
+	if err != nil {
+		return "", err
+	}
+
+	var url string
+	if len(chargeResp.Actions) > 0 {
+		for _, action := range chargeResp.Actions {
+			if action.Name == "generate-qr-code" {
+				url = action.URL
+				break
+			}
+		}
+	}
+
+	return url, nil
 }
 
 func (mr *midtransRequest) TransactionStatus(transactionStatusResp *coreapi.TransactionStatusResponse) transaction.Status {

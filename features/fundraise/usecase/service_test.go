@@ -12,8 +12,6 @@ func TestFindAll(t *testing.T) {
 	var validation = helperMocks.NewValidationInterface(t)
 	var service = New(repository, validation)
 
-	var fundraises = []dtos.ResFundraise{
-		
-	}
+	var fundraises = []dtos.ResFundraise{}
 
 }

@@ -29,16 +29,16 @@ func New(model transaction.Repository, generator helpers.GeneratorInterface, mtR
 	}
 }
 
-func (svc *service) FindAll(page, size, roleID, userID int) ([]dtos.ResTransaction, int64) {
+func (svc *service) FindAll(page, size, roleID, userID int, keyword string) ([]dtos.ResTransaction, int64) {
 	var transactions []dtos.ResTransaction
 	var transactionData []transaction.Transaction
 	var totalData int64
 	if roleID == 2 {
-		transactionData = svc.model.Paginate(page, size)
-		totalData = svc.model.GetTotalData()
+		transactionData = svc.model.Paginate(page, size, keyword)
+		totalData = svc.model.GetTotalData(keyword)
 	} else {
 		transactionData = svc.model.PaginateUser(page, size, userID)
-		totalData = svc.model.GetTotalDataByUser(userID)
+		totalData = svc.model.GetTotalDataByUser(userID, keyword)
 	}
 
 	for _, transaction := range transactionData {
@@ -47,6 +47,11 @@ func (svc *service) FindAll(page, size, roleID, userID int) ([]dtos.ResTransacti
 		if err := smapping.FillStruct(&data, smapping.MapFields(transaction)); err != nil {
 			log.Error(err.Error())
 		}
+
+		data.Fullname = transaction.User.Fullname
+		data.Address = transaction.User.Address
+		data.PhoneNumber = transaction.User.PhoneNumber
+		data.ProfilePicture = transaction.User.ProfilePicture
 
 		switch transaction.Status {
 		case "2":
@@ -62,12 +67,16 @@ func (svc *service) FindAll(page, size, roleID, userID int) ([]dtos.ResTransacti
 		}
 
 		switch transaction.PaymentType {
-		case "6", "7", "8":
-			data.PaymentType = "Bank Transfer"
+		case "6":
+			data.PaymentType = "Bank BCA"
+		case "7":
+			data.PaymentType = "Bank BRI"
+		case "8":
+			data.PaymentType = "Bank BNI"
 		case "10":
 			data.PaymentType = "Gopay"
 		default:
-			data.PaymentType = "Bank Transfer"
+			data.PaymentType = "Other"
 		}
 
 		transactions = append(transactions, data)
@@ -97,12 +106,16 @@ func (svc *service) FindByID(transactionID int) *dtos.ResTransaction {
 	}
 
 	switch transaction.PaymentType {
-	case "6", "7", "8":
-		transaction.PaymentType = "Bank Transfer"
+	case "6":
+		transaction.PaymentType = "Bank BCA"
+	case "7":
+		transaction.PaymentType = "Bank BRI"
+	case "8":
+		transaction.PaymentType = "Bank BNI"
 	case "10":
 		transaction.PaymentType = "Gopay"
 	default:
-		transaction.PaymentType = "Bank Transfer"
+		transaction.PaymentType = "Other"
 	}
 
 	err := smapping.FillStruct(&res, smapping.MapFields(transaction))
@@ -166,6 +179,28 @@ func (svc *service) Create(userID int, newTransaction dtos.InputTransaction) (*d
 			return nil, err
 		}
 		resTransaction.PaymentType = "Gopay"
+		resTransaction.VirtualAccount = req
+		resTransaction.ID = transaction.ID
+		resTransaction.Amount = int(transaction.Amount)
+		resTransaction.Status = "Created"
+		resTransaction.UserID = userID
+		resTransaction.FundraiseID = transaction.FundraiseID
+	case "11":
+		req, err := svc.mtRequest.CreateTransactionQris(strconv.Itoa(transaction.ID), transaction.PaymentType, int64(transaction.Amount))
+		if err != nil {
+			log.Error(err.Error())
+			return nil, err
+		}
+		transactionID := svc.model.Insert(transaction)
+		if transactionID == -1 {
+			return nil, err
+		}
+		transaction.UrlCallback = req
+		update := svc.model.Update(transaction)
+		if update == -1 {
+			return nil, err
+		}
+		resTransaction.PaymentType = "Qris"
 		resTransaction.VirtualAccount = req
 		resTransaction.ID = transaction.ID
 		resTransaction.Amount = int(transaction.Amount)

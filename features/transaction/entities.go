@@ -1,7 +1,7 @@
 package transaction
 
 import (
-	"raihpeduli/features/auth"
+	"raihpeduli/features/user"
 	"time"
 
 	"gorm.io/gorm"
@@ -21,7 +21,7 @@ type Transaction struct {
 	UrlCallback    string `gorm:"type:varchar(250)"`
 	CreatedAt      time.Time
 
-	User auth.User
+	User user.User
 }
 
 type Status struct {
