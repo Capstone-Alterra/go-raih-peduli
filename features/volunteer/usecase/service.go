@@ -229,6 +229,8 @@ func (svc *service) RegisterVacancy(newApply dtos.ApplyVacancy, userID int, file
 		}
 
 		url = imageURL
+	} else {
+		return false, nil
 	}
 
 	registrar.UserID = userID
@@ -238,7 +240,7 @@ func (svc *service) RegisterVacancy(newApply dtos.ApplyVacancy, userID int, file
 		return false, nil
 	}
 
-	registrar.Resume = url
+	registrar.Photo = url
 
 	err = svc.model.RegisterVacancy(&registrar)
 	if err != nil {

@@ -193,7 +193,7 @@ func (ctl *controller) ApplyVacancy() echo.HandlerFunc {
 
 		userID := ctx.Get("user_id")
 
-		fileHeader, err := ctx.FormFile("resume")
+		fileHeader, err := ctx.FormFile("photo")
 		var file multipart.File
 
 		if err == nil {

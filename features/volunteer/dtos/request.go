@@ -23,7 +23,7 @@ type InputVacancy struct {
 type ApplyVacancy struct {
 	VolunteerID int            `json:"volunteer_id" form:"volunteer_id" validate:"required"`
 	Skills      string         `json:"skills" form:"skills" validate:"required"`
-	Resume      multipart.File `json:"resume" form:"resume" validate:"required"`
+	Resume      string 		   `json:"resume" form:"resume" validate:"required"`
 	Reason      string         `json:"reason" form:"reason" validate:"required"`
 }
 
