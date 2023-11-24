@@ -155,8 +155,7 @@ func (svc *service) CreateVacancy(newVolunteer dtos.InputVacancy, UserID int, fi
 		return nil, errMap, errors.New("validation error")
 	}
 
-	volun := volunteer.VolunteerVacancies{}
-
+	vacancy := volunteer.VolunteerVacancies{}
 	var url string = ""
 
 	if file != nil {
@@ -168,14 +167,19 @@ func (svc *service) CreateVacancy(newVolunteer dtos.InputVacancy, UserID int, fi
 		}
 
 		url = imageURL
+	} else {
+		config := config.LoadCloudStorageConfig()
+		url = "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/vacancies/volunteer-vacancy.jpg"
 	}
 
-	volun.UserID = UserID
-	volun.Photo = url
-	err := smapping.FillStruct(&volun, smapping.MapFields(newVolunteer))
+	vacancy.UserID = UserID
+	vacancy.Photo = url
+	err := smapping.FillStruct(&vacancy, smapping.MapFields(newVolunteer))
+	if err != nil {
+		return nil, nil, err
+	}
 
-	result, err := svc.model.InsertVacancy(&volun)
-
+	result, err := svc.model.InsertVacancy(&vacancy)
 	if err != nil {
 		log.Error(err)
 		return nil, nil, errors.New("Use Case : failed to create volunteer")
