@@ -28,8 +28,11 @@ var validate *validator.Validate
 func (ctl *controller) GetTransactions() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		pagination := dtos.Pagination{}
-		paginationResponse := dtos.PaginationResponse{}
+
 		ctx.Bind(&pagination)
+
+		keyword := ctx.QueryParam("fullname")
+
 		userID := ctx.Get("user_id").(int)
 		roleID, _ := strconv.Atoi(ctx.Get("role_id").(string))
 
@@ -40,23 +43,13 @@ func (ctl *controller) GetTransactions() echo.HandlerFunc {
 			return ctx.JSON(400, helper.Response("Please provide query `page` and `size` in number!"))
 		}
 
-		transactions, totalData := ctl.service.FindAll(page, size, roleID, userID)
+		transactions, totalData := ctl.service.FindAll(page, size, roleID, userID, keyword)
 
 		if transactions == nil {
 			return ctx.JSON(404, helper.Response("There is No Transactions!"))
 		}
 
-		paginationResponse.TotalData = totalData
-		paginationResponse.CurrentPage = pagination.Page
-		if paginationResponse.CurrentPage == 1 {
-			paginationResponse.PreviousPage = -1
-			paginationResponse.NextPage = -1
-
-		} else {
-			paginationResponse.PreviousPage = pagination.Page - 1
-			paginationResponse.NextPage = pagination.Page + 1
-		}
-		paginationResponse.TotalPage = (int(totalData) + pagination.Size - 1) / pagination.Size
+		paginationResponse := helpers.PaginationResponse(page, size, int(totalData))
 
 		return ctx.JSON(200, helper.Response("Success!", map[string]any{
 			"data":       transactions,

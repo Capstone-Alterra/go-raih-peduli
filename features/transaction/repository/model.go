@@ -17,12 +17,18 @@ func New(db *gorm.DB) transaction.Repository {
 	}
 }
 
-func (mdl *model) Paginate(page, size int) []transaction.Transaction {
+func (mdl *model) Paginate(page, size int, keyword string) []transaction.Transaction {
 	var transactions []transaction.Transaction
 
 	offset := (page - 1) * size
+	searching := "%" + keyword + "%"
 
-	result := mdl.db.Offset(offset).Limit(size).Find(&transactions)
+	result := mdl.db.Preload("User").
+		Table("transactions").
+		Joins("JOIN users ON transactions.user_id = users.id").
+		Where("users.fullname LIKE ?", searching).
+		Offset(offset).Limit(size).
+		Find(&transactions)
 
 	if result.Error != nil {
 		log.Error(result.Error)
@@ -32,10 +38,17 @@ func (mdl *model) Paginate(page, size int) []transaction.Transaction {
 	return transactions
 }
 
-func (mdl *model) GetTotalData() int64 {
+func (mdl *model) GetTotalData(keyword string) int64 {
 	var totalData int64
+	searching := "%" + keyword + "%"
 
-	result := mdl.db.Model(&transaction.Transaction{}).Count(&totalData)
+	result := mdl.db.Model(&transaction.Transaction{}).
+		Preload("User", "fullname LIKE ?", searching).
+		Joins("JOIN users ON transactions.user_id = users.id").
+		Where("users.fullname LIKE ?", searching).
+		Count(&totalData)
+
+	//result := mdl.db.Model(&transaction.Transaction{}).Count(&totalData)
 
 	if result.Error != nil {
 		log.Error(result.Error)
@@ -45,10 +58,17 @@ func (mdl *model) GetTotalData() int64 {
 	return totalData
 }
 
-func (mdl *model) GetTotalDataByUser(userID int) int64 {
+func (mdl *model) GetTotalDataByUser(userID int, keyword string) int64 {
 	var totalData int64
+	searching := "%" + keyword + "%"
 
-	result := mdl.db.Model(&transaction.Transaction{}).Where("user_id = ?", userID).Count(&totalData)
+	result := mdl.db.Model(&transaction.Transaction{}).
+		Preload("User", "fullname LIKE ?", searching).
+		Joins("JOIN users ON transactions.user_id = users.id").
+		Where("users.fullname LIKE ?", searching).
+		Count(&totalData)
+
+	// result := mdl.db.Model(&transaction.Transaction{}).Where("user_id = ?", userID).Count(&totalData)
 
 	if result.Error != nil {
 		log.Error(result.Error)
@@ -63,7 +83,7 @@ func (mdl *model) PaginateUser(page, size, userID int) []transaction.Transaction
 
 	offset := (page - 1) * size
 
-	result := mdl.db.Where("user_id = ?", userID).Offset(offset).Limit(size).Find(&transactions)
+	result := mdl.db.Preload("User").Where("user_id = ?", userID).Offset(offset).Limit(size).Find(&transactions)
 
 	if result.Error != nil {
 		log.Error(result.Error)
