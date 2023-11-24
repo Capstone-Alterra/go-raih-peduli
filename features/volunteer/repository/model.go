@@ -45,7 +45,7 @@ func (mdl *model) Paginate(page, size int, searchAndFilter dtos.SearchAndFilter)
 	return volunteers
 }
 
-func (mdl *model) SelectByID(volunteerID int) *volunteer.VolunteerVacancies {
+func (mdl *model) SelectVacancyByID(volunteerID int) *volunteer.VolunteerVacancies {
 	var volunteer volunteer.VolunteerVacancies
 	result := mdl.db.First(&volunteer, volunteerID)
 
@@ -57,7 +57,7 @@ func (mdl *model) SelectByID(volunteerID int) *volunteer.VolunteerVacancies {
 	return &volunteer
 }
 
-func (mdl *model) Update(volunteer volunteer.VolunteerVacancies) int64 {
+func (mdl *model) UpdateVacancy(volunteer volunteer.VolunteerVacancies) int64 {
 	result := mdl.db.Updates(&volunteer)
 
 	if result.Error != nil {
@@ -67,7 +67,7 @@ func (mdl *model) Update(volunteer volunteer.VolunteerVacancies) int64 {
 	return result.RowsAffected
 }
 
-func (mdl *model) DeleteByID(volunteerID int) int64 {
+func (mdl *model) DeleteVacancyByID(volunteerID int) int64 {
 	result := mdl.db.Delete(&volunteer.VolunteerVacancies{}, volunteerID)
 
 	if result.Error != nil {
@@ -78,7 +78,7 @@ func (mdl *model) DeleteByID(volunteerID int) int64 {
 	return result.RowsAffected
 }
 
-func (mdl *model) Insert(newVolunteer *volunteer.VolunteerVacancies) (*volunteer.VolunteerVacancies, error) {
+func (mdl *model) InsertVacancy(newVolunteer *volunteer.VolunteerVacancies) (*volunteer.VolunteerVacancies, error) {
 	result := mdl.db.Create(newVolunteer)
 
 	if result.Error != nil {
@@ -88,7 +88,7 @@ func (mdl *model) Insert(newVolunteer *volunteer.VolunteerVacancies) (*volunteer
 	return newVolunteer, nil
 }
 
-func (mdl *model) Register(registrar *volunteer.VolunteerRelations) error {
+func (mdl *model) RegisterVacancy(registrar *volunteer.VolunteerRelations) error {
 	result := mdl.db.Table("volunteer_relations").Create(registrar)
 
 	if result.Error != nil {
@@ -166,7 +166,7 @@ func (mdl *model) GetTotalDataVacanciesBySearchAndFilter(searchAndFilter dtos.Se
 	return totalData
 }
 
-func (mdl *model) GetTotalVolunteerByVacancyID(vacancyID int) int64 {
+func (mdl *model) GetTotalVolunteersByVacancyID(vacancyID int) int64 {
 	var totalData int64
 
 	result := mdl.db.Table("volunteer_relations").Where("volunteer_id = ?", vacancyID).Count(&totalData)
@@ -178,7 +178,7 @@ func (mdl *model) GetTotalVolunteerByVacancyID(vacancyID int) int64 {
 	return totalData
 }
 
-func (mdl *model) SelectVolunteerByVacancyID(vacancyID int, name string, page, size int) []volunteer.Volunteer {
+func (mdl *model) SelectVolunteersByVacancyID(vacancyID int, name string, page, size int) []volunteer.Volunteer {
 	var volunteers []volunteer.Volunteer
 
 	offset := (page - 1) * size
@@ -196,7 +196,7 @@ func (mdl *model) SelectVolunteerByVacancyID(vacancyID int, name string, page, s
 	return volunteers
 }
 
-func (mdl *model) GetTotalVolunteer(vacancyID int, name string) int64 {
+func (mdl *model) GetTotalVolunteers(vacancyID int, name string) int64 {
 	var totalData int64
 
 	result := mdl.db.Table("volunteer_relations AS vr").Select("users.fullname", "users.address", "users.nik", "vr.resume", "vr.status").

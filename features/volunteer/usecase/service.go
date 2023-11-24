@@ -25,8 +25,8 @@ func New(model volunteer.Repository, validation helpers.ValidationInterface) vol
 	}
 }
 
-func (svc *service) FindAll(page, size int, searchAndFilter dtos.SearchAndFilter) ([]dtos.ResVolunteer, int64) {
-	var volunteers []dtos.ResVolunteer
+func (svc *service) FindAllVacancies(page, size int, searchAndFilter dtos.SearchAndFilter) ([]dtos.ResVacancy, int64) {
+	var volunteers []dtos.ResVacancy
 
 	if searchAndFilter.MaxParticipant == 0 {
 		searchAndFilter.MaxParticipant = math.MaxInt32
@@ -35,7 +35,7 @@ func (svc *service) FindAll(page, size int, searchAndFilter dtos.SearchAndFilter
 	volunteersEnt := svc.model.Paginate(page, size, searchAndFilter)
 
 	for _, volunteer := range volunteersEnt {
-		var data dtos.ResVolunteer
+		var data dtos.ResVacancy
 
 		if err := smapping.FillStruct(&data, smapping.MapFields(volunteer)); err != nil {
 			log.Error(err.Error())
@@ -55,9 +55,9 @@ func (svc *service) FindAll(page, size int, searchAndFilter dtos.SearchAndFilter
 	return volunteers, totalData
 }
 
-func (svc *service) FindByID(volunteerID int) *dtos.ResVolunteer {
-	res := dtos.ResVolunteer{}
-	volunteer := svc.model.SelectByID(volunteerID)
+func (svc *service) FindVacancyByID(volunteerID int) *dtos.ResVacancy {
+	res := dtos.ResVacancy{}
+	volunteer := svc.model.SelectVacancyByID(volunteerID)
 
 	if volunteer == nil {
 		return nil
@@ -69,12 +69,12 @@ func (svc *service) FindByID(volunteerID int) *dtos.ResVolunteer {
 		return nil
 	}
 
-	res.TotalRegistrar = int(svc.model.GetTotalVolunteerByVacancyID(res.ID))
+	res.TotalRegistrar = int(svc.model.GetTotalVolunteersByVacancyID(res.ID))
 
 	return &res
 }
 
-func (svc *service) Modify(volunteerData dtos.InputVolunteer, volunteerID int) bool {
+func (svc *service) ModifyVacancy(volunteerData dtos.InputVacancy, volunteerID int) bool {
 	newVolunteer := volunteer.VolunteerVacancies{}
 
 	err := smapping.FillStruct(&newVolunteer, smapping.MapFields(volunteerData))
@@ -84,7 +84,7 @@ func (svc *service) Modify(volunteerData dtos.InputVolunteer, volunteerID int) b
 	}
 
 	newVolunteer.ID = volunteerID
-	rowsAffected := svc.model.Update(newVolunteer)
+	rowsAffected := svc.model.UpdateVacancy(newVolunteer)
 
 	if rowsAffected <= 0 {
 		log.Error("There is No Volunteer Updated!")
@@ -111,8 +111,8 @@ func (svc *service) UpdateStatusRegistrar(status string, registrarID int) bool {
 	return true
 }
 
-func (svc *service) Remove(volunteerID int) bool {
-	rowsAffected := svc.model.DeleteByID(volunteerID)
+func (svc *service) RemoveVacancy(volunteerID int) bool {
+	rowsAffected := svc.model.DeleteVacancyByID(volunteerID)
 
 	if rowsAffected <= 0 {
 		log.Error("There is No Volunteer Deleted!")
@@ -122,7 +122,7 @@ func (svc *service) Remove(volunteerID int) bool {
 	return true
 }
 
-func (svc *service) Create(newVolunteer dtos.InputVolunteer, UserID int, file multipart.File) (*dtos.ResVolunteer, []string, error) {
+func (svc *service) CreateVacancy(newVolunteer dtos.InputVacancy, UserID int, file multipart.File) (*dtos.ResVacancy, []string, error) {
 	if errMap := svc.validation.ValidateRequest(newVolunteer); errMap != nil {
 		return nil, errMap, errors.New("validation error")
 	}
@@ -146,14 +146,14 @@ func (svc *service) Create(newVolunteer dtos.InputVolunteer, UserID int, file mu
 	volun.Photo = url
 	err := smapping.FillStruct(&volun, smapping.MapFields(newVolunteer))
 
-	result, err := svc.model.Insert(&volun)
+	result, err := svc.model.InsertVacancy(&volun)
 
 	if err != nil {
 		log.Error(err)
 		return nil, nil, errors.New("Use Case : failed to create volunteer")
 	}
 
-	resVolun := dtos.ResVolunteer{}
+	resVolun := dtos.ResVacancy{}
 	resVolun.Photo = url
 	errRes := smapping.FillStruct(&resVolun, smapping.MapFields(result))
 
@@ -165,7 +165,7 @@ func (svc *service) Create(newVolunteer dtos.InputVolunteer, UserID int, file mu
 	return &resVolun, nil, nil
 }
 
-func (svc *service) Register(newApply dtos.ApplyVolunteer, userID int, file multipart.File) (bool, []string) {
+func (svc *service) RegisterVacancy(newApply dtos.ApplyVacancy, userID int, file multipart.File) (bool, []string) {
 	if errMap := svc.validation.ValidateRequest(newApply); errMap != nil {
 		return false, errMap
 	}
@@ -194,7 +194,7 @@ func (svc *service) Register(newApply dtos.ApplyVolunteer, userID int, file mult
 
 	registrar.Resume = url
 
-	err = svc.model.Register(&registrar)
+	err = svc.model.RegisterVacancy(&registrar)
 	if err != nil {
 		return false, nil
 	}
@@ -202,10 +202,10 @@ func (svc *service) Register(newApply dtos.ApplyVolunteer, userID int, file mult
 	return true, nil
 }
 
-func (svc *service) FindAllVolunteerByVacancyID(page, size int, vacancyID int, name string) ([]dtos.ResRegistrantVacancy, int64) {
+func (svc *service) FindAllVolunteersByVacancyID(page, size int, vacancyID int, name string) ([]dtos.ResRegistrantVacancy, int64) {
 	var volunteers []dtos.ResRegistrantVacancy
 
-	volunteerEnt := svc.model.SelectVolunteerByVacancyID(vacancyID, name, page, size)
+	volunteerEnt := svc.model.SelectVolunteersByVacancyID(vacancyID, name, page, size)
 	if volunteerEnt == nil {
 		return nil, 0
 	}
@@ -220,7 +220,7 @@ func (svc *service) FindAllVolunteerByVacancyID(page, size int, vacancyID int, n
 		volunteers = append(volunteers, data)
 	}
 
-	totalData := svc.model.GetTotalVolunteer(vacancyID, name)
+	totalData := svc.model.GetTotalVolunteers(vacancyID, name)
 
 	return volunteers, totalData
 }
