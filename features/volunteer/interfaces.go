@@ -26,10 +26,10 @@ type Repository interface {
 
 type Usecase interface {
 	FindAllVacancies(page, size int, searchAndFilter dtos.SearchAndFilter) ([]dtos.ResVacancy, int64)
-	FindVacancyByID(volunteerID int) *dtos.ResVacancy
-	ModifyVacancy(volunteerData dtos.InputVacancy, volunteerID int) bool
-	RemoveVacancy(volunteerID int) bool
-	CreateVacancy(newVolunteer dtos.InputVacancy, UserID int, file multipart.File) (*dtos.ResVacancy, []string, error)
+	FindVacancyByID(vacancyID int) *dtos.ResVacancy
+	ModifyVacancy(vacancyData dtos.InputVacancy, file multipart.File, oldData dtos.ResVacancy) (bool, []string)
+	RemoveVacancy(vacancyID int) bool
+	CreateVacancy(newVacancy dtos.InputVacancy, UserID int, file multipart.File) (*dtos.ResVacancy, []string, error)
 	RegisterVacancy(newApply dtos.ApplyVacancy, userID int, file multipart.File) (bool, []string)
 	UpdateStatusRegistrar(status string, registrarID int) bool
 	FindAllVolunteersByVacancyID(page, size int, vacancyID int, name string) ([]dtos.ResRegistrantVacancy, int64)

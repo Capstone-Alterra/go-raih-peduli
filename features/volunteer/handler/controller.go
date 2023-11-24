@@ -76,33 +76,41 @@ func (ctl *controller) UpdateVacancy() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		input := dtos.InputVacancy{}
 
-		volunteerID, errParam := strconv.Atoi(ctx.Param("id"))
+		vacancyID, errParam := strconv.Atoi(ctx.Param("id"))
 
 		if errParam != nil {
 			return ctx.JSON(400, helpers.Response(errParam.Error()))
 		}
 
-		volunteer := ctl.service.FindVacancyByID(volunteerID)
+		vacancy := ctl.service.FindVacancyByID(vacancyID)
 
-		if volunteer == nil {
+		if vacancy == nil {
 			return ctx.JSON(404, helpers.Response("Volunteer Not Found!"))
 		}
 
 		ctx.Bind(&input)
 
-		// validate = validator.New(validator.WithRequiredStructEnabled())
-		// err := validate.Struct(input)
+		fileHeader, err := ctx.FormFile("photo")
+		var file multipart.File
 
-		// if err != nil {
-		// 	errMap := helperss.ErrorMapValidation(err)
-		// 	return ctx.JSON(400, helpers.Response("Bad Request!", map[string]any{
-		// 		"error": errMap,
-		// 	}))
-		// }
+		if err == nil {
+			formFile, err := fileHeader.Open()
 
-		update := ctl.service.ModifyVacancy(input, volunteerID)
+			if err != nil {
+				return ctx.JSON(500, helpers.Response("something went wrong"))
+			}
 
-		if !update {
+			file = formFile
+		}
+
+		result, errMap := ctl.service.ModifyVacancy(input, file, *vacancy)
+		if errMap != nil {
+			return ctx.JSON(400, helpers.Response("error missing some data", map[string]any{
+				"error": errMap,
+			}))
+		}
+
+		if !result {
 			return ctx.JSON(500, helpers.Response("Something Went Wrong!"))
 		}
 

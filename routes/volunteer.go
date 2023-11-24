@@ -16,7 +16,6 @@ func Volunteers(e *echo.Echo, handler volunteer.Handler, jwt helpers.JWTInterfac
 	volunteers.GET("", handler.GetVacancies())
 	volunteers.GET("/:id", handler.VacancyDetails())
 	volunteers.PUT("/:id", handler.UpdateVacancy())
-	volunteers.PATCH("/:id", handler.UpdateVacancy())
 	volunteers.DELETE("/:id", handler.DeleteVacancy())
 
 	volunteers.POST("/register", handler.ApplyVacancy(), m.AuthorizeJWT(jwt, 1, cfg.SECRET))

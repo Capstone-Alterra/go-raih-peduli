@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math"
 	"mime/multipart"
+	"raihpeduli/config"
 	"raihpeduli/features/volunteer"
 	"raihpeduli/features/volunteer/dtos"
 	"raihpeduli/helpers"
@@ -74,24 +75,51 @@ func (svc *service) FindVacancyByID(volunteerID int) *dtos.ResVacancy {
 	return &res
 }
 
-func (svc *service) ModifyVacancy(volunteerData dtos.InputVacancy, volunteerID int) bool {
-	newVolunteer := volunteer.VolunteerVacancies{}
-
-	err := smapping.FillStruct(&newVolunteer, smapping.MapFields(volunteerData))
-	if err != nil {
-		log.Error(err)
-		return false
+func (svc *service) ModifyVacancy(vacancyData dtos.InputVacancy, file multipart.File, oldData dtos.ResVacancy) (bool, []string) {
+	errMap := svc.validation.ValidateRequest(vacancyData)
+	if errMap != nil {
+		return false, errMap
 	}
 
-	newVolunteer.ID = volunteerID
-	rowsAffected := svc.model.UpdateVacancy(newVolunteer)
+	var newVacancy volunteer.VolunteerVacancies
+	var url string = ""
+	var config = config.LoadCloudStorageConfig()
+	var oldFilename string = oldData.Photo
+	var urlLength int = len("https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/vacancies/")
+
+	if file != nil {
+		if oldFilename == "https://storage.googleapis.com/raih_peduli/vacancies/volunteer-vacancy.jpg" {
+			oldFilename = ""
+		} else if len(oldFilename) > urlLength {
+			oldFilename = oldFilename[urlLength:]
+		}
+
+		imageURL, err := svc.model.UploadFile(file, oldFilename)
+
+		if err != nil {
+			logrus.Error(err)
+			return false, nil
+		}
+
+		url = imageURL
+	}
+
+	err := smapping.FillStruct(&newVacancy, smapping.MapFields(vacancyData))
+	if err != nil {
+		log.Error(err)
+		return false, nil
+	}
+
+	newVacancy.ID = oldData.ID
+	newVacancy.Photo = url
+	rowsAffected := svc.model.UpdateVacancy(newVacancy)
 
 	if rowsAffected <= 0 {
 		log.Error("There is No Volunteer Updated!")
-		return false
+		return false, nil
 	}
 
-	return true
+	return true, nil
 }
 
 func (svc *service) UpdateStatusRegistrar(status string, registrarID int) bool {

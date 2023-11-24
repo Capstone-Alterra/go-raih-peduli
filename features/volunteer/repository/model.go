@@ -131,7 +131,7 @@ func (mdl *model) UploadFile(file multipart.File, objectName string) (string, er
 		return "", err
 	}
 
-	return "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/volunteer/" + objectName, nil
+	return "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/vacancies/" + objectName, nil
 }
 
 func (mdl *model) GetTotalDataVacancies() int64 {

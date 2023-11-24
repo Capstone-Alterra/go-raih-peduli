@@ -117,7 +117,7 @@ func VolunteerHandler() volunteer.Handler {
 
 	db := utils.InitDB()
 
-	clStorage := helpers.NewCloudStorage(config.CLOUD_PROJECT_ID, config.CLOUD_BUCKET_NAME, "fundraises/")
+	clStorage := helpers.NewCloudStorage(config.CLOUD_PROJECT_ID, config.CLOUD_BUCKET_NAME, "vacancies/")
 	repo := vr.New(db, clStorage)
 	uc := vu.New(repo, validation)
 	return vh.New(uc)
