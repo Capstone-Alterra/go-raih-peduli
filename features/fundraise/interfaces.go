@@ -10,11 +10,11 @@ import (
 type Repository interface {
 	Paginate(pagination dtos.Pagination, searchAndFilter dtos.SearchAndFilter) ([]Fundraise, error)
 	PaginateMobile(pagination dtos.Pagination, searchAndFilter dtos.SearchAndFilter) ([]Fundraise, error)
-	Insert(newFundraise Fundraise) (int, error)
+	Insert(newFundraise Fundraise) (*Fundraise, error)
 	SelectByID(fundraiseID int) (*Fundraise, error)
 	TotalFundAcquired(fundraiseID int) (int32, error)
-	Update(fundraise Fundraise) (int, error)
-	DeleteByID(fundraiseID int) (int, error)
+	Update(fundraise Fundraise) error
+	DeleteByID(fundraiseID int) error
 	UploadFile(file multipart.File, objectName string) (string, error)
 	SelectBookmarkedFundraiseID(ownerID int) (map[int]string, error)
 	SelectBookmarkByFundraiseAndOwnerID(fundraiseID, ownerID int) (string, error)

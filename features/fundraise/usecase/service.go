@@ -173,16 +173,15 @@ func (svc *service) Create(newFundraise dtos.InputFundraise, userID int, file mu
 		return nil, nil, err
 	}
 
-	if _, err := svc.model.Insert(fundraise); err != nil {
+	inserted, err := svc.model.Insert(fundraise)
+
+	if err != nil {
 		return nil, nil, err
 	}
 
 	var res dtos.ResFundraise
 
-	res.Status = "pending"
-	res.Photo = url
-	res.UserID = userID
-	if err := smapping.FillStruct(&res, smapping.MapFields(newFundraise)); err != nil {
+	if err := smapping.FillStruct(&res, smapping.MapFields(inserted)); err != nil {
 		return nil, nil, err
 	}
 
@@ -228,9 +227,9 @@ func (svc *service) Modify(fundraiseData dtos.InputFundraise, file multipart.Fil
 	newFundraise.ID = oldData.ID
 	newFundraise.UserID = oldData.UserID
 	newFundraise.Status = oldData.Status
-	_, err := svc.model.Update(newFundraise)
+	
 
-	if err != nil {
+	if err := svc.model.Update(newFundraise); err != nil {
 		logrus.Error(err)
 		return nil, err
 	}
@@ -252,9 +251,7 @@ func (svc *service) ModifyStatus(input dtos.InputFundraiseStatus, oldData dtos.R
 
 	newFundraise.Status = input.Status
 
-	_, err := svc.model.Update(newFundraise)
-
-	if err != nil {
+	if err := svc.model.Update(newFundraise); err != nil {
 		logrus.Error(err)
 		return nil, err
 	}
@@ -263,9 +260,7 @@ func (svc *service) ModifyStatus(input dtos.InputFundraiseStatus, oldData dtos.R
 }
 
 func (svc *service) Remove(fundraiseID int) bool {
-	_, err := svc.model.DeleteByID(fundraiseID)
-
-	if err != nil {
+	if err := svc.model.DeleteByID(fundraiseID); err != nil {
 		logrus.Error(err)
 		return false
 	}
