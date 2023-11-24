@@ -131,7 +131,7 @@ func (mdl *model) Insert(newTransaction transaction.Transaction) int64 {
 
 func (mdl *model) SelectByID(transactionID int) *transaction.Transaction {
 	var transaction transaction.Transaction
-	result := mdl.db.First(&transaction, transactionID)
+	result := mdl.db.Preload("User").First(&transaction, transactionID)
 
 	if result.Error != nil {
 		log.Error(result.Error)
