@@ -2,13 +2,16 @@ package transaction
 
 import (
 	"raihpeduli/features/transaction/dtos"
+	"raihpeduli/features/user"
 
 	"github.com/labstack/echo/v4"
 )
 
 type Repository interface {
 	Paginate(page, size int, keyword string) []Transaction
+	CountByID(fundraiseID int) (int64, error)
 	PaginateUser(page, size, userID int) []Transaction
+	SelectUserByID(userID int) *user.User
 	Insert(newTransaction Transaction) int64
 	SelectByID(transactionID int) *Transaction
 	Update(transaction Transaction) int64
