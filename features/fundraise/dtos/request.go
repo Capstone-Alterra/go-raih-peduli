@@ -12,7 +12,7 @@ type InputFundraise struct {
 }
 
 type InputFundraiseStatus struct {
-	Status string `json:"status" form:"status" validate:"oneof=pending live closed"`
+	Status string `json:"status" form:"status" validate:"oneof=pending accepted rejected"`
 }
 
 type Pagination struct {

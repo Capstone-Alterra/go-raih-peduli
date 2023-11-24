@@ -15,7 +15,7 @@ type Fundraise struct {
 	Target      int32     `gorm:"type:int(11)"`
 	StartDate   time.Time `gorm:"type:DATETIME"`
 	EndDate     time.Time `gorm:"type:DATETIME"`
-	Status      string    `gorm:"type:enum('pending','live','closed')"`
+	Status      string    `gorm:"type:enum('pending','accepted','rejected')"`
 	UserID      int       `gorm:"type:int(11)"`
 
 	CreatedAt time.Time
