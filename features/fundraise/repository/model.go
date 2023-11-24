@@ -18,15 +18,15 @@ import (
 )
 
 type model struct {
-	db        *gorm.DB
-	clStorage helpers.CloudStorageInterface
+	db         *gorm.DB
+	clStorage  helpers.CloudStorageInterface
 	collection *mongo.Collection
 }
 
 func New(db *gorm.DB, clStorage helpers.CloudStorageInterface, collection *mongo.Collection) fundraise.Repository {
 	return &model{
-		db:        db,
-		clStorage: clStorage,
+		db:         db,
+		clStorage:  clStorage,
 		collection: collection,
 	}
 }
@@ -143,7 +143,7 @@ func (mdl *model) SelectBookmarkedFundraiseID(ownerID int) (map[int]string, erro
 	}
 
 	var mapPostIDs = map[int]string{}
-	
+
 	for _, data := range results {
 		postID := int(data["post_id"].(int32))
 		mapPostIDs[postID] = data["_id"].(primitive.ObjectID).Hex()
