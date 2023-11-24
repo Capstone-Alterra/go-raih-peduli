@@ -82,7 +82,7 @@ func (ctl *controller) FundraiseDetails() echo.HandlerFunc {
 			return ctx.JSON(404, helper.Response("fundraise not found"))
 		}
 
-		return ctx.JSON(200, helper.Response("Success!", map[string]any{
+		return ctx.JSON(200, helper.Response("success", map[string]any{
 			"data": fundraise,
 		}))
 	}
@@ -121,7 +121,7 @@ func (ctl *controller) CreateFundraise() echo.HandlerFunc {
 			return ctx.JSON(500, helper.Response(err.Error()))
 		}
 
-		return ctx.JSON(200, helper.Response("Success!", map[string]any{
+		return ctx.JSON(200, helper.Response("success created fundraise", map[string]any{
 			"data": fundraise,
 		}))
 	}
@@ -170,7 +170,7 @@ func (ctl *controller) UpdateFundraise() echo.HandlerFunc {
 			return ctx.JSON(500, helper.Response(err.Error()))
 		}
 
-		return ctx.JSON(200, helper.Response("fundraise success updated"))
+		return ctx.JSON(200, helper.Response("success updated fundraise"))
 	}
 }
 
@@ -204,7 +204,7 @@ func (ctl *controller) UpdateFundraiseStatus() echo.HandlerFunc {
 			return ctx.JSON(500, helper.Response(err.Error()))
 		}
 
-		return ctx.JSON(200, helper.Response("fundraise success updated"))
+		return ctx.JSON(200, helper.Response("success updated fundraise status"))
 	}
 }
 
@@ -225,9 +225,9 @@ func (ctl *controller) DeleteFundraise() echo.HandlerFunc {
 		delete := ctl.service.Remove(fundraiseID)
 
 		if !delete {
-			return ctx.JSON(500, helper.Response("Something Went Wrong!"))
+			return ctx.JSON(500, helper.Response("something went wrong"))
 		}
 
-		return ctx.JSON(200, helper.Response("Fundraise Success Deleted!", nil))
+		return ctx.JSON(200, helper.Response("fundraise success deleted"))
 	}
 }
