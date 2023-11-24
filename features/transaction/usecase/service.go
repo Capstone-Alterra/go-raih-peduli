@@ -118,6 +118,11 @@ func (svc *service) FindByID(transactionID int) *dtos.ResTransaction {
 		transaction.PaymentType = "Other"
 	}
 
+	res.Fullname = transaction.User.Fullname
+	res.Address = transaction.User.Address
+	res.PhoneNumber = transaction.User.PhoneNumber
+	res.ProfilePicture = transaction.User.ProfilePicture
+
 	err := smapping.FillStruct(&res, smapping.MapFields(transaction))
 	if err != nil {
 		log.Error(err)
