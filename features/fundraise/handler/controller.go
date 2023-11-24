@@ -25,7 +25,7 @@ func New(service fundraise.Usecase) fundraise.Handler {
 
 var validate *validator.Validate
 
-func (ctl *controller) GetFundraises() echo.HandlerFunc {
+func (ctl *controller) GetFundraises(suffix string) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		pagination := dtos.Pagination{}
 		ctx.Bind(&pagination)
@@ -39,7 +39,7 @@ func (ctl *controller) GetFundraises() echo.HandlerFunc {
 			userID = ctx.Get("user_id").(int)
 		}
 
-		fundraises, totalData := ctl.service.FindAll(pagination, searchAndFilter, userID)
+		fundraises, totalData := ctl.service.FindAll(pagination, searchAndFilter, userID, suffix)
 
 		if fundraises == nil {
 			return ctx.JSON(404, helper.Response("fundraises not found"))

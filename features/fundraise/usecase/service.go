@@ -25,7 +25,7 @@ func New(model fundraise.Repository, validation helpers.ValidationInterface) fun
 	}
 }
 
-func (svc *service) FindAll(pagination dtos.Pagination, searchAndFilter dtos.SearchAndFilter, ownerID int) ([]dtos.ResFundraise, int64) {
+func (svc *service) FindAll(pagination dtos.Pagination, searchAndFilter dtos.SearchAndFilter, ownerID int, suffix string) ([]dtos.ResFundraise, int64) {
 	var fundraises []dtos.ResFundraise
 	var bookmarkIDs map[int]string
 
@@ -41,7 +41,19 @@ func (svc *service) FindAll(pagination dtos.Pagination, searchAndFilter dtos.Sea
 		searchAndFilter.MaxTarget = math.MaxInt32
 	}
 
-	entities, err := svc.model.Paginate(pagination, searchAndFilter)
+	var entities []fundraise.Fundraise
+	var err error
+
+	if suffix == "mobile" {
+		entities, err = svc.model.PaginateMobile(pagination, searchAndFilter)
+	} else {
+		entities, err = svc.model.Paginate(pagination, searchAndFilter)
+	}
+
+	if err != nil {
+		logrus.Error(err)
+		return nil, 0
+	}
 
 	if ownerID != 0 {
 		bookmarkIDs, err = svc.model.SelectBookmarkedFundraiseID(ownerID)
@@ -72,15 +84,27 @@ func (svc *service) FindAll(pagination dtos.Pagination, searchAndFilter dtos.Sea
 			}
 		}
 
+		if data.FundAcquired, err = svc.model.TotalFundAcquired(data.ID); err != nil {
+			logrus.Error(err)
+		}
+
 		fundraises = append(fundraises, data)
 	}
 
 	var totalData int64 = 0
 
 	if searchAndFilter.Title != "" || searchAndFilter.MinTarget != 0 || searchAndFilter.MaxTarget != math.MaxInt32 {
-		totalData = svc.model.GetTotalDataBySearchAndFilter(searchAndFilter)
+		if suffix == "mobile" {
+			totalData = svc.model.GetTotalDataBySearchAndFilterMobile(searchAndFilter)
+		} else {
+			totalData = svc.model.GetTotalDataBySearchAndFilter(searchAndFilter)
+		}
 	} else {
-		totalData = svc.model.GetTotalData()
+		if suffix == "mobile" {
+			totalData = svc.model.GetTotalDataMobile()
+		} else {
+			totalData = svc.model.GetTotalData()
+		}
 	}
 
 
@@ -107,6 +131,11 @@ func (svc *service) FindByID(fundraiseID, ownerID int) *dtos.ResFundraise {
 	}
 
 	if err := smapping.FillStruct(&res, smapping.MapFields(fundraise)); err != nil {
+		logrus.Error(err)
+		return nil
+	}
+
+	if res.FundAcquired, err = svc.model.TotalFundAcquired(fundraiseID); err != nil {
 		logrus.Error(err)
 		return nil
 	}
