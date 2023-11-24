@@ -1,6 +1,9 @@
 package repository
 
 import (
+	"raihpeduli/features/user"
+
+	"raihpeduli/features/fundraise"
 	"raihpeduli/features/transaction"
 
 	"github.com/labstack/gommon/log"
@@ -36,6 +39,28 @@ func (mdl *model) Paginate(page, size int, keyword string) []transaction.Transac
 	}
 
 	return transactions
+}
+
+func (mdl *model) CountByID(fundraiseID int) (int64, error) {
+	var count int64
+
+	if err := mdl.db.Model(&fundraise.Fundraise{}).Where("id = ?", fundraiseID).Count(&count).Error; err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
+func (mdl *model) SelectUserByID(userID int) *user.User {
+	var user user.User
+	result := mdl.db.First(&user, userID)
+
+	if result.Error != nil {
+		log.Error(result.Error)
+		return nil
+	}
+
+	return &user
 }
 
 func (mdl *model) GetTotalData(keyword string) int64 {
