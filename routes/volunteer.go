@@ -12,14 +12,14 @@ import (
 func Volunteers(e *echo.Echo, handler volunteer.Handler, jwt helpers.JWTInterface, cfg config.ProgramConfig) {
 	volunteers := e.Group("/volunteers")
 
-	volunteers.GET("", handler.GetVolunteers())
-	volunteers.POST("", handler.CreateVolunteer(), m.AuthorizeJWT(jwt, 0, cfg.SECRET))
-	volunteers.POST("/register", handler.ApplyVacancies(), m.AuthorizeJWT(jwt, 1, cfg.SECRET))
-	volunteers.GET("/registrar/:vacancy_id", handler.GetVolunteerByVacancyID())
+	volunteers.POST("", handler.CreateVacancy(), m.AuthorizeJWT(jwt, 0, cfg.SECRET))
+	volunteers.GET("", handler.GetVacancies())
+	volunteers.GET("/:id", handler.VacancyDetails())
+	volunteers.PUT("/:id", handler.UpdateVacancy())
+	volunteers.DELETE("/:id", handler.DeleteVacancy())
 
-	volunteers.GET("/:id", handler.VolunteerDetails())
-	volunteers.PUT("/:id", handler.UpdateVolunteer())
-	volunteers.PATCH("/:id", handler.UpdateVolunteer())
+	volunteers.POST("/register", handler.ApplyVacancy(), m.AuthorizeJWT(jwt, 1, cfg.SECRET))
+	volunteers.GET("/registrar/:vacancy_id", handler.GetVolunteersByVacancyID())
 	volunteers.PATCH("/update-status-registrar/:id", handler.UpdateStatusRegistrar(), m.AuthorizeJWT(jwt, 2, cfg.SECRET))
-	volunteers.DELETE("/:id", handler.DeleteVolunteer())
+
 }
