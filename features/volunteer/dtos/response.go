@@ -31,5 +31,6 @@ type ResRegistrantVacancy struct {
 	Address  string `json:"address"`
 	Nik      string `json:"nik"`
 	Resume   string `json:"resume"`
+	Photo 	 string `json:"photo"`
 	Status   string `json:"status"`
 }

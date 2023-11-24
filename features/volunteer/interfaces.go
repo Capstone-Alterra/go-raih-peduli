@@ -22,6 +22,7 @@ type Repository interface {
 	GetTotalVolunteersByVacancyID(vacancyID int) int64
 	SelectVolunteersByVacancyID(vacancyID int, name string, page, size int) []Volunteer
 	GetTotalVolunteers(vacancyID int, name string) int64
+	SelectVolunteerDetails(vacancyID int, volunteerID int) *Volunteer
 }
 
 type Usecase interface {
@@ -33,6 +34,7 @@ type Usecase interface {
 	RegisterVacancy(newApply dtos.ApplyVacancy, userID int, file multipart.File) (bool, []string)
 	UpdateStatusRegistrar(status string, registrarID int) bool
 	FindAllVolunteersByVacancyID(page, size int, vacancyID int, name string) ([]dtos.ResRegistrantVacancy, int64)
+	FindDetailVolunteers(vacancyID, volunteerID int) *dtos.ResRegistrantVacancy
 }
 
 type Handler interface {
@@ -44,4 +46,5 @@ type Handler interface {
 	ApplyVacancy() echo.HandlerFunc
 	UpdateStatusRegistrar() echo.HandlerFunc
 	GetVolunteersByVacancyID() echo.HandlerFunc
+	GetVolunteer() echo.HandlerFunc
 }

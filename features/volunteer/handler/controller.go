@@ -277,3 +277,25 @@ func (ctl *controller) GetVolunteersByVacancyID() echo.HandlerFunc {
 		}))
 	}
 }
+
+
+func (ctl *controller) GetVolunteer() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		vacancyID, err := strconv.Atoi(ctx.Param("vacancy_id"))
+		volunteerID, err := strconv.Atoi(ctx.Param("volunteer_id"))
+
+		if err != nil {
+			return ctx.JSON(400, helpers.Response(err.Error()))
+		}
+
+		volunteer := ctl.service.FindDetailVolunteers(vacancyID, volunteerID)
+
+		if volunteer.Fullname == "" {
+			return ctx.JSON(404, helpers.Response("Volunteer Not Found!"))
+		}
+
+		return ctx.JSON(200, helpers.Response("Success!", map[string]any{
+			"data": volunteer,
+		}))
+	}
+}

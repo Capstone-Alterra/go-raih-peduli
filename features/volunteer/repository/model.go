@@ -183,7 +183,8 @@ func (mdl *model) SelectVolunteersByVacancyID(vacancyID int, name string, page, 
 
 	offset := (page - 1) * size
 
-	result := mdl.db.Table("volunteer_relations AS vr").Select("users.fullname", "users.address", "users.nik", "vr.resume", "vr.status").
+	result := mdl.db.Table("volunteer_relations AS vr").
+		Select("users.fullname", "users.address", "users.nik", "vr.resume", "vr.status", "vr.photo").
 		Joins("JOIN users ON users.id = vr.user_id").
 		Where("vr.volunteer_id = ?", vacancyID).
 		Where("users.fullname LIKE ?", "%"+name+"%").
@@ -194,6 +195,22 @@ func (mdl *model) SelectVolunteersByVacancyID(vacancyID int, name string, page, 
 	}
 
 	return volunteers
+}
+
+func (mdl *model) SelectVolunteerDetails(vacancyID int, volunteerID int) *volunteer.Volunteer {
+	var volunteers volunteer.Volunteer
+
+	result := mdl.db.Table("volunteer_relations AS vr").
+		Select("users.fullname", "users.address", "users.nik", "vr.resume", "vr.status", "vr.photo").
+		Joins("JOIN users ON users.id = vr.user_id").
+		Where("vr.volunteer_id = ? AND vr.id = ?", vacancyID, volunteerID).
+		Find(&volunteers)
+	if result.Error != nil {
+		log.Error(result.Error)
+		return nil
+	}
+
+	return &volunteers
 }
 
 func (mdl *model) GetTotalVolunteers(vacancyID int, name string) int64 {

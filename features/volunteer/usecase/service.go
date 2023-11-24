@@ -256,3 +256,20 @@ func (svc *service) FindAllVolunteersByVacancyID(page, size int, vacancyID int, 
 
 	return volunteers, totalData
 }
+
+func (svc *service) FindDetailVolunteers(vacancyID, volunteerID int) *dtos.ResRegistrantVacancy {
+	res := dtos.ResRegistrantVacancy{}
+	volunteer := svc.model.SelectVolunteerDetails(vacancyID, volunteerID)
+
+	if volunteer == nil {
+		return nil
+	}
+
+	err := smapping.FillStruct(&res, smapping.MapFields(volunteer))
+	if err != nil {
+		log.Error("Failed mapping into dtos")
+		return nil
+	}
+	return &res
+
+}
