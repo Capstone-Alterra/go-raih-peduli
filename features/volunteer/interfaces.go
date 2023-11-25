@@ -10,9 +10,11 @@ import (
 type Repository interface {
 	Paginate(page, size int, searchAndFilter dtos.SearchAndFilter) []VolunteerVacancies
 	PaginateMobile(page, size int, searchAndFilter dtos.SearchAndFilter) []VolunteerVacancies
-	SelectVacancyByID(volunteerID int) *VolunteerVacancies
-	UpdateVacancy(volunteer VolunteerVacancies) int64
-	DeleteVacancyByID(volunteerID int) int64
+	SelectVacancyByID(vacancyID int) *VolunteerVacancies
+	SelectBookmarkedVacancyID(ownerID int) (map[int]string, error)
+	SelectBookmarkByVacancyAndOwnerID(vacancyID, ownerID int) string
+	UpdateVacancy(vacancy VolunteerVacancies) int64
+	DeleteVacancyByID(vacancyID int) int64
 	InsertVacancy(*VolunteerVacancies) (*VolunteerVacancies, error)
 	UploadFile(file multipart.File, objectName string) (string, error)
 	GetTotalDataVacancies() int64
@@ -26,24 +28,28 @@ type Repository interface {
 	SelectVolunteersByVacancyID(vacancyID int, name string, page, size int) []Volunteer
 	GetTotalVolunteers(vacancyID int, name string) int64
 	SelectVolunteerDetails(vacancyID int, volunteerID int) *Volunteer
+	CheckUser(userID int) bool
 }
 
 type Usecase interface {
-	FindAllVacancies(page, size int, searchAndFilter dtos.SearchAndFilter, status string) ([]dtos.ResVacancy, int64)
-	FindVacancyByID(vacancyID int) *dtos.ResVacancy
+	FindAllVacancies(page, size int, searchAndFilter dtos.SearchAndFilter, ownerID int, status string) ([]dtos.ResVacancy, int64)
+	FindVacancyByID(vacancyID, ownerID int) *dtos.ResVacancy
 	ModifyVacancy(vacancyData dtos.InputVacancy, file multipart.File, oldData dtos.ResVacancy) (bool, []string)
+	ModifyVacancyStatus(input dtos.StatusVacancies, oldData dtos.ResVacancy) (bool, []string)
 	RemoveVacancy(vacancyID int) bool
 	CreateVacancy(newVacancy dtos.InputVacancy, UserID int, file multipart.File) (*dtos.ResVacancy, []string, error)
 	RegisterVacancy(newApply dtos.ApplyVacancy, userID int, file multipart.File) (bool, []string)
 	UpdateStatusRegistrar(status string, registrarID int) bool
 	FindAllVolunteersByVacancyID(page, size int, vacancyID int, name string) ([]dtos.ResRegistrantVacancy, int64)
 	FindDetailVolunteers(vacancyID, volunteerID int) *dtos.ResRegistrantVacancy
+	CheckUser(userID int) bool
 }
 
 type Handler interface {
 	GetVacancies(suffix string) echo.HandlerFunc
 	VacancyDetails() echo.HandlerFunc
 	UpdateVacancy() echo.HandlerFunc
+	UpdateStatusVacancy() echo.HandlerFunc
 	DeleteVacancy() echo.HandlerFunc
 	CreateVacancy() echo.HandlerFunc
 	ApplyVacancy() echo.HandlerFunc

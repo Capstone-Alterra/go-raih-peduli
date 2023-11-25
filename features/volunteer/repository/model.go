@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"mime/multipart"
 	"raihpeduli/config"
 	"raihpeduli/features/volunteer"
@@ -9,18 +10,24 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/gommon/log"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"gorm.io/gorm"
 )
 
 type model struct {
-	db        *gorm.DB
-	clStorage helpers.CloudStorageInterface
+	db         *gorm.DB
+	clStorage  helpers.CloudStorageInterface
+	collection *mongo.Collection
 }
 
-func New(db *gorm.DB, clStorage helpers.CloudStorageInterface) volunteer.Repository {
+func New(db *gorm.DB, clStorage helpers.CloudStorageInterface, collection *mongo.Collection) volunteer.Repository {
 	return &model{
-		db:        db,
-		clStorage: clStorage,
+		db:         db,
+		clStorage:  clStorage,
+		collection: collection,
 	}
 }
 
@@ -77,6 +84,41 @@ func (mdl *model) SelectVacancyByID(volunteerID int) *volunteer.VolunteerVacanci
 	}
 
 	return &volunteer
+}
+
+func (mdl *model) SelectBookmarkedVacancyID(ownerID int) (map[int]string, error) {
+	opts := options.Find().SetProjection(bson.M{"post_id": 1, "_id": 1})
+	cursor, err := mdl.collection.Find(context.Background(), bson.M{"owner_id": ownerID, "post_type": "vacancy"}, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []bson.M
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		return nil, err
+	}
+
+	var mapPostIDs = map[int]string{}
+
+	for _, data := range results {
+		postID := int(data["post_id"].(int32))
+		mapPostIDs[postID] = data["_id"].(primitive.ObjectID).Hex()
+	}
+
+	return mapPostIDs, nil
+}
+
+func (mdl *model) SelectBookmarkByVacancyAndOwnerID(vacancyID, ownerID int) string {
+	opts := options.FindOne().SetProjection(bson.M{"_id": 1})
+
+	var result bson.M
+	if err := mdl.collection.FindOne(context.Background(), bson.M{"owner_id": ownerID, "post_id": vacancyID, "post_type": "vacancy"}, opts).Decode(&result); err != nil {
+		return ""
+	}
+
+	objectIDString := result["_id"].(primitive.ObjectID).Hex()
+
+	return objectIDString
 }
 
 func (mdl *model) UpdateVacancy(volunteer volunteer.VolunteerVacancies) int64 {
@@ -173,9 +215,9 @@ func (mdl *model) GetTotalDataVacanciesMobile() int64 {
 	var totalData int64
 
 	result := mdl.db.Table("volunteer_vacancies").
-	Where("deleted_at IS NULL").
-	Where("status = ?", "accepted").
-	Count(&totalData)
+		Where("deleted_at IS NULL").
+		Where("status = ?", "accepted").
+		Count(&totalData)
 
 	if result.Error != nil {
 		log.Error(result.Error)
@@ -242,7 +284,7 @@ func (mdl *model) SelectVolunteersByVacancyID(vacancyID int, name string, page, 
 	offset := (page - 1) * size
 
 	result := mdl.db.Table("volunteer_relations AS vr").
-		Select("users.fullname", "users.address", "users.nik", "vr.resume", "vr.status", "vr.photo").
+		Select("vr.id", "users.fullname", "users.address", "users.nik", "vr.resume", "vr.status", "vr.photo").
 		Joins("JOIN users ON users.id = vr.user_id").
 		Where("vr.volunteer_id = ?", vacancyID).
 		Where("users.fullname LIKE ?", "%"+name+"%").
@@ -259,7 +301,7 @@ func (mdl *model) SelectVolunteerDetails(vacancyID int, volunteerID int) *volunt
 	var volunteers volunteer.Volunteer
 
 	result := mdl.db.Table("volunteer_relations AS vr").
-		Select("users.fullname", "users.address", "users.nik", "vr.resume", "vr.status", "vr.photo").
+		Select("vr.id", "users.fullname", "users.address", "users.nik", "vr.resume", "vr.status", "vr.photo").
 		Joins("JOIN users ON users.id = vr.user_id").
 		Where("vr.volunteer_id = ? AND vr.id = ?", vacancyID, volunteerID).
 		Find(&volunteers)
@@ -287,14 +329,17 @@ func (mdl *model) GetTotalVolunteers(vacancyID int, name string) int64 {
 	return totalData
 }
 
-//select us.fullname, us.address, us.nik, vr.resume, vr.status from volunteer_relations as vr join users as us on us.id = vr.user_id where vr.volunteer_id = 1 and us.fullname = "";
-/*
-if err := db.Table("employee").Select("department.id, employee.department_id, employeeContact.employee_id").Joins("JOIN department on department.id = employee.department_id").Joins("JOIN employeeContact on employeeContact.id = employee.id").Find(&results).Error; err != nil {
-    return err, ""
+func (mdl *model) CheckUser(userID int) bool {
+	var nik string
+
+	result := mdl.db.Table("users").Select("nik").Where("id = ?", userID).Pluck("nik", &nik)
+	if result.Error != nil {
+		return false
+	}
+
+	if nik == "" {
+		return false
+	}
+
+	return true
 }
-
-
-// multiple joins with parameter
-db.Joins("JOIN emails ON emails.user_id = users.id AND emails.email = ?", "jinzhu@example.org").Joins("JOIN credit_cards ON credit_cards.user_id = users.id").Where("credit_cards.number = ?", "411111111111").Find(&user)
-
-*/

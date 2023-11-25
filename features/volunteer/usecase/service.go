@@ -8,6 +8,7 @@ import (
 	"raihpeduli/features/volunteer"
 	"raihpeduli/features/volunteer/dtos"
 	"raihpeduli/helpers"
+	"strings"
 
 	"github.com/labstack/gommon/log"
 	"github.com/mashingan/smapping"
@@ -26,8 +27,10 @@ func New(model volunteer.Repository, validation helpers.ValidationInterface) vol
 	}
 }
 
-func (svc *service) FindAllVacancies(page, size int, searchAndFilter dtos.SearchAndFilter, suffix string) ([]dtos.ResVacancy, int64) {
+func (svc *service) FindAllVacancies(page, size int, searchAndFilter dtos.SearchAndFilter, ownerID int, suffix string) ([]dtos.ResVacancy, int64) {
 	var volunteers []dtos.ResVacancy
+	var bookmarkIDs map[int]string
+	var err error
 
 	if searchAndFilter.MaxParticipant == 0 {
 		searchAndFilter.MaxParticipant = math.MaxInt32
@@ -38,15 +41,45 @@ func (svc *service) FindAllVacancies(page, size int, searchAndFilter dtos.Search
 	if suffix == "mobile" {
 		volunteersEnt = svc.model.PaginateMobile(page, size, searchAndFilter)
 	} else {
-		volunteersEnt = svc.model.PaginateMobile(page, size, searchAndFilter)
+		volunteersEnt = svc.model.Paginate(page, size, searchAndFilter)
+	}
+
+	if ownerID != 0 {
+		bookmarkIDs, err = svc.model.SelectBookmarkedVacancyID(ownerID)
+		if err != nil {
+			return nil, 0
+		}
 	}
 
 	for _, volunteer := range volunteersEnt {
 		var data dtos.ResVacancy
 
-		if err := smapping.FillStruct(&data, smapping.MapFields(volunteer)); err != nil {
-			log.Error(err.Error())
+		data.ID = volunteer.ID
+		data.UserID = volunteer.UserID
+		data.Title = volunteer.Title
+		data.Description = volunteer.Description
+		data.SkillsRequired = strings.Split(volunteer.SkillsRequired, ",")
+		data.NumberOfVacancies = volunteer.NumberOfVacancies
+		data.ApplicationDeadline = volunteer.ApplicationDeadline
+		data.ContactEmail = volunteer.ContactEmail
+		data.Province = volunteer.Province
+		data.City = volunteer.City
+		data.SubDistrict = volunteer.SubDistrict
+		data.Photo = volunteer.Photo
+		data.Status = volunteer.Status
+		data.CreatedAt = volunteer.CreatedAt
+		data.UpdatedAt = volunteer.UpdatedAt
+		data.DeletedAt = volunteer.DeletedAt
+
+		if bookmarkIDs != nil {
+			bookmardID, ok := bookmarkIDs[data.ID]
+
+			if ok {
+				data.BookmarkID = &bookmardID
+			}
 		}
+
+		data.TotalRegistrar = int(svc.model.GetTotalVolunteersByVacancyID(data.ID))
 
 		volunteers = append(volunteers, data)
 	}
@@ -70,19 +103,40 @@ func (svc *service) FindAllVacancies(page, size int, searchAndFilter dtos.Search
 	return volunteers, totalData
 }
 
-func (svc *service) FindVacancyByID(volunteerID int) *dtos.ResVacancy {
+func (svc *service) FindVacancyByID(vacancyID, ownerID int) *dtos.ResVacancy {
 	res := dtos.ResVacancy{}
-	volunteer := svc.model.SelectVacancyByID(volunteerID)
+	vacancy := svc.model.SelectVacancyByID(vacancyID)
 
-	if volunteer == nil {
+	if vacancy == nil {
 		return nil
 	}
 
-	err := smapping.FillStruct(&res, smapping.MapFields(volunteer))
-	if err != nil {
-		log.Error(err)
-		return nil
+	var bookmarkID string
+
+	if ownerID != 0 {
+		bookmarkID = svc.model.SelectBookmarkByVacancyAndOwnerID(vacancyID, ownerID)
+
+		if bookmarkID != "" {
+			res.BookmarkID = &bookmarkID
+		}
 	}
+
+	res.ID = vacancy.ID
+	res.UserID = vacancy.UserID
+	res.Title = vacancy.Title
+	res.Description = vacancy.Description
+	res.SkillsRequired = strings.Split(vacancy.SkillsRequired, ",")
+	res.NumberOfVacancies = vacancy.NumberOfVacancies
+	res.ApplicationDeadline = vacancy.ApplicationDeadline
+	res.ContactEmail = vacancy.ContactEmail
+	res.Province = vacancy.Province
+	res.City = vacancy.City
+	res.SubDistrict = vacancy.SubDistrict
+	res.Photo = vacancy.Photo
+	res.Status = vacancy.Status
+	res.CreatedAt = vacancy.CreatedAt
+	res.UpdatedAt = vacancy.UpdatedAt
+	res.DeletedAt = vacancy.DeletedAt
 
 	res.TotalRegistrar = int(svc.model.GetTotalVolunteersByVacancyID(res.ID))
 
@@ -118,14 +172,41 @@ func (svc *service) ModifyVacancy(vacancyData dtos.InputVacancy, file multipart.
 		url = imageURL
 	}
 
-	err := smapping.FillStruct(&newVacancy, smapping.MapFields(vacancyData))
-	if err != nil {
-		log.Error(err)
+	newVacancy.ID = oldData.ID
+	newVacancy.UserID = oldData.UserID
+	newVacancy.Title = vacancyData.Title
+	newVacancy.Description = vacancyData.Description
+	newVacancy.SkillsRequired = strings.Join(vacancyData.SkillsRequired, ", ")
+	newVacancy.NumberOfVacancies = vacancyData.NumberOfVacancies
+	newVacancy.ApplicationDeadline = vacancyData.ApplicationDeadline
+	newVacancy.ContactEmail = vacancyData.ContactEmail
+	newVacancy.Province = vacancyData.Province
+	newVacancy.City = vacancyData.City
+	newVacancy.SubDistrict = vacancyData.SubDistrict
+	newVacancy.DetailLocation = vacancyData.DetailLocation
+	newVacancy.Photo = url
+
+	rowsAffected := svc.model.UpdateVacancy(newVacancy)
+
+	if rowsAffected <= 0 {
+		log.Error("There is No Volunteer Updated!")
 		return false, nil
 	}
 
+	return true, nil
+}
+
+func (svc *service) ModifyVacancyStatus(input dtos.StatusVacancies, oldData dtos.ResVacancy) (bool, []string) {
+	errMap := svc.validation.ValidateRequest(input)
+	if errMap != nil {
+		return false, errMap
+	}
+
+	var newVacancy volunteer.VolunteerVacancies
+
 	newVacancy.ID = oldData.ID
-	newVacancy.Photo = url
+	newVacancy.Status = input.Status
+
 	rowsAffected := svc.model.UpdateVacancy(newVacancy)
 
 	if rowsAffected <= 0 {
@@ -187,11 +268,17 @@ func (svc *service) CreateVacancy(newVolunteer dtos.InputVacancy, UserID int, fi
 	}
 
 	vacancy.UserID = UserID
+	vacancy.Title = newVolunteer.Title
+	vacancy.Description = newVolunteer.Description
+	vacancy.SkillsRequired = strings.Join(newVolunteer.SkillsRequired, ", ")
+	vacancy.NumberOfVacancies = newVolunteer.NumberOfVacancies
+	vacancy.ApplicationDeadline = newVolunteer.ApplicationDeadline
+	vacancy.ContactEmail = newVolunteer.ContactEmail
+	vacancy.Province = newVolunteer.Province
+	vacancy.City = newVolunteer.City
+	vacancy.SubDistrict = newVolunteer.SubDistrict
+	vacancy.DetailLocation = newVolunteer.DetailLocation
 	vacancy.Photo = url
-	err := smapping.FillStruct(&vacancy, smapping.MapFields(newVolunteer))
-	if err != nil {
-		return nil, nil, err
-	}
 
 	result, err := svc.model.InsertVacancy(&vacancy)
 	if err != nil {
@@ -200,13 +287,22 @@ func (svc *service) CreateVacancy(newVolunteer dtos.InputVacancy, UserID int, fi
 	}
 
 	resVolun := dtos.ResVacancy{}
-	resVolun.Photo = url
-	errRes := smapping.FillStruct(&resVolun, smapping.MapFields(result))
-
-	if errRes != nil {
-		log.Error(errRes)
-		return nil, nil, errors.New("Use Case : failed to mapping response")
-	}
+	resVolun.ID = result.ID
+	resVolun.UserID = result.UserID
+	resVolun.Title = result.Title
+	resVolun.Description = result.Description
+	resVolun.SkillsRequired = strings.Split(result.SkillsRequired, ",")
+	resVolun.NumberOfVacancies = result.NumberOfVacancies
+	resVolun.ApplicationDeadline = result.ApplicationDeadline
+	resVolun.ContactEmail = result.ContactEmail
+	resVolun.Province = result.Province
+	resVolun.City = result.City
+	resVolun.SubDistrict = result.SubDistrict
+	resVolun.Photo = result.Photo
+	resVolun.Status = result.Status
+	resVolun.CreatedAt = result.CreatedAt
+	resVolun.UpdatedAt = result.UpdatedAt
+	resVolun.DeletedAt = result.DeletedAt
 
 	return &resVolun, nil, nil
 }
@@ -288,4 +384,13 @@ func (svc *service) FindDetailVolunteers(vacancyID, volunteerID int) *dtos.ResRe
 	}
 	return &res
 
+}
+
+func (svc *service) CheckUser(userID int) bool {
+	result := svc.model.CheckUser(userID)
+	if !result {
+		return false
+	}
+
+	return true
 }
