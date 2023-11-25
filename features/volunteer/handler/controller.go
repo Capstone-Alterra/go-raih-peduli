@@ -276,10 +276,20 @@ func (ctl *controller) UpdateStatusRegistrar() echo.HandlerFunc {
 
 		ctx.Bind(&input)
 
-		volunteerID, err := strconv.Atoi(ctx.Param("volunteer_id"))
-
+		vacancyID, err := strconv.Atoi(ctx.Param("vacancy_id"))
 		if err != nil {
 			return ctx.JSON(400, helpers.Response(err.Error()))
+		}
+
+		volunteerID, err := strconv.Atoi(ctx.Param("volunteer_id"))
+		if err != nil {
+			return ctx.JSON(400, helpers.Response(err.Error()))
+		}
+
+		volunteer := ctl.service.FindDetailVolunteers(vacancyID, volunteerID)
+
+		if volunteer.Fullname == "" {
+			return ctx.JSON(404, helpers.Response("volunteer not found"))
 		}
 
 		update := ctl.service.UpdateStatusRegistrar(input.Status, volunteerID)
@@ -310,7 +320,7 @@ func (ctl *controller) GetVolunteersByVacancyID() echo.HandlerFunc {
 
 		page := pagination.Page
 		size := pagination.PageSize
-		name := ctx.QueryParam("name")
+		name := ctx.QueryParam("fullname")
 
 		volunteers, totalData := ctl.service.FindAllVolunteersByVacancyID(page, size, vacancyID, name)
 

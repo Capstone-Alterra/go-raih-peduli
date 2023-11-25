@@ -29,6 +29,7 @@ type ResVacancy struct {
 }
 
 type ResRegistrantVacancy struct {
+	ID       int    `json:"id"`
 	Fullname string `json:"fullname"`
 	Address  string `json:"address"`
 	Nik      string `json:"nik"`
