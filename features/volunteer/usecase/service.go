@@ -8,6 +8,7 @@ import (
 	"raihpeduli/features/volunteer"
 	"raihpeduli/features/volunteer/dtos"
 	"raihpeduli/helpers"
+	"strings"
 
 	"github.com/labstack/gommon/log"
 	"github.com/mashingan/smapping"
@@ -53,9 +54,19 @@ func (svc *service) FindAllVacancies(page, size int, searchAndFilter dtos.Search
 	for _, volunteer := range volunteersEnt {
 		var data dtos.ResVacancy
 
-		if err := smapping.FillStruct(&data, smapping.MapFields(volunteer)); err != nil {
-			log.Error(err.Error())
-		}
+		data.ID = volunteer.ID
+		data.UserID = volunteer.UserID
+		data.Title = volunteer.Title
+		data.Description = volunteer.Description
+		data.SkillsRequired = strings.Split(volunteer.SkillsRequired, ",")
+		data.NumberOfVacancies = volunteer.NumberOfVacancies
+		data.ApplicationDeadline = volunteer.ApplicationDeadline
+		data.ContactEmail = volunteer.ContactEmail
+		data.Province = volunteer.Province
+		data.City = volunteer.City
+		data.SubDistrict = volunteer.SubDistrict
+		data.Photo = volunteer.Photo
+		data.Status = volunteer.Status
 
 		if bookmarkIDs != nil {
 			bookmardID, ok := bookmarkIDs[data.ID]
@@ -108,11 +119,23 @@ func (svc *service) FindVacancyByID(vacancyID, ownerID int) *dtos.ResVacancy {
 		}
 	}
 
-	err = smapping.FillStruct(&res, smapping.MapFields(vacancy))
 	if err != nil {
-		log.Error(err)
 		return nil
 	}
+
+	res.ID = vacancy.ID
+	res.UserID = vacancy.UserID
+	res.Title = vacancy.Title
+	res.Description = vacancy.Description
+	res.SkillsRequired = strings.Split(vacancy.SkillsRequired, ",")
+	res.NumberOfVacancies = vacancy.NumberOfVacancies
+	res.ApplicationDeadline = vacancy.ApplicationDeadline
+	res.ContactEmail = vacancy.ContactEmail
+	res.Province = vacancy.Province
+	res.City = vacancy.City
+	res.SubDistrict = vacancy.SubDistrict
+	res.Photo = vacancy.Photo
+	res.Status = vacancy.Status
 
 	res.TotalRegistrar = int(svc.model.GetTotalVolunteersByVacancyID(res.ID))
 
@@ -148,14 +171,26 @@ func (svc *service) ModifyVacancy(vacancyData dtos.InputVacancy, file multipart.
 		url = imageURL
 	}
 
-	err := smapping.FillStruct(&newVacancy, smapping.MapFields(vacancyData))
-	if err != nil {
-		log.Error(err)
-		return false, nil
-	}
+	// err := smapping.FillStruct(&newVacancy, smapping.MapFields(vacancyData))
+	// if err != nil {
+	// 	log.Error(err)
+	// 	return false, nil
+	// }
 
 	newVacancy.ID = oldData.ID
+	newVacancy.UserID = oldData.UserID
+	newVacancy.Title = vacancyData.Title
+	newVacancy.Description = vacancyData.Description
+	newVacancy.SkillsRequired = strings.Join(vacancyData.SkillsRequired, ", ")
+	newVacancy.NumberOfVacancies = vacancyData.NumberOfVacancies
+	newVacancy.ApplicationDeadline = vacancyData.ApplicationDeadline
+	newVacancy.ContactEmail = vacancyData.ContactEmail
+	newVacancy.Province = vacancyData.Province
+	newVacancy.City = vacancyData.City
+	newVacancy.SubDistrict = vacancyData.SubDistrict
+	newVacancy.DetailLocation = vacancyData.DetailLocation
 	newVacancy.Photo = url
+
 	rowsAffected := svc.model.UpdateVacancy(newVacancy)
 
 	if rowsAffected <= 0 {
@@ -217,11 +252,17 @@ func (svc *service) CreateVacancy(newVolunteer dtos.InputVacancy, UserID int, fi
 	}
 
 	vacancy.UserID = UserID
+	vacancy.Title = newVolunteer.Title
+	vacancy.Description = newVolunteer.Description
+	vacancy.SkillsRequired = strings.Join(newVolunteer.SkillsRequired, ", ")
+	vacancy.NumberOfVacancies = newVolunteer.NumberOfVacancies
+	vacancy.ApplicationDeadline = newVolunteer.ApplicationDeadline
+	vacancy.ContactEmail = newVolunteer.ContactEmail
+	vacancy.Province = newVolunteer.Province
+	vacancy.City = newVolunteer.City
+	vacancy.SubDistrict = newVolunteer.SubDistrict
+	vacancy.DetailLocation = newVolunteer.DetailLocation
 	vacancy.Photo = url
-	err := smapping.FillStruct(&vacancy, smapping.MapFields(newVolunteer))
-	if err != nil {
-		return nil, nil, err
-	}
 
 	result, err := svc.model.InsertVacancy(&vacancy)
 	if err != nil {
@@ -230,13 +271,22 @@ func (svc *service) CreateVacancy(newVolunteer dtos.InputVacancy, UserID int, fi
 	}
 
 	resVolun := dtos.ResVacancy{}
-	resVolun.Photo = url
-	errRes := smapping.FillStruct(&resVolun, smapping.MapFields(result))
-
-	if errRes != nil {
-		log.Error(errRes)
-		return nil, nil, errors.New("Use Case : failed to mapping response")
-	}
+	resVolun.ID = result.ID
+	resVolun.UserID = result.UserID
+	resVolun.Title = result.Title
+	resVolun.Description = result.Description
+	resVolun.SkillsRequired = strings.Split(result.SkillsRequired, ",")
+	resVolun.NumberOfVacancies = result.NumberOfVacancies
+	resVolun.ApplicationDeadline = result.ApplicationDeadline
+	resVolun.ContactEmail = result.ContactEmail
+	resVolun.Province = result.Province
+	resVolun.City = result.City
+	resVolun.SubDistrict = result.SubDistrict
+	resVolun.Photo = result.Photo
+	resVolun.Status = result.Status
+	resVolun.CreatedAt = result.CreatedAt
+	resVolun.UpdatedAt = result.UpdatedAt
+	resVolun.DeletedAt = result.DeletedAt
 
 	return &resVolun, nil, nil
 }
