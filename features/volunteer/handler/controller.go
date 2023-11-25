@@ -235,11 +235,16 @@ func (ctl *controller) ApplyVacancy() echo.HandlerFunc {
 
 		ctx.Bind(&input)
 
-		userID := ctx.Get("user_id")
+		userID := ctx.Get("user_id").(int)
 
-		checkUser := ctl.service.CheckUser(userID.(int))
+		checkUser := ctl.service.CheckUser(userID)
 		if !checkUser {
 			return ctx.JSON(401, helpers.Response("please fill in your NIK first before register"))
+		}
+
+		volunteer := ctl.service.FindDetailVolunteers(input.VacancyID, userID)
+		if volunteer != nil {
+			return ctx.JSON(400, helpers.Response("user already registered"))
 		}
 
 		fileHeader, err := ctx.FormFile("photo")
@@ -255,7 +260,7 @@ func (ctl *controller) ApplyVacancy() echo.HandlerFunc {
 			file = formFile
 		}
 
-		result, errMap := ctl.service.RegisterVacancy(input, userID.(int), file)
+		result, errMap := ctl.service.RegisterVacancy(input, userID, file)
 		if errMap != nil {
 			return ctx.JSON(400, helpers.Response("missing some data", map[string]any{
 				"error": errMap,

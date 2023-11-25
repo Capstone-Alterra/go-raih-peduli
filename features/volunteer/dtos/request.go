@@ -25,10 +25,10 @@ type StatusVacancies struct {
 }
 
 type ApplyVacancy struct {
-	VolunteerID int    `json:"volunteer_id" form:"volunteer_id" validate:"required"`
-	Skills      string `json:"skills" form:"skills" validate:"required"`
-	Resume      string `json:"resume" form:"resume" validate:"required"`
-	Reason      string `json:"reason" form:"reason" validate:"required"`
+	VacancyID int    `json:"vacancy_id" form:"vacancy_id" validate:"required"`
+	Skills    string `json:"skills" form:"skills" validate:"required"`
+	Resume    string `json:"resume" form:"resume" validate:"required"`
+	Reason    string `json:"reason" form:"reason" validate:"required"`
 }
 
 type StatusRegistrar struct {
