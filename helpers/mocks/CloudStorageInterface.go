@@ -13,6 +13,20 @@ type CloudStorageInterface struct {
 	mock.Mock
 }
 
+// DeleteFile provides a mock function with given fields: object
+func (_m *CloudStorageInterface) DeleteFile(object string) error {
+	ret := _m.Called(object)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string) error); ok {
+		r0 = rf(object)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // UploadFile provides a mock function with given fields: file, object
 func (_m *CloudStorageInterface) UploadFile(file multipart.File, object string) error {
 	ret := _m.Called(file, object)
