@@ -67,6 +67,9 @@ func (svc *service) FindAllVacancies(page, size int, searchAndFilter dtos.Search
 		data.SubDistrict = volunteer.SubDistrict
 		data.Photo = volunteer.Photo
 		data.Status = volunteer.Status
+		data.CreatedAt = volunteer.CreatedAt
+		data.UpdatedAt = volunteer.UpdatedAt
+		data.DeletedAt = volunteer.DeletedAt
 
 		if bookmarkIDs != nil {
 			bookmardID, ok := bookmarkIDs[data.ID]
@@ -168,12 +171,6 @@ func (svc *service) ModifyVacancy(vacancyData dtos.InputVacancy, file multipart.
 
 		url = imageURL
 	}
-
-	// err := smapping.FillStruct(&newVacancy, smapping.MapFields(vacancyData))
-	// if err != nil {
-	// 	log.Error(err)
-	// 	return false, nil
-	// }
 
 	newVacancy.ID = oldData.ID
 	newVacancy.UserID = oldData.UserID

@@ -328,15 +328,3 @@ func (mdl *model) GetTotalVolunteers(vacancyID int, name string) int64 {
 
 	return totalData
 }
-
-//select us.fullname, us.address, us.nik, vr.resume, vr.status from volunteer_relations as vr join users as us on us.id = vr.user_id where vr.volunteer_id = 1 and us.fullname = "";
-/*
-if err := db.Table("employee").Select("department.id, employee.department_id, employeeContact.employee_id").Joins("JOIN department on department.id = employee.department_id").Joins("JOIN employeeContact on employeeContact.id = employee.id").Find(&results).Error; err != nil {
-    return err, ""
-}
-
-
-// multiple joins with parameter
-db.Joins("JOIN emails ON emails.user_id = users.id AND emails.email = ?", "jinzhu@example.org").Joins("JOIN credit_cards ON credit_cards.user_id = users.id").Where("credit_cards.number = ?", "411111111111").Find(&user)
-
-*/

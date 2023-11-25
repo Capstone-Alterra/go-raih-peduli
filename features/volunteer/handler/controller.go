@@ -45,12 +45,12 @@ func (ctl *controller) GetVacancies(suffix string) echo.HandlerFunc {
 		vacancies, totalData := ctl.service.FindAllVacancies(page, size, searchAndFilter, userID, suffix)
 
 		if vacancies == nil {
-			return ctx.JSON(404, helpers.Response("there is no volunteers!"))
+			return ctx.JSON(404, helpers.Response("there is no volunteer vacancies"))
 		}
 
 		paginationResponse := helpers.PaginationResponse(page, size, int(totalData))
 
-		return ctx.JSON(200, helpers.Response("success!", map[string]any{
+		return ctx.JSON(200, helpers.Response("success", map[string]any{
 			"data":       vacancies,
 			"pagination": paginationResponse,
 		}))
@@ -74,10 +74,10 @@ func (ctl *controller) VacancyDetails() echo.HandlerFunc {
 		vacancy := ctl.service.FindVacancyByID(vacancyID, userID)
 
 		if vacancy == nil {
-			return ctx.JSON(404, helpers.Response("volunteer not found!"))
+			return ctx.JSON(404, helpers.Response("volunteer vacancy not found"))
 		}
 
-		return ctx.JSON(200, helpers.Response("success!", map[string]any{
+		return ctx.JSON(200, helpers.Response("success", map[string]any{
 			"data": vacancy,
 		}))
 	}
@@ -96,7 +96,7 @@ func (ctl *controller) UpdateVacancy() echo.HandlerFunc {
 		vacancy := ctl.service.FindVacancyByID(vacancyID, 0)
 
 		if vacancy == nil {
-			return ctx.JSON(404, helpers.Response("volunteer not found!"))
+			return ctx.JSON(404, helpers.Response("volunteer vacancy not found"))
 		}
 
 		ctx.Bind(&input)
@@ -122,10 +122,10 @@ func (ctl *controller) UpdateVacancy() echo.HandlerFunc {
 		}
 
 		if !result {
-			return ctx.JSON(500, helpers.Response("something went wrong!"))
+			return ctx.JSON(500, helpers.Response("something went wrong"))
 		}
 
-		return ctx.JSON(200, helpers.Response("volunteer success updated!"))
+		return ctx.JSON(200, helpers.Response("success updated volunteer vacancy"))
 	}
 }
 
@@ -155,10 +155,10 @@ func (ctl *controller) UpdateStatusVacancy() echo.HandlerFunc {
 		}
 
 		if !result {
-			return ctx.JSON(500, helpers.Response("something went wrong!"))
+			return ctx.JSON(500, helpers.Response("something went wrong"))
 		}
 
-		return ctx.JSON(200, helpers.Response("success updated volunteer vacancies status"))
+		return ctx.JSON(200, helpers.Response("success updated volunteer vacancy status"))
 	}
 }
 
@@ -173,16 +173,16 @@ func (ctl *controller) DeleteVacancy() echo.HandlerFunc {
 		volunteer := ctl.service.FindVacancyByID(volunteerID, 0)
 
 		if volunteer == nil {
-			return ctx.JSON(404, helpers.Response("volunteer not found!"))
+			return ctx.JSON(404, helpers.Response("volunteer vacancy not found"))
 		}
 
 		delete := ctl.service.RemoveVacancy(volunteerID)
 
 		if !delete {
-			return ctx.JSON(500, helpers.Response("something went wrong!"))
+			return ctx.JSON(500, helpers.Response("something went wrong"))
 		}
 
-		return ctx.JSON(200, helpers.Response("volunteer success deleted!", nil))
+		return ctx.JSON(200, helpers.Response("success deleted volunteer vacancy", nil))
 	}
 }
 
@@ -216,7 +216,7 @@ func (ctl *controller) CreateVacancy() echo.HandlerFunc {
 		}
 
 		if volun == nil {
-			return ctx.JSON(500, helpers.Response("something when wrong!", nil))
+			return ctx.JSON(500, helpers.Response("something when wrong", nil))
 		}
 
 		if err != nil {
@@ -258,10 +258,10 @@ func (ctl *controller) ApplyVacancy() echo.HandlerFunc {
 		}
 
 		if !result {
-			return ctx.JSON(500, helpers.Response("something when wrong!"))
+			return ctx.JSON(500, helpers.Response("something when wrong"))
 		}
 
-		return ctx.JSON(200, helpers.Response("apply volunteer success!", nil))
+		return ctx.JSON(200, helpers.Response("success apply volunteer", nil))
 	}
 }
 
@@ -280,10 +280,10 @@ func (ctl *controller) UpdateStatusRegistrar() echo.HandlerFunc {
 		update := ctl.service.UpdateStatusRegistrar(input.Status, volunteerID)
 
 		if !update {
-			return ctx.JSON(500, helpers.Response("something went wrong!"))
+			return ctx.JSON(500, helpers.Response("something went wrong"))
 		}
 
-		return ctx.JSON(200, helpers.Response("registrar success updated!"))
+		return ctx.JSON(200, helpers.Response("success updated registrar status"))
 	}
 }
 
@@ -310,7 +310,7 @@ func (ctl *controller) GetVolunteersByVacancyID() echo.HandlerFunc {
 		volunteers, totalData := ctl.service.FindAllVolunteersByVacancyID(page, size, vacancyID, name)
 
 		if volunteers == nil {
-			return ctx.JSON(404, helpers.Response("there is no volunteers!"))
+			return ctx.JSON(404, helpers.Response("there is no volunteers"))
 		}
 
 		paginationResponse := helpers.PaginationResponse(page, size, int(totalData))
@@ -334,7 +334,7 @@ func (ctl *controller) GetVolunteer() echo.HandlerFunc {
 		volunteer := ctl.service.FindDetailVolunteers(vacancyID, volunteerID)
 
 		if volunteer.Fullname == "" {
-			return ctx.JSON(404, helpers.Response("volunteer not found!"))
+			return ctx.JSON(404, helpers.Response("volunteer not found"))
 		}
 
 		return ctx.JSON(200, helpers.Response("success!", map[string]any{
