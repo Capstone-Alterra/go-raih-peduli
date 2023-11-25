@@ -12,7 +12,7 @@ type Repository interface {
 	PaginateMobile(page, size int, searchAndFilter dtos.SearchAndFilter) []VolunteerVacancies
 	SelectVacancyByID(vacancyID int) *VolunteerVacancies
 	SelectBookmarkedVacancyID(ownerID int) (map[int]string, error)
-	SelectBookmarkByVacancyAndOwnerID(vacancyID, ownerID int) (string, error)
+	SelectBookmarkByVacancyAndOwnerID(vacancyID, ownerID int) string
 	UpdateVacancy(vacancy VolunteerVacancies) int64
 	DeleteVacancyByID(vacancyID int) int64
 	InsertVacancy(*VolunteerVacancies) (*VolunteerVacancies, error)

@@ -108,17 +108,17 @@ func (mdl *model) SelectBookmarkedVacancyID(ownerID int) (map[int]string, error)
 	return mapPostIDs, nil
 }
 
-func (mdl *model) SelectBookmarkByVacancyAndOwnerID(vacancyID, ownerID int) (string, error) {
+func (mdl *model) SelectBookmarkByVacancyAndOwnerID(vacancyID, ownerID int) string {
 	opts := options.FindOne().SetProjection(bson.M{"_id": 1})
 
 	var result bson.M
 	if err := mdl.collection.FindOne(context.Background(), bson.M{"owner_id": ownerID, "post_id": vacancyID, "post_type": "vacancy"}, opts).Decode(&result); err != nil {
-		return "", err
+		return ""
 	}
 
 	objectIDString := result["_id"].(primitive.ObjectID).Hex()
 
-	return objectIDString, nil
+	return objectIDString
 }
 
 func (mdl *model) UpdateVacancy(volunteer volunteer.VolunteerVacancies) int64 {
