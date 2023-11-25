@@ -20,6 +20,10 @@ type InputVacancy struct {
 	Status              string         `json:"status" form:"status"`
 }
 
+type StatusVacancies struct {
+	Status string `json:"status" form:"status" validate:"oneof=pending accepted rejected"`
+}
+
 type ApplyVacancy struct {
 	VolunteerID int    `json:"volunteer_id" form:"volunteer_id" validate:"required"`
 	Skills      string `json:"skills" form:"skills" validate:"required"`

@@ -22,6 +22,7 @@ func Volunteers(e *echo.Echo, handler volunteer.Handler, jwt helpers.JWTInterfac
 	volunteers.GET("", handler.GetVacancies(""), m.AuthorizeJWT(jwt, -1, cfg.SECRET))
 	volunteers.GET("/:id", handler.VacancyDetails(), m.AuthorizeJWT(jwt, 0, cfg.SECRET))
 	volunteers.PUT("/:id", handler.UpdateVacancy())
+	volunteers.PATCH("/:id", handler.UpdateStatusVacancy(), m.AuthorizeJWT(jwt, 2, cfg.SECRET))
 	volunteers.DELETE("/:id", handler.DeleteVacancy())
 
 	volunteers.GET("/:vacancy_id/registrants", handler.GetVolunteersByVacancyID())

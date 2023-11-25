@@ -18,6 +18,7 @@ type ResVacancy struct {
 	Province            string         `json:"province"`
 	City                string         `json:"city"`
 	SubDistrict         string         `json:"sub_district"`
+	DetailLocation      string         `json:"detail_location"`
 	Photo               string         `json:"photo"`
 	Status              string         `json:"status"`
 	TotalRegistrar      int            `json:"total_registrar"`

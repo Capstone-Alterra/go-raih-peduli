@@ -34,6 +34,7 @@ type Usecase interface {
 	FindAllVacancies(page, size int, searchAndFilter dtos.SearchAndFilter, ownerID int, status string) ([]dtos.ResVacancy, int64)
 	FindVacancyByID(vacancyID, ownerID int) *dtos.ResVacancy
 	ModifyVacancy(vacancyData dtos.InputVacancy, file multipart.File, oldData dtos.ResVacancy) (bool, []string)
+	ModifyVacancyStatus(input dtos.StatusVacancies, oldData dtos.ResVacancy) (bool, []string)
 	RemoveVacancy(vacancyID int) bool
 	CreateVacancy(newVacancy dtos.InputVacancy, UserID int, file multipart.File) (*dtos.ResVacancy, []string, error)
 	RegisterVacancy(newApply dtos.ApplyVacancy, userID int, file multipart.File) (bool, []string)
@@ -46,6 +47,7 @@ type Handler interface {
 	GetVacancies(suffix string) echo.HandlerFunc
 	VacancyDetails() echo.HandlerFunc
 	UpdateVacancy() echo.HandlerFunc
+	UpdateStatusVacancy() echo.HandlerFunc
 	DeleteVacancy() echo.HandlerFunc
 	CreateVacancy() echo.HandlerFunc
 	ApplyVacancy() echo.HandlerFunc

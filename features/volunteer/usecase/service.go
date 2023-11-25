@@ -201,6 +201,27 @@ func (svc *service) ModifyVacancy(vacancyData dtos.InputVacancy, file multipart.
 	return true, nil
 }
 
+func (svc *service) ModifyVacancyStatus(input dtos.StatusVacancies, oldData dtos.ResVacancy) (bool, []string) {
+	errMap := svc.validation.ValidateRequest(input)
+	if errMap != nil {
+		return false, errMap
+	}
+
+	var newVacancy volunteer.VolunteerVacancies
+
+	newVacancy.ID = oldData.ID
+	newVacancy.Status = input.Status
+
+	rowsAffected := svc.model.UpdateVacancy(newVacancy)
+
+	if rowsAffected <= 0 {
+		log.Error("There is No Volunteer Updated!")
+		return false, nil
+	}
+
+	return true, nil
+}
+
 func (svc *service) UpdateStatusRegistrar(status string, registrarID int) bool {
 	registrar := svc.model.SelectRegistrarByID(registrarID)
 

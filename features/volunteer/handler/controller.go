@@ -129,6 +129,39 @@ func (ctl *controller) UpdateVacancy() echo.HandlerFunc {
 	}
 }
 
+func (ctl *controller) UpdateStatusVacancy() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		input := dtos.StatusVacancies{}
+
+		vacancyID, err := strconv.Atoi(ctx.Param("id"))
+
+		if err != nil {
+			return ctx.JSON(400, helpers.Response(err.Error()))
+		}
+
+		vacancy := ctl.service.FindVacancyByID(vacancyID, 0)
+
+		if vacancy == nil {
+			return ctx.JSON(404, helpers.Response("volunteer vacancy not found"))
+		}
+
+		ctx.Bind(&input)
+
+		result, errMap := ctl.service.ModifyVacancyStatus(input, *vacancy)
+		if errMap != nil {
+			return ctx.JSON(400, helpers.Response("error missing some data", map[string]any{
+				"error": errMap,
+			}))
+		}
+
+		if !result {
+			return ctx.JSON(500, helpers.Response("something went wrong!"))
+		}
+
+		return ctx.JSON(200, helpers.Response("success updated volunteer vacancies status"))
+	}
+}
+
 func (ctl *controller) DeleteVacancy() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		volunteerID, err := strconv.Atoi(ctx.Param("id"))
