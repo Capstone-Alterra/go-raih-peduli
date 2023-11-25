@@ -328,3 +328,18 @@ func (mdl *model) GetTotalVolunteers(vacancyID int, name string) int64 {
 
 	return totalData
 }
+
+func (mdl *model) CheckUser(userID int) bool {
+	var nik string
+
+	result := mdl.db.Table("users").Select("nik").Where("id = ?", userID).Pluck("nik", &nik)
+	if result.Error != nil {
+		return false
+	}
+
+	if nik == "" {
+		return false
+	}
+
+	return true
+}

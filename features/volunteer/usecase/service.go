@@ -385,3 +385,12 @@ func (svc *service) FindDetailVolunteers(vacancyID, volunteerID int) *dtos.ResRe
 	return &res
 
 }
+
+func (svc *service) CheckUser(userID int) bool {
+	result := svc.model.CheckUser(userID)
+	if !result {
+		return false
+	}
+
+	return true
+}

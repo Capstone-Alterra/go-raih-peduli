@@ -28,6 +28,7 @@ type Repository interface {
 	SelectVolunteersByVacancyID(vacancyID int, name string, page, size int) []Volunteer
 	GetTotalVolunteers(vacancyID int, name string) int64
 	SelectVolunteerDetails(vacancyID int, volunteerID int) *Volunteer
+	CheckUser(userID int) bool
 }
 
 type Usecase interface {
@@ -41,6 +42,7 @@ type Usecase interface {
 	UpdateStatusRegistrar(status string, registrarID int) bool
 	FindAllVolunteersByVacancyID(page, size int, vacancyID int, name string) ([]dtos.ResRegistrantVacancy, int64)
 	FindDetailVolunteers(vacancyID, volunteerID int) *dtos.ResRegistrantVacancy
+	CheckUser(userID int) bool
 }
 
 type Handler interface {

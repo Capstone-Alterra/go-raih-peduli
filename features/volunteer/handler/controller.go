@@ -237,6 +237,11 @@ func (ctl *controller) ApplyVacancy() echo.HandlerFunc {
 
 		userID := ctx.Get("user_id")
 
+		checkUser := ctl.service.CheckUser(userID.(int))
+		if !checkUser {
+			return ctx.JSON(401, helpers.Response("please fill in your NIK first before register"))
+		}
+
 		fileHeader, err := ctx.FormFile("photo")
 		var file multipart.File
 
