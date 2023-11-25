@@ -34,19 +34,24 @@ func (ctl *controller) GetVacancies(suffix string) echo.HandlerFunc {
 		searchAndFilter := dtos.SearchAndFilter{}
 		ctx.Bind(&searchAndFilter)
 
+		userID := 0
+		if ctx.Get("user_id") != nil {
+			userID = ctx.Get("user_id").(int)
+		}
+
 		page := pagination.Page
 		size := pagination.PageSize
 
-		volunteers, totalData := ctl.service.FindAllVacancies(page, size, searchAndFilter, suffix)
+		vacancies, totalData := ctl.service.FindAllVacancies(page, size, searchAndFilter, userID, suffix)
 
-		if volunteers == nil {
+		if vacancies == nil {
 			return ctx.JSON(404, helpers.Response("there is no volunteers!"))
 		}
 
 		paginationResponse := helpers.PaginationResponse(page, size, int(totalData))
 
 		return ctx.JSON(200, helpers.Response("success!", map[string]any{
-			"data":       volunteers,
+			"data":       vacancies,
 			"pagination": paginationResponse,
 		}))
 	}
@@ -54,20 +59,26 @@ func (ctl *controller) GetVacancies(suffix string) echo.HandlerFunc {
 
 func (ctl *controller) VacancyDetails() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		volunteerID, err := strconv.Atoi(ctx.Param("id"))
+		vacancyID, err := strconv.Atoi(ctx.Param("id"))
 
 		if err != nil {
 			return ctx.JSON(400, helpers.Response(err.Error()))
 		}
 
-		volunteer := ctl.service.FindVacancyByID(volunteerID)
+		userID := 0
 
-		if volunteer == nil {
+		if ctx.Get("user_id") != nil {
+			userID = ctx.Get("user_id").(int)
+		}
+
+		vacancy := ctl.service.FindVacancyByID(vacancyID, userID)
+
+		if vacancy == nil {
 			return ctx.JSON(404, helpers.Response("volunteer not found!"))
 		}
 
 		return ctx.JSON(200, helpers.Response("success!", map[string]any{
-			"data": volunteer,
+			"data": vacancy,
 		}))
 	}
 }
@@ -82,7 +93,7 @@ func (ctl *controller) UpdateVacancy() echo.HandlerFunc {
 			return ctx.JSON(400, helpers.Response(errParam.Error()))
 		}
 
-		vacancy := ctl.service.FindVacancyByID(vacancyID)
+		vacancy := ctl.service.FindVacancyByID(vacancyID, 0)
 
 		if vacancy == nil {
 			return ctx.JSON(404, helpers.Response("volunteer not found!"))
@@ -126,7 +137,7 @@ func (ctl *controller) DeleteVacancy() echo.HandlerFunc {
 			return ctx.JSON(400, helpers.Response(err.Error()))
 		}
 
-		volunteer := ctl.service.FindVacancyByID(volunteerID)
+		volunteer := ctl.service.FindVacancyByID(volunteerID, 0)
 
 		if volunteer == nil {
 			return ctx.JSON(404, helpers.Response("volunteer not found!"))
@@ -277,7 +288,6 @@ func (ctl *controller) GetVolunteersByVacancyID() echo.HandlerFunc {
 		}))
 	}
 }
-
 
 func (ctl *controller) GetVolunteer() echo.HandlerFunc {
 	return func(ctx echo.Context) error {

@@ -116,9 +116,12 @@ func VolunteerHandler() volunteer.Handler {
 	validation := helpers.NewValidationRequest()
 
 	db := utils.InitDB()
+	mongoDB := utils.ConnectMongo()
+	collection := mongoDB.Collection("bookmarks")
 
 	clStorage := helpers.NewCloudStorage(config.CLOUD_PROJECT_ID, config.CLOUD_BUCKET_NAME, "vacancies/")
-	repo := vr.New(db, clStorage)
+
+	repo := vr.New(db, clStorage, collection)
 	uc := vu.New(repo, validation)
 	return vh.New(uc)
 }

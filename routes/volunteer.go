@@ -16,11 +16,10 @@ func Volunteers(e *echo.Echo, handler volunteer.Handler, jwt helpers.JWTInterfac
 	mobile.POST("", handler.CreateVacancy(), m.AuthorizeJWT(jwt, 0, cfg.SECRET))
 	mobile.POST("/register", handler.ApplyVacancy(), m.AuthorizeJWT(jwt, 1, cfg.SECRET))
 
-
 	volunteers := e.Group("/volunteer-vacancies")
 
-	volunteers.POST("", handler.CreateVacancy(), m.AuthorizeJWT(jwt, 0, cfg.SECRET)) 
-	volunteers.GET("", handler.GetVacancies(""), m.AuthorizeJWT(jwt, -1, cfg.SECRET)) 
+	volunteers.POST("", handler.CreateVacancy(), m.AuthorizeJWT(jwt, 0, cfg.SECRET))
+	volunteers.GET("", handler.GetVacancies(""), m.AuthorizeJWT(jwt, -1, cfg.SECRET))
 	volunteers.GET("/:id", handler.VacancyDetails(), m.AuthorizeJWT(jwt, 0, cfg.SECRET))
 	volunteers.PUT("/:id", handler.UpdateVacancy())
 	volunteers.DELETE("/:id", handler.DeleteVacancy())

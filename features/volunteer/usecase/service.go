@@ -26,8 +26,10 @@ func New(model volunteer.Repository, validation helpers.ValidationInterface) vol
 	}
 }
 
-func (svc *service) FindAllVacancies(page, size int, searchAndFilter dtos.SearchAndFilter, suffix string) ([]dtos.ResVacancy, int64) {
+func (svc *service) FindAllVacancies(page, size int, searchAndFilter dtos.SearchAndFilter, ownerID int, suffix string) ([]dtos.ResVacancy, int64) {
 	var volunteers []dtos.ResVacancy
+	var bookmarkIDs map[int]string
+	var err error
 
 	if searchAndFilter.MaxParticipant == 0 {
 		searchAndFilter.MaxParticipant = math.MaxInt32
@@ -38,7 +40,14 @@ func (svc *service) FindAllVacancies(page, size int, searchAndFilter dtos.Search
 	if suffix == "mobile" {
 		volunteersEnt = svc.model.PaginateMobile(page, size, searchAndFilter)
 	} else {
-		volunteersEnt = svc.model.PaginateMobile(page, size, searchAndFilter)
+		volunteersEnt = svc.model.Paginate(page, size, searchAndFilter)
+	}
+
+	if ownerID != 0 {
+		bookmarkIDs, err = svc.model.SelectBookmarkedVacancyID(ownerID)
+		if err != nil {
+			return nil, 0
+		}
 	}
 
 	for _, volunteer := range volunteersEnt {
@@ -47,6 +56,16 @@ func (svc *service) FindAllVacancies(page, size int, searchAndFilter dtos.Search
 		if err := smapping.FillStruct(&data, smapping.MapFields(volunteer)); err != nil {
 			log.Error(err.Error())
 		}
+
+		if bookmarkIDs != nil {
+			bookmardID, ok := bookmarkIDs[data.ID]
+
+			if ok {
+				data.BookmarkID = &bookmardID
+			}
+		}
+
+		data.TotalRegistrar = int(svc.model.GetTotalVolunteersByVacancyID(data.ID))
 
 		volunteers = append(volunteers, data)
 	}
@@ -70,15 +89,26 @@ func (svc *service) FindAllVacancies(page, size int, searchAndFilter dtos.Search
 	return volunteers, totalData
 }
 
-func (svc *service) FindVacancyByID(volunteerID int) *dtos.ResVacancy {
+func (svc *service) FindVacancyByID(vacancyID, ownerID int) *dtos.ResVacancy {
 	res := dtos.ResVacancy{}
-	volunteer := svc.model.SelectVacancyByID(volunteerID)
+	vacancy := svc.model.SelectVacancyByID(vacancyID)
 
-	if volunteer == nil {
+	if vacancy == nil {
 		return nil
 	}
 
-	err := smapping.FillStruct(&res, smapping.MapFields(volunteer))
+	var bookmarkID string
+	var err error
+
+	if ownerID != 0 {
+		bookmarkID, err = svc.model.SelectBookmarkByVacancyAndOwnerID(vacancyID, ownerID)
+
+		if bookmarkID != "" {
+			res.BookmarkID = &bookmarkID
+		}
+	}
+
+	err = smapping.FillStruct(&res, smapping.MapFields(vacancy))
 	if err != nil {
 		log.Error(err)
 		return nil
