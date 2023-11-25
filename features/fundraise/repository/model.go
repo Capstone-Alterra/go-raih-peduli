@@ -116,18 +116,24 @@ func (mdl *model) DeleteByID(fundraiseID int) error {
 	return nil
 }
 
-func (mdl *model) UploadFile(file multipart.File, objectName string) (string, error) {
+func (mdl *model) UploadFile(file multipart.File) (string, error) {
 	config := config.LoadCloudStorageConfig()
 	randomChar := uuid.New().String()
-	if objectName == "" {
-		objectName = randomChar
-	}
+	filename := randomChar
 
-	if err := mdl.clStorage.UploadFile(file, objectName); err != nil {
+	if err := mdl.clStorage.UploadFile(file, filename); err != nil {
 		return "", err
 	}
 
-	return "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/fundraises/" + objectName, nil
+	return "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/fundraises/" + filename, nil
+}
+
+func (mdl *model) DeleteFile(filename string) error {
+	if err := mdl.clStorage.DeleteFile(filename); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (mdl *model) SelectBookmarkedFundraiseID(ownerID int) (map[int]string, error) {

@@ -63,6 +63,30 @@ func (_m *MidtransInterface) CreateTransactionGopay(IDTransaction string, Paymen
 	return r0, r1
 }
 
+// CreateTransactionQris provides a mock function with given fields: IDTransaction, PaymentType, Amount
+func (_m *MidtransInterface) CreateTransactionQris(IDTransaction string, PaymentType string, Amount int64) (string, error) {
+	ret := _m.Called(IDTransaction, PaymentType, Amount)
+
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string, string, int64) (string, error)); ok {
+		return rf(IDTransaction, PaymentType, Amount)
+	}
+	if rf, ok := ret.Get(0).(func(string, string, int64) string); ok {
+		r0 = rf(IDTransaction, PaymentType, Amount)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(string, string, int64) error); ok {
+		r1 = rf(IDTransaction, PaymentType, Amount)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // TransactionStatus provides a mock function with given fields: transactionStatusResp
 func (_m *MidtransInterface) TransactionStatus(transactionStatusResp *coreapi.TransactionStatusResponse) transaction.Status {
 	ret := _m.Called(transactionStatusResp)

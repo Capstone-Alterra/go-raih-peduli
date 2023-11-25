@@ -152,7 +152,7 @@ func (svc *service) Create(newFundraise dtos.InputFundraise, userID int, file mu
 	var url string = ""
 
 	if file != nil {
-		imageURL, err := svc.model.UploadFile(file, "")
+		imageURL, err := svc.model.UploadFile(file)
 
 		if err != nil {
 			logrus.Error(err)
@@ -204,11 +204,11 @@ func (svc *service) Modify(fundraiseData dtos.InputFundraise, file multipart.Fil
 			oldFilename = oldFilename[urlLength:]
 		}
 
-		if oldFilename == "default" {
-			oldFilename = ""
+		if err := svc.model.DeleteFile(oldFilename); err != nil {
+			return nil, err
 		}
 
-		imageURL, err := svc.model.UploadFile(file, oldFilename)
+		imageURL, err := svc.model.UploadFile(file)
 
 		if err != nil {
 			logrus.Error(err)
@@ -227,7 +227,6 @@ func (svc *service) Modify(fundraiseData dtos.InputFundraise, file multipart.Fil
 	newFundraise.ID = oldData.ID
 	newFundraise.UserID = oldData.UserID
 	newFundraise.Status = oldData.Status
-	
 
 	if err := svc.model.Update(newFundraise); err != nil {
 		logrus.Error(err)

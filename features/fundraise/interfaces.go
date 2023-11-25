@@ -15,7 +15,8 @@ type Repository interface {
 	TotalFundAcquired(fundraiseID int) (int32, error)
 	Update(fundraise Fundraise) error
 	DeleteByID(fundraiseID int) error
-	UploadFile(file multipart.File, objectName string) (string, error)
+	UploadFile(file multipart.File) (string, error)
+	DeleteFile(filename string) error
 	SelectBookmarkedFundraiseID(ownerID int) (map[int]string, error)
 	SelectBookmarkByFundraiseAndOwnerID(fundraiseID, ownerID int) (string, error)
 	GetTotalData() int64

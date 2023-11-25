@@ -41,6 +41,7 @@ type MidtransInterface interface {
 
 type CloudStorageInterface interface {
 	UploadFile(file multipart.File, object string) error
+	DeleteFile(object string) error
 }
 
 type ConverterInterface interface {
