@@ -228,6 +228,6 @@ func (ctl *controller) DeleteFundraise() echo.HandlerFunc {
 			return ctx.JSON(500, helper.Response("something went wrong"))
 		}
 
-		return ctx.JSON(200, helper.Response("fundraise success deleted"))
+		return ctx.JSON(200, helper.Response("success deleted fundraise"))
 	}
 }
