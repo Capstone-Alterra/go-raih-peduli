@@ -43,6 +43,11 @@ import (
 	br "raihpeduli/features/bookmark/repository"
 	bu "raihpeduli/features/bookmark/usecase"
 
+	"raihpeduli/features/chatbot"
+	ch "raihpeduli/features/chatbot/handler"
+	cr "raihpeduli/features/chatbot/repository"
+	cu "raihpeduli/features/chatbot/usecase"
+
 	"github.com/labstack/echo/v4"
 )
 
@@ -58,6 +63,7 @@ func main() {
 	routes.News(e, NewsHandler(), jwtService, *cfg)
 	routes.Transactions(e, TransactionHandler(), jwtService, *cfg)
 	routes.Bookmarks(e, BookmarkHandler(), jwtService, *cfg)
+	routes.Chatbots(e, ChatbotHandler(), jwtService, *cfg)
 
 	middlewares.LogMiddlewares(e)
 
@@ -160,4 +166,15 @@ func BookmarkHandler() bookmark.Handler {
 	repo := br.New(db, collection)
 	uc := bu.New(repo, validation)
 	return bh.New(uc)
+}
+
+func ChatbotHandler() chatbot.Handler {
+	db := utils.InitDB()
+	mongoDB := utils.ConnectMongo()
+	collection := mongoDB.Collection("chatbot_histories")
+	validation := helpers.NewValidationRequest()
+
+	repo := cr.New(db, collection)
+	uc := cu.New(repo, validation)
+	return ch.New(uc)
 }

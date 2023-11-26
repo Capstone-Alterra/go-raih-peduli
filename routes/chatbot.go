@@ -13,7 +13,7 @@ func Chatbots(e *echo.Echo, handler chatbot.Handler, jwt helpers.JWTInterface, c
 	chatbots := e.Group("/chatbots")
 
 	chatbots.GET("", handler.GetChatHistory(), m.AuthorizeJWT(jwt, -1, config.SECRET))
-	chatbots.POST("", handler.SendMessage(), m.AuthorizeJWT(jwt, -1, config.SECRET))
+	chatbots.POST("", handler.SendQuestion(), m.AuthorizeJWT(jwt, -1, config.SECRET))
 	
-	chatbots.DELETE("/:user_id", handler.DeleteChatHistory(), m.AuthorizeJWT(jwt, 2, config.SECRET))
+	chatbots.DELETE("", handler.DeleteChatHistory(), m.AuthorizeJWT(jwt, 1, config.SECRET))
 }
