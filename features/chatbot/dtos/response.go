@@ -1,5 +1,6 @@
 package dtos
 
-type ResChatbot struct {
-	Name string `json:"name"`
+type ResChatReply struct {
+	Question string `json:"question"`
+	Reply    string `json:"reply"`
 }

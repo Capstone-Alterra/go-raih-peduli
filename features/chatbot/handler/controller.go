@@ -1,14 +1,11 @@
 package handler
 
 import (
-	"raihpeduli/helpers"
 	helper "raihpeduli/helpers"
-	"strconv"
 
 	"raihpeduli/features/chatbot"
 	"raihpeduli/features/chatbot/dtos"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 )
 
@@ -22,81 +19,63 @@ func New(service chatbot.Usecase) chatbot.Handler {
 	}
 }
 
-var validate *validator.Validate
-
 func (ctl *controller) GetChatHistory() echo.HandlerFunc {
 	return func (ctx echo.Context) error  {
 		pagination := dtos.Pagination{}
 		ctx.Bind(&pagination)
-		
-		page := pagination.Page
-		size := pagination.Size
 
-		if page <= 0 || size <= 0 {
-			return ctx.JSON(400, helper.Response("Please provide query `page` and `size` in number!"))
+		userID := ctx.Get("user_id").(int)
+
+		chatHistories := ctl.service.FindAllChat(userID)
+
+		if chatHistories == nil || len(chatHistories) == 0 {
+			return ctx.JSON(404, helper.Response("there is no chat history for this user"))
 		}
 
-		chatbots := ctl.service.FindAll(page, size)
-
-		if chatbots == nil {
-			return ctx.JSON(404, helper.Response("There is No Chatbots!"))
-		}
-
-		return ctx.JSON(200, helper.Response("Success!", map[string]any {
-			"data": chatbots,
+		return ctx.JSON(200, helper.Response("success", map[string]any {
+			"data": chatHistories,
 		}))
 	}
 }
 
-func (ctl *controller) SendMessage() echo.HandlerFunc {
+func (ctl *controller) SendQuestion() echo.HandlerFunc {
 	return func (ctx echo.Context) error  {
 		input := dtos.InputMessage{}
 
 		ctx.Bind(&input)
 
-		validate = validator.New(validator.WithRequiredStructEnabled())
+		userID := 0
 
-		err := validate.Struct(input)
+		if ctx.Get("user_id") != nil {
+			userID = ctx.Get("user_id").(int)
+		}
 
-		if err != nil {
-			errMap := helpers.ErrorMapValidation(err)
-			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any {
+		message, errMap, err := ctl.service.SetReplyMessage(input, userID)
+
+		if errMap != nil {
+			return ctx.JSON(400, helper.Response("error missing some data", map[string]any {
 				"error": errMap,
 			}))
 		}
 
-		chatbot := ctl.service.Create(input)
-
-		if chatbot == nil {
-			return ctx.JSON(500, helper.Response("Something went Wrong!", nil))
+		if err != nil {
+			return ctx.JSON(500, helper.Response(err.Error()))
 		}
 
-		return ctx.JSON(200, helper.Response("Success!", map[string]any {
-			"data": chatbot,
+		return ctx.JSON(200, helper.Response("success", map[string]any {
+			"data": message,
 		}))
 	}
 }
 
 func (ctl *controller) DeleteChatHistory() echo.HandlerFunc {
 	return func (ctx echo.Context) error  {
-		chatbotID, err := strconv.Atoi(ctx.Param("id"))
+		userID := ctx.Get("user_id").(int)
 
-		if err != nil {
-			return ctx.JSON(400, helper.Response(err.Error()))
+		if err := ctl.service.ClearHistory(userID); err != nil {
+			return ctx.JSON(500, helper.Response(err.Error()))
 		}
 
-		chatbot := ctl.service.FindByID(chatbotID)
-
-		if chatbot == nil {
-			return ctx.JSON(404, helper.Response("Chatbot Not Found!"))
-		}
-
-		delete := ctl.service.Remove(chatbotID)
-
-		if !delete {
-			return ctx.JSON(500, helper.Response("Something Went Wrong!"))
-		}
-
-		return ctx.JSON(200, helper.Response("Chatbot Success Deleted!", nil))
+		return ctx.JSON(200, helper.Response("success cleared chat history", nil))
 	}
 }

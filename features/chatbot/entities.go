@@ -1,13 +1,16 @@
 package chatbot
 
-import (
-	"gorm.io/gorm"
-)
-
-type Chatbot struct {
-	gorm.Model
-
-	ID int `gorm:"type:int(11)"`
-	Name string `gorm:"type:varchar(255)"`
+type ChatHistory struct {
+	UserID           int                `bson:"user_id"`
+	QuestionAndReply []QuestionAndReply `bson:"question_reply"`
 }
 
+type QuestionAndReply struct {
+	Question string `bson:"question"`
+	Reply    string `bson:"reply"`
+}
+
+type User struct {
+	ID    int
+	Email string
+}

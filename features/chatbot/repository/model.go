@@ -1,77 +1,69 @@
 package repository
 
 import (
+	"context"
 	"raihpeduli/features/chatbot"
 
-	"github.com/labstack/gommon/log"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"gorm.io/gorm"
 )
 
 type model struct {
 	db *gorm.DB
+	collection *mongo.Collection
 }
 
-func New(db *gorm.DB) chatbot.Repository {
+func New(db *gorm.DB, collection *mongo.Collection) chatbot.Repository {
 	return &model {
 		db: db,
+		collection: collection,
 	}
 }
 
-func (mdl *model) Paginate(page, size int) []chatbot.Chatbot {
-	var chatbots []chatbot.Chatbot
-
-	offset := (page - 1) * size
-
-	result := mdl.db.Offset(offset).Limit(size).Find(&chatbots)
+func (mdl *model) SaveChat(questionNReply chatbot.QuestionAndReply, userID int) error {
+	var user chatbot.User
 	
-	if result.Error != nil {
-		log.Error(result.Error)
-		return nil
+	if err := mdl.collection.FindOne(context.Background(), bson.M{"user_id": userID}).Decode(&user); err != nil {
+		mdl.collection.InsertOne(context.Background(), chatbot.ChatHistory{
+			UserID: userID,
+			QuestionAndReply: []chatbot.QuestionAndReply{
+				questionNReply,
+			},
+		})
+	} else {
+		if _, err := mdl.collection.UpdateOne(context.Background(), bson.M{"user_id": userID}, bson.M{"$push": bson.M{"question_reply": questionNReply}}); err != nil {
+			return err
+		}
 	}
 
-	return chatbots
+	return nil
 }
 
-func (mdl *model) Insert(newChatbot chatbot.Chatbot) int64 {
-	result := mdl.db.Create(&newChatbot)
+func (mdl *model) SelectUserByID(userID int) (*chatbot.User, error) {
+	var user chatbot.User
 
-	if result.Error != nil {
-		log.Error(result.Error)
-		return -1
+	if err := mdl.db.Table("users").Where("id = ?", userID).First(&user).Error; err != nil {
+		return nil, err
 	}
 
-	return int64(newChatbot.ID)
+	return &user, nil
 }
 
-func (mdl *model) SelectByID(chatbotID int) *chatbot.Chatbot {
-	var chatbot chatbot.Chatbot
-	result := mdl.db.First(&chatbot, chatbotID)
-
-	if result.Error != nil {
-		log.Error(result.Error)
-		return nil
-	}
-
-	return &chatbot
-}
-
-func (mdl *model) Update(chatbot chatbot.Chatbot) int64 {
-	result := mdl.db.Save(&chatbot)
-
-	if result.Error != nil {
-		log.Error(result.Error)
-	}
-
-	return result.RowsAffected
-}
-
-func (mdl *model) DeleteByID(chatbotID int) int64 {
-	result := mdl.db.Delete(&chatbot.Chatbot{}, chatbotID)
+func (mdl *model) SelectByUserID(userID int) (*chatbot.ChatHistory, error) {
 	
-	if result.Error != nil {
-		log.Error(result.Error)
-		return 0
+	var chatHistories chatbot.ChatHistory
+	if err := mdl.collection.FindOne(context.Background(), bson.M{"user_id": userID}).Decode(&chatHistories); err != nil {
+		return nil, err
 	}
 
-	return result.RowsAffected
+	return &chatHistories, nil
+}
+
+func (mdl *model) DeleteByUserID(userID int) error {
+	if _, err := mdl.collection.DeleteOne(context.Background(), bson.M{"user_id": userID}); err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -7,23 +7,20 @@ import (
 )
 
 type Repository interface {
-	Paginate(page, size int) []Chatbot
-	Insert(newChatbot Chatbot) int64
-	SelectByID(chatbotID int) *Chatbot
-	Update(chatbot Chatbot) int64
-	DeleteByID(chatbotID int) int64
+	SaveChat(questionNReply QuestionAndReply, userID int) error
+	SelectByUserID(chatbotID int) (*ChatHistory, error)
+	DeleteByUserID(chatbotID int) error
+	SelectUserByID(userID int) (*User, error)
 }
 
 type Usecase interface {
-	FindAll(page, size int) []dtos.ResChatbot
-	FindByID(chatbotID int) *dtos.ResChatbot
-	Create(newChatbot dtos.InputMessage) *dtos.ResChatbot
-	Modify(chatbotData dtos.InputMessage, chatbotID int) bool
-	Remove(chatbotID int) bool
+	FindAllChat(userID int) []dtos.ResChatReply
+	SetReplyMessage(requestMessage dtos.InputMessage, userID int) (*dtos.ResChatReply, []string, error)
+	ClearHistory(userID int) error
 }
 
 type Handler interface {
 	GetChatHistory() echo.HandlerFunc
-	SendMessage() echo.HandlerFunc
+	SendQuestion() echo.HandlerFunc
 	DeleteChatHistory() echo.HandlerFunc
 }

@@ -1,110 +1,79 @@
 package usecase
 
 import (
+	"errors"
 	"raihpeduli/features/chatbot"
 	"raihpeduli/features/chatbot/dtos"
+	"raihpeduli/helpers"
 
 	"github.com/labstack/gommon/log"
 	"github.com/mashingan/smapping"
+	"github.com/sirupsen/logrus"
 )
 
 type service struct {
 	model chatbot.Repository
+	validation helpers.ValidationInterface
 }
 
-func New(model chatbot.Repository) chatbot.Usecase {
+func New(model chatbot.Repository, validation helpers.ValidationInterface) chatbot.Usecase {
 	return &service {
 		model: model,
+		validation: validation,
 	}
 }
 
-func (svc *service) FindAll(page, size int) []dtos.ResChatbot {
-	var chatbots []dtos.ResChatbot
+func (svc *service) FindAllChat(userID int) []dtos.ResChatReply {
+	var res []dtos.ResChatReply
 
-	chatbotsEnt := svc.model.Paginate(page, size)
+	chatHistories, err := svc.model.SelectByUserID(userID)
 
-	for _, chatbot := range chatbotsEnt {
-		var data dtos.ResChatbot
+	if err != nil {
+		logrus.Error(err)
+		return nil
+	}
+
+	for _, chatbot := range chatHistories.QuestionAndReply {
+		var data dtos.ResChatReply
 
 		if err := smapping.FillStruct(&data, smapping.MapFields(chatbot)); err != nil {
 			log.Error(err.Error())
 		} 
 		
-		chatbots = append(chatbots, data)
+		res = append(res, data)
 	}
 
-	return chatbots
+	return res
 }
 
-func (svc *service) FindByID(chatbotID int) *dtos.ResChatbot {
-	res := dtos.ResChatbot{}
-	chatbot := svc.model.SelectByID(chatbotID)
-
-	if chatbot == nil {
-		return nil
+func (svc *service) SetReplyMessage(input dtos.InputMessage, userID int) (*dtos.ResChatReply, []string, error) {
+	if errMap := svc.validation.ValidateRequest(input); errMap != nil {
+		return nil, errMap, errors.New("message must not be empty") 
 	}
 
-	err := smapping.FillStruct(&res, smapping.MapFields(chatbot))
-	if err != nil {
-		log.Error(err)
-		return nil
+	var chatMessage = chatbot.QuestionAndReply{
+		Question: input.Message,
+		Reply: "test",
 	}
 
-	return &res
+	if userID != 0 {
+		if err := svc.model.SaveChat(chatMessage, userID); err != nil {
+			return nil, nil, err
+		}
+	}
+
+	var res = dtos.ResChatReply{
+		Question: input.Message,
+		Reply: "test",
+	}
+
+	return &res, nil, nil
 }
 
-func (svc *service) Create(newChatbot dtos.InputChatbot) *dtos.ResChatbot {
-	chatbot := chatbot.Chatbot{}
-	
-	err := smapping.FillStruct(&chatbot, smapping.MapFields(newChatbot))
-	if err != nil {
-		log.Error(err)
-		return nil
+func (svc *service) ClearHistory(userID int) error {
+	if err := svc.model.DeleteByUserID(userID); err != nil {
+		return err
 	}
 
-	chatbotID := svc.model.Insert(chatbot)
-
-	if chatbotID == -1 {
-		return nil
-	}
-
-	resChatbot := dtos.ResChatbot{}
-	errRes := smapping.FillStruct(&resChatbot, smapping.MapFields(newChatbot))
-	if errRes != nil {
-		log.Error(errRes)
-		return nil
-	}
-
-	return &resChatbot
-}
-
-func (svc *service) Modify(chatbotData dtos.InputChatbot, chatbotID int) bool {
-	newChatbot := chatbot.Chatbot{}
-
-	err := smapping.FillStruct(&newChatbot, smapping.MapFields(chatbotData))
-	if err != nil {
-		log.Error(err)
-		return false
-	}
-
-	newChatbot.ID = chatbotID
-	rowsAffected := svc.model.Update(newChatbot)
-
-	if rowsAffected <= 0 {
-		log.Error("There is No Chatbot Updated!")
-		return false
-	}
-	
-	return true
-}
-
-func (svc *service) Remove(chatbotID int) bool {
-	rowsAffected := svc.model.DeleteByID(chatbotID)
-
-	if rowsAffected <= 0 {
-		log.Error("There is No Chatbot Deleted!")
-		return false
-	}
-
-	return true
+	return nil
 }
