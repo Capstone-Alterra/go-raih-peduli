@@ -51,7 +51,7 @@ func (svc *service) SetReplyMessage(input dtos.InputMessage, userID int) (*dtos.
 		return nil, errMap, errors.New("message must not be empty") 
 	}
 
-	qNPrompts, err := svc.model.ReadQuestionNPrompts()
+	_, err := svc.model.ReadQuestionNPrompts()
 
 	if err != nil {
 		return nil, nil, err
