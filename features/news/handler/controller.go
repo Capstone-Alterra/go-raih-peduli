@@ -57,7 +57,7 @@ func (ctl *controller) GetNews() echo.HandlerFunc {
 
 		paginationResponse := helpers.PaginationResponse(page, pageSize, int(totalData))
 
-		return ctx.JSON(200, helper.Response("Success!", map[string]any{
+		return ctx.JSON(200, helper.Response("success", map[string]any{
 			"data":       newss,
 			"pagination": paginationResponse,
 		}))
@@ -81,10 +81,10 @@ func (ctl *controller) NewsDetails() echo.HandlerFunc {
 		news := ctl.service.FindByID(newsID, userID)
 
 		if news == nil {
-			return ctx.JSON(404, helper.Response("News Not Found!"))
+			return ctx.JSON(404, helper.Response("news not found!"))
 		}
 
-		return ctx.JSON(200, helper.Response("Success!", map[string]any{
+		return ctx.JSON(200, helper.Response("success", map[string]any{
 			"data": news,
 		}))
 	}
@@ -95,15 +95,6 @@ func (ctl *controller) CreateNews() echo.HandlerFunc {
 		input := dtos.InputNews{}
 
 		ctx.Bind(&input)
-
-		validate = validator.New(validator.WithRequiredStructEnabled())
-
-		if err := validate.Struct(input); err != nil {
-			errMap := helper.ErrorMapValidation(err)
-			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any{
-				"error": errMap,
-			}))
-		}
 
 		userID := ctx.Get("user_id")
 
@@ -122,7 +113,7 @@ func (ctl *controller) CreateNews() echo.HandlerFunc {
 		news, errMap, err := ctl.service.Create(input, userID.(int), file)
 
 		if errMap != nil {
-			return ctx.JSON(400, helper.Response("missing some data", map[string]any{
+			return ctx.JSON(400, helper.Response("error missing some data", map[string]any{
 				"error": errMap,
 			}))
 		}
@@ -131,7 +122,7 @@ func (ctl *controller) CreateNews() echo.HandlerFunc {
 			return ctx.JSON(500, helper.Response(err.Error(), nil))
 		}
 
-		return ctx.JSON(200, helper.Response("Success!", map[string]any{
+		return ctx.JSON(200, helper.Response("success created fundraise", map[string]any{
 			"data": news,
 		}))
 	}
@@ -150,19 +141,10 @@ func (ctl *controller) UpdateNews() echo.HandlerFunc {
 		news := ctl.service.FindByID(newsID, 0)
 
 		if news == nil {
-			return ctx.JSON(404, helper.Response("News Not Found!"))
+			return ctx.JSON(404, helper.Response("news not found"))
 		}
 
 		ctx.Bind(&input)
-
-		validate = validator.New(validator.WithRequiredStructEnabled())
-
-		if err := validate.Struct(input); err != nil {
-			errMap := helper.ErrorMapValidation(err)
-			return ctx.JSON(400, helper.Response("error missing some data", map[string]any{
-				"errors": errMap,
-			}))
-		}
 
 		fileHeader, err := ctx.FormFile("photo")
 		var file multipart.File
@@ -182,7 +164,7 @@ func (ctl *controller) UpdateNews() echo.HandlerFunc {
 			return ctx.JSON(500, helper.Response("something went wrong"))
 		}
 
-		return ctx.JSON(200, helper.Response("news success updated"))
+		return ctx.JSON(200, helper.Response("success updated news"))
 	}
 
 }
@@ -198,15 +180,15 @@ func (ctl *controller) DeleteNews() echo.HandlerFunc {
 		news := ctl.service.FindByID(newsID, 0)
 
 		if news == nil {
-			return ctx.JSON(404, helper.Response("News Not Found!"))
+			return ctx.JSON(404, helper.Response("news not found"))
 		}
 
 		delete := ctl.service.Remove(newsID)
 
 		if !delete {
-			return ctx.JSON(500, helper.Response("Something Went Wrong!"))
+			return ctx.JSON(500, helper.Response("something went wrong"))
 		}
 
-		return ctx.JSON(200, helper.Response("News Success Deleted!", nil))
+		return ctx.JSON(200, helper.Response("success deleted news", nil))
 	}
 }
