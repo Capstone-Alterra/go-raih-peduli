@@ -25,8 +25,8 @@ type InputUpdateProfilePicture struct {
 }
 
 type Pagination struct {
-	Page int `query:"page"`
-	Size int `query:"size"`
+	Page     int `query:"page"`
+	PageSize int `query:"page_size"`
 }
 
 type VerifyOTP struct {
