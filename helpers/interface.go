@@ -47,3 +47,7 @@ type CloudStorageInterface interface {
 type ConverterInterface interface {
 	Convert(target any, value any) error
 }
+
+type OpenAIInterface interface {
+	GetReplyFromGPT(question string, qnaList map[string]string) (string, error)
+}
