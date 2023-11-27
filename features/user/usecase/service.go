@@ -4,7 +4,7 @@ import (
 	"errors"
 	"mime/multipart"
 	"raihpeduli/config"
-	user "raihpeduli/features/user"
+	"raihpeduli/features/user"
 	"raihpeduli/features/user/dtos"
 	"raihpeduli/helpers"
 	"strconv"
@@ -158,12 +158,15 @@ func (svc *service) ModifyProfilePicture(file dtos.InputUpdateProfilePicture, ol
 	var urlLength int = len("https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/users/")
 
 	if file.ProfilePicture != nil {
-		if oldFilename == "https://storage.googleapis.com/raih_peduli/users/user.png" {
-			oldFilename = ""
-		} else if len(oldFilename) > urlLength {
+		if len(oldFilename) > urlLength {
 			oldFilename = oldFilename[urlLength:]
 		}
-		imageURL, err := svc.model.UploadFile(file.ProfilePicture, oldFilename)
+
+		if err := svc.model.DeleteFile(oldFilename); err != nil {
+			return false, nil
+		}
+
+		imageURL, err := svc.model.UploadFile(file.ProfilePicture)
 
 		if err != nil {
 			logrus.Error(err)

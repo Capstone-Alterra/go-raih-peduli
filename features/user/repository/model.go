@@ -182,16 +182,21 @@ func (mdl *model) GetTotalData() int64 {
 	return totalData
 }
 
-func (mdl *model) UploadFile(file multipart.File, objectName string) (string, error) {
+func (mdl *model) UploadFile(file multipart.File) (string, error) {
 	config := config.LoadCloudStorageConfig()
 	randomChar := uuid.New().String()
-	if objectName == "" {
-		objectName = randomChar
-	}
 
-	if err := mdl.clStorage.UploadFile(file, objectName); err != nil {
+	if err := mdl.clStorage.UploadFile(file, randomChar); err != nil {
 		return "", err
 	}
 
-	return "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/users/" + objectName, nil
+	return "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/users/" + randomChar, nil
+}
+
+func (mdl *model) DeleteFile(filename string) error {
+	if err := mdl.clStorage.DeleteFile(filename); err != nil {
+		return err
+	}
+
+	return nil
 }

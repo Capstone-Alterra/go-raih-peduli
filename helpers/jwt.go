@@ -69,7 +69,7 @@ func (j *JWT) GenerateTokenResetPassword(userID string, roleID string) string {
 	return validToken
 }
 
-func (j JWT) RefereshJWT(accessToken *jwt.Token, refreshToken *jwt.Token) map[string]any {
+func (j JWT) RefereshJWT(refreshToken *jwt.Token) map[string]any {
 	var result = map[string]any{}
 	expTime, err := refreshToken.Claims.GetExpirationTime()
 	if err != nil {
@@ -77,13 +77,12 @@ func (j JWT) RefereshJWT(accessToken *jwt.Token, refreshToken *jwt.Token) map[st
 		return nil
 	}
 	if refreshToken.Valid && expTime.Time.Compare(time.Now()) > 0 {
-		var newClaim = accessToken.Claims.(jwt.MapClaims)
+		var newAccessClaim = refreshToken.Claims.(jwt.MapClaims)
+		newAccessClaim["iat"] = time.Now().Unix()
+		newAccessClaim["exp"] = time.Now().Add(time.Minute * 10).Unix()
 
-		newClaim["iat"] = time.Now().Unix()
-		newClaim["exp"] = time.Now().Add(time.Minute * 10).Unix()
-
-		var newToken = jwt.NewWithClaims(accessToken.Method, newClaim)
-		newSignedToken, _ := newToken.SignedString(accessToken.Signature)
+		var newAccessToken = jwt.NewWithClaims(refreshToken.Method, newAccessClaim)
+		newSignedAccessToken, _ := newAccessToken.SignedString(refreshToken.Signature)
 
 		var newRefreshClaim = refreshToken.Claims.(jwt.MapClaims)
 		newRefreshClaim["exp"] = time.Now().Add(time.Hour * 24).Unix()
@@ -91,7 +90,7 @@ func (j JWT) RefereshJWT(accessToken *jwt.Token, refreshToken *jwt.Token) map[st
 		var newRefreshToken = jwt.NewWithClaims(refreshToken.Method, newRefreshClaim)
 		newSignedRefreshToken, _ := newRefreshToken.SignedString(refreshToken.Signature)
 
-		result["access_token"] = newSignedToken
+		result["access_token"] = newSignedAccessToken
 		result["refresh_token"] = newSignedRefreshToken
 		return result
 	}
