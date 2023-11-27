@@ -14,12 +14,14 @@ import (
 type service struct {
 	model chatbot.Repository
 	validation helpers.ValidationInterface
+	openAI helpers.OpenAIInterface
 }
 
-func New(model chatbot.Repository, validation helpers.ValidationInterface) chatbot.Usecase {
+func New(model chatbot.Repository, validation helpers.ValidationInterface, openAI helpers.OpenAIInterface) chatbot.Usecase {
 	return &service {
 		model: model,
 		validation: validation,
+		openAI: openAI,
 	}
 }
 
@@ -51,7 +53,12 @@ func (svc *service) SetReplyMessage(input dtos.InputMessage, userID int) (*dtos.
 		return nil, errMap, errors.New("message must not be empty") 
 	}
 
-	_, err := svc.model.ReadQuestionNPrompts()
+	data, err := svc.model.ReadQuestionNPrompts()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	reply, err := svc.openAI.GetReplyFromGPT(input.Message, data)
 
 	if err != nil {
 		return nil, nil, err
@@ -59,7 +66,7 @@ func (svc *service) SetReplyMessage(input dtos.InputMessage, userID int) (*dtos.
 
 	var chatMessage = chatbot.QuestionAndReply{
 		Question: input.Message,
-		Reply: "test",
+		Reply: reply,
 	}
 	
 	if userID != 0 {
@@ -70,7 +77,7 @@ func (svc *service) SetReplyMessage(input dtos.InputMessage, userID int) (*dtos.
 
 	var res = dtos.ResChatReply{
 		Question: input.Message,
-		Reply: "test",
+		Reply: reply,
 	}
 
 	return &res, nil, nil

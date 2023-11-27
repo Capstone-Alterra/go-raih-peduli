@@ -56,6 +56,7 @@ type ProgramConfig struct {
 	REFRESH_SECRET string
 	SERVER_PORT    string
 	OTP_SECRET     string
+	OPENAI_KEY	   string
 }
 
 type SMTPConfig struct {
@@ -198,6 +199,10 @@ func loadConfig() *ProgramConfig {
 
 	if val, found := os.LookupEnv("OTP_SECRET"); found {
 		res.OTP_SECRET = val
+	}
+
+	if val, found := os.LookupEnv("OPENAI_KEY"); found {
+		res.OPENAI_KEY = val
 	}
 
 	return res
