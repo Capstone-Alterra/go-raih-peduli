@@ -26,13 +26,13 @@ func (ctl *controller) GetUsers() echo.HandlerFunc {
 		pagination := dtos.Pagination{}
 		ctx.Bind(&pagination)
 
-		if pagination.Page < 1 || pagination.Size < 1 {
+		if pagination.Page < 1 || pagination.PageSize < 1 {
 			pagination.Page = 1
-			pagination.Size = 20
+			pagination.PageSize = 20
 		}
 
 		page := pagination.Page
-		size := pagination.Size
+		size := pagination.PageSize
 		users, totalData := ctl.service.FindAll(page, size)
 
 		if users == nil {

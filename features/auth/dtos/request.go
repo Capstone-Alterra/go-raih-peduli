@@ -19,6 +19,5 @@ type ResendOTP struct {
 }
 
 type RefreshJWT struct {
-	AccessToken  string `json:"access_token" form:"access_token" valildate:"required"`
 	RefreshToken string `json:"refresh_token" form:"refresh_token" validate:"required"`
 }

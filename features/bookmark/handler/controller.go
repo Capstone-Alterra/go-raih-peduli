@@ -15,7 +15,7 @@ type controller struct {
 }
 
 func New(service bookmark.Usecase) bookmark.Handler {
-	return &controller {
+	return &controller{
 		service: service,
 	}
 }
@@ -23,11 +23,11 @@ func New(service bookmark.Usecase) bookmark.Handler {
 var validate *validator.Validate
 
 func (ctl *controller) GetBookmarksByUserID() echo.HandlerFunc {
-	return func (ctx echo.Context) error  {
+	return func(ctx echo.Context) error {
 		pagination := dtos.Pagination{}
 		ctx.Bind(&pagination)
-		
-		size := pagination.Size
+
+		size := pagination.PageSize
 
 		if size <= 0 {
 			size = 10
@@ -41,14 +41,14 @@ func (ctl *controller) GetBookmarksByUserID() echo.HandlerFunc {
 			return ctx.JSON(404, helpers.Response("there is no bookmarks"))
 		}
 
-		return ctx.JSON(200, helpers.Response("success", map[string]any {
+		return ctx.JSON(200, helpers.Response("success", map[string]any{
 			"data": bookmarks,
 		}))
 	}
 }
 
 func (ctl *controller) BookmarkAPost() echo.HandlerFunc {
-	return func (ctx echo.Context) error  {
+	return func(ctx echo.Context) error {
 		input := dtos.InputBookmarkPost{}
 
 		ctx.Bind(&input)
@@ -58,7 +58,7 @@ func (ctl *controller) BookmarkAPost() echo.HandlerFunc {
 		_, errMap, err := ctl.service.SetBookmark(input, userID)
 
 		if errMap != nil {
-			return ctx.JSON(400, helpers.Response("error missing some data", map[string]any {
+			return ctx.JSON(400, helpers.Response("error missing some data", map[string]any{
 				"error": errMap,
 			}))
 		}
@@ -72,15 +72,13 @@ func (ctl *controller) BookmarkAPost() echo.HandlerFunc {
 }
 
 func (ctl *controller) UnBookmarkAPost() echo.HandlerFunc {
-	return func (ctx echo.Context) error  {
+	return func(ctx echo.Context) error {
 		bookmarkID := ctx.Param("id")
-		
+
 		userID := ctx.Get("user_id").(int)
 
 		bookmark := ctl.service.FindByID(bookmarkID)
 
-		
-		
 		if bookmark == nil {
 			return ctx.JSON(404, helpers.Response("post not found"))
 		}

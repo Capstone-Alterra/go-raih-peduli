@@ -72,13 +72,13 @@ func (_m *JWTInterface) GenerateTokenResetPassword(userID string, roleID string)
 	return r0
 }
 
-// RefereshJWT provides a mock function with given fields: accessToken, refreshToken
-func (_m *JWTInterface) RefereshJWT(accessToken *jwt.Token, refreshToken *jwt.Token) map[string]interface{} {
-	ret := _m.Called(accessToken, refreshToken)
+// RefereshJWT provides a mock function with given fields: refreshToken
+func (_m *JWTInterface) RefereshJWT(refreshToken *jwt.Token) map[string]interface{} {
+	ret := _m.Called(refreshToken)
 
 	var r0 map[string]interface{}
-	if rf, ok := ret.Get(0).(func(*jwt.Token, *jwt.Token) map[string]interface{}); ok {
-		r0 = rf(accessToken, refreshToken)
+	if rf, ok := ret.Get(0).(func(*jwt.Token) map[string]interface{}); ok {
+		r0 = rf(refreshToken)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(map[string]interface{})

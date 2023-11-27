@@ -3,6 +3,7 @@ package usecase
 import (
 	"errors"
 	"os"
+	"raihpeduli/config"
 	"raihpeduli/features/auth"
 	"raihpeduli/features/auth/dtos"
 	"raihpeduli/helpers"
@@ -32,6 +33,8 @@ func New(model auth.Repository, jwt helpers.JWTInterface, hash helpers.HashInter
 }
 
 func (svc *service) Register(newData dtos.InputUser) (*dtos.ResUser, []string, error) {
+	config := config.LoadCloudStorageConfig()
+
 	errMap := svc.validator.ValidateRequest(newData)
 	if errMap != nil {
 		return nil, errMap, nil
@@ -51,7 +54,7 @@ func (svc *service) Register(newData dtos.InputUser) (*dtos.ResUser, []string, e
 	}
 
 	newUser.Password = svc.hash.HashPassword(newUser.Password)
-	newUser.ProfilePicture = "https://storage.googleapis.com/raih_peduli/users/user.png"
+	newUser.ProfilePicture = "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/users/default"
 	userModel, err := svc.model.Register(&newUser)
 	if userModel == nil {
 		return nil, nil, err
@@ -129,17 +132,12 @@ func (svc *service) ResendOTP(email string) bool {
 }
 
 func (svc *service) RefreshJWT(jwt dtos.RefreshJWT) (*dtos.ResJWT, error) {
-	parsedAccessToken, err := svc.jwt.ValidateToken(jwt.AccessToken, os.Getenv("SECRET"))
-	if err != nil {
-		return nil, errors.New("validate token failed")
-	}
-
 	parsedRefreshToken, err := svc.jwt.ValidateToken(jwt.RefreshToken, os.Getenv("SECRET"))
 	if err != nil {
 		return nil, errors.New("validate token failed")
 	}
 
-	token := svc.jwt.RefereshJWT(parsedAccessToken, parsedRefreshToken)
+	token := svc.jwt.RefereshJWT(parsedRefreshToken)
 	if token == nil {
 		return nil, errors.New("refresh jwt failed")
 	}
