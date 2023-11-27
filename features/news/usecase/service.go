@@ -26,31 +26,43 @@ func New(model news.Repository, validation helpers.ValidationInterface) news.Use
 	}
 }
 
-func (svc *service) FindAll(page, size int, keyword string, ownerID int) []dtos.ResNews {
+func (svc *service) FindAll(pagination dtos.Pagination, searchAndFilter dtos.SearchAndFilter, ownerID int) ([]dtos.ResNews, int64) {
 	var newss []dtos.ResNews
 	var bookmarkIDs map[int]string
 
-	newsEnt, err := svc.model.Paginate(page, size, keyword)
+	if pagination.Page == 0 {
+		pagination.Page = 1
+	}
 
+	if pagination.PageSize == 0 {
+		pagination.PageSize = 10
+	}
+
+	entities, err := svc.model.Paginate(pagination, searchAndFilter)
+
+	if err != nil {
+		logrus.Error(err)
+		return nil, 0
+	}
 	if ownerID != 0 {
 		bookmarkIDs, err = svc.model.SelectBookmarkedNewsID(ownerID)
 		if err != nil {
-			log.Error(err)
-			return nil
+			logrus.Error(err)
+			return nil, 0
 		}
 		fmt.Println(bookmarkIDs)
 	}
 
 	if err != nil {
-		log.Error(err)
-		return nil
+		logrus.Error(err)
+		return nil, 0
 	}
 
-	for _, news := range newsEnt {
+	for _, news := range entities {
 		var data dtos.ResNews
 
 		if err := smapping.FillStruct(&data, smapping.MapFields(news)); err != nil {
-			log.Error(err.Error())
+			logrus.Error(err.Error())
 		}
 
 		if bookmarkIDs != nil {
@@ -63,7 +75,14 @@ func (svc *service) FindAll(page, size int, keyword string, ownerID int) []dtos.
 		newss = append(newss, data)
 	}
 
-	return newss
+	var totalData int64 = 0
+
+	if searchAndFilter.Title != "" {
+		totalData = svc.model.GetTotalDataBySearchAndFilter(searchAndFilter)
+	} else {
+		totalData = svc.model.GetTotalData()
+	}
+	return newss, totalData
 }
 
 func (svc *service) FindByID(newsID, ownerID int) *dtos.ResNews {
@@ -158,7 +177,7 @@ func (svc *service) Modify(newsData dtos.InputNews, file multipart.File, oldData
 	newNews.Photo = url
 	newNews.ID = oldData.ID
 	newNews.UserID = oldData.UserID
-	_, err := svc.model.Update(newNews)
+	err := svc.model.Update(newNews)
 
 	if err != nil {
 		logrus.Error(err)
@@ -170,7 +189,7 @@ func (svc *service) Modify(newsData dtos.InputNews, file multipart.File, oldData
 }
 
 func (svc *service) Remove(newsID int) bool {
-	_, err := svc.model.DeleteByID(newsID)
+	err := svc.model.DeleteByID(newsID)
 
 	if err != nil {
 		logrus.Error(err)

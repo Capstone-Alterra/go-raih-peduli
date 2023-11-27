@@ -8,18 +8,20 @@ import (
 )
 
 type Repository interface {
-	Paginate(page, size int, keyword string) ([]News, error)
-	Insert(newNews News) (int, error)
+	Paginate(pagination dtos.Pagination, searchAndFilter dtos.SearchAndFilter) ([]News, error)
+	Insert(newNews News) (*News, error)
 	SelectByID(newsID int) (*News, error)
-	Update(news News) (int, error)
-	DeleteByID(newsID int) (int, error)
+	Update(news News) error
+	DeleteByID(newsID int) error
 	UploadFile(file multipart.File, objectName string) (string, error)
 	SelectBookmarkedNewsID(ownerID int) (map[int]string, error)
 	SelectBoockmarkByNewsAndOwnerID(newsID, ownerID int) (string, error)
+	GetTotalData() int64
+	GetTotalDataBySearchAndFilter(searchAndFilter dtos.SearchAndFilter) int64
 }
 
 type Usecase interface {
-	FindAll(page, size int, keyword string, ownerID int) []dtos.ResNews
+	FindAll(pagination dtos.Pagination, searchAndFilter dtos.SearchAndFilter, ownerID int) ([]dtos.ResNews, int64)
 	FindByID(newsID, ownerID int) *dtos.ResNews
 	Create(newNews dtos.InputNews, userID int, file multipart.File) (*dtos.ResNews, []string, error)
 	Modify(newsData dtos.InputNews, file multipart.File, oldData dtos.ResNews) bool

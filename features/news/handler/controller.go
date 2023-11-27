@@ -2,6 +2,7 @@ package handler
 
 import (
 	"mime/multipart"
+	"raihpeduli/helpers"
 	helper "raihpeduli/helpers"
 	"strconv"
 
@@ -27,17 +28,12 @@ var validate *validator.Validate
 func (ctl *controller) GetNews() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		pagination := dtos.Pagination{}
-		paginationResponse := dtos.PaginationResponse{}
 
 		ctx.Bind(&pagination)
 
-		page := pagination.Page
-		size := pagination.PageSize
-		keyword := ctx.QueryParam("title")
+		searchAndFilter := dtos.SearchAndFilter{}
 
-		if page <= 0 || size <= 0 {
-			return ctx.JSON(400, helper.Response("Please provide query `page` and `size` in number!"))
-		}
+		ctx.Bind(&searchAndFilter)
 
 		userID := 0
 
@@ -45,22 +41,21 @@ func (ctl *controller) GetNews() echo.HandlerFunc {
 			userID = ctx.Get("user_id").(int)
 		}
 
-		newss := ctl.service.FindAll(page, size, keyword, userID)
+		newss, totalData := ctl.service.FindAll(pagination, searchAndFilter, userID)
 
 		if newss == nil {
-			return ctx.JSON(404, helper.Response("There is No Newss!"))
+			return ctx.JSON(404, helper.Response("news not found"))
 		}
 
-		paginationResponse.TotalData = int64(len(newss))
-		paginationResponse.CurrentPage = page
-		if paginationResponse.CurrentPage == 1 {
-			paginationResponse.PreviousPage = -1
-			paginationResponse.NextPage = -1
-		} else {
-			paginationResponse.PreviousPage = pagination.Page - 1
-			paginationResponse.NextPage = pagination.Page + 1
+		page := pagination.Page
+		pageSize := pagination.PageSize
+
+		if page <= 0 || pageSize <= 0 {
+			page = 1
+			pageSize = 10
 		}
-		paginationResponse.TotalPage = (len(newss) + size - 1) / size
+
+		paginationResponse := helpers.PaginationResponse(page, pageSize, int(totalData))
 
 		return ctx.JSON(200, helper.Response("Success!", map[string]any{
 			"data":       newss,
