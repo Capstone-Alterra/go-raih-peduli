@@ -11,6 +11,7 @@ require (
 	github.com/labstack/gommon v0.4.0
 	github.com/mashingan/smapping v0.1.19
 	github.com/midtrans/midtrans-go v1.3.7
+	github.com/sashabaranov/go-openai v1.17.9
 	github.com/stretchr/testify v1.8.4
 	go.mongodb.org/mongo-driver v1.13.0
 	golang.org/x/crypto v0.14.0
