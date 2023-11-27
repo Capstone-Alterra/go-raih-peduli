@@ -32,7 +32,7 @@ func (ctl *controller) GetNews() echo.HandlerFunc {
 		ctx.Bind(&pagination)
 
 		page := pagination.Page
-		size := pagination.Size
+		size := pagination.PageSize
 		keyword := ctx.QueryParam("title")
 
 		if page <= 0 || size <= 0 {

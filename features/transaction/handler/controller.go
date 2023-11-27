@@ -37,7 +37,7 @@ func (ctl *controller) GetTransactions() echo.HandlerFunc {
 		roleID, _ := strconv.Atoi(ctx.Get("role_id").(string))
 
 		page := pagination.Page
-		size := pagination.Size
+		size := pagination.PageSize
 
 		if page <= 0 || size <= 0 {
 			return ctx.JSON(400, helper.Response("Please provide query `page` and `size` in number!"))
