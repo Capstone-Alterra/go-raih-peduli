@@ -75,15 +75,6 @@ func (svc *service) Register(newData dtos.InputUser) (*dtos.ResUser, []string, e
 		return nil, nil, err
 	}
 
-	userID := strconv.Itoa(userModel.ID)
-	roleID := strconv.Itoa(resCustomer.RoleID)
-	tokenData := svc.jwt.GenerateJWT(userID, roleID)
-
-	if tokenData == nil {
-		log.Error("Token process failed")
-		return nil, nil, errors.New("generate token failed")
-	}
-
 	return &resCustomer, nil, nil
 }
 

@@ -23,15 +23,15 @@ func (ctl *controller) Login() echo.HandlerFunc {
 		loginData := dtos.RequestLogin{}
 
 		if err := ctx.Bind(&loginData); err != nil {
-			return ctx.JSON(400, helpers.Response("Invalid request body!"))
+			return ctx.JSON(400, helpers.Response("invalid request body"))
 		}
 
 		loginRes, err := ctl.service.Login(loginData)
 		if err != nil {
-			return ctx.JSON(401, helpers.Response("Invalid credentials!"))
+			return ctx.JSON(401, helpers.Response("invalid credentials"))
 		}
 
-		return ctx.JSON(200, helpers.Response("Success!", map[string]any{
+		return ctx.JSON(200, helpers.Response("success", map[string]any{
 			"data": loginRes,
 		}))
 	}
@@ -51,12 +51,12 @@ func (ctl *controller) RegisterUser() echo.HandlerFunc {
 		}
 
 		if err != nil {
-			return ctx.JSON(400, helpers.Response("Bad Request!", map[string]any{
+			return ctx.JSON(400, helpers.Response("bad request", map[string]any{
 				"error": err.Error(),
 			}))
 		}
 
-		return ctx.JSON(200, helpers.Response("Success!", map[string]any{
+		return ctx.JSON(200, helpers.Response("success", map[string]any{
 			"data": user,
 		}))
 	}
@@ -70,7 +70,7 @@ func (ctl *controller) ResendOTP() echo.HandlerFunc {
 
 		result := ctl.service.ResendOTP(input.Email)
 		if !result {
-			return ctx.JSON(500, helpers.Response("Something Went Wrong!"))
+			return ctx.JSON(500, helpers.Response("something went wrong"))
 		}
 
 		return ctx.JSON(200, helpers.Response("OTP has been sent via email"))
@@ -88,10 +88,10 @@ func (ctl *controller) RefreshJWT() echo.HandlerFunc {
 				return ctx.JSON(400, helpers.Response("invalid jwt token"))
 			}
 
-			return ctx.JSON(500, helpers.Response("Something Went Wrong!"))
+			return ctx.JSON(500, helpers.Response("something went wrong"))
 		}
 
-		return ctx.JSON(200, helpers.Response("Success!", map[string]any{
+		return ctx.JSON(200, helpers.Response("success", map[string]any{
 			"data": refershJWT,
 		}))
 	}
