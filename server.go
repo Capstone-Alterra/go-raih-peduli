@@ -63,7 +63,7 @@ func main() {
 	routes.News(e, NewsHandler(), jwtService, *cfg)
 	routes.Transactions(e, TransactionHandler(), jwtService, *cfg)
 	routes.Bookmarks(e, BookmarkHandler(), jwtService, *cfg)
-	routes.Chatbots(e, ChatbotHandler(), jwtService, *cfg)
+	routes.Chatbots(e, ChatbotHandler(cfg), jwtService, *cfg)
 
 	middlewares.LogMiddlewares(e)
 
@@ -168,13 +168,15 @@ func BookmarkHandler() bookmark.Handler {
 	return bh.New(uc)
 }
 
-func ChatbotHandler() chatbot.Handler {
+func ChatbotHandler(cfg *config.ProgramConfig) chatbot.Handler {
 	db := utils.InitDB()
 	mongoDB := utils.ConnectMongo()
 	collection := mongoDB.Collection("chatbot_histories")
+
 	validation := helpers.NewValidationRequest()
+	openAI := helpers.NewOpenAI(cfg.OPENAI_KEY)
 
 	repo := cr.New(db, collection)
-	uc := cu.New(repo, validation)
+	uc := cu.New(repo, validation, openAI)
 	return ch.New(uc)
 }
