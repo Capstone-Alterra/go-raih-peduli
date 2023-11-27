@@ -10,6 +10,11 @@ import (
 )
 
 func News(e *echo.Echo, handler news.Handler, jwt helpers.JWTInterface, config config.ProgramConfig) {
+	mobileNews := e.Group("/mobile/news")
+
+	mobileNews.GET("", handler.GetNews(), m.AuthorizeJWT(jwt, -1, config.SECRET))
+	mobileNews.GET("/:id", handler.NewsDetails(), m.AuthorizeJWT(jwt, -1, config.SECRET))
+
 	news := e.Group("/news")
 
 	news.GET("", handler.GetNews(), m.AuthorizeJWT(jwt, -1, config.SECRET))
