@@ -53,9 +53,12 @@ func (svc *service) SetReplyMessage(input dtos.InputMessage, userID int) (*dtos.
 		return nil, errMap, errors.New("message must not be empty") 
 	}
 
-	// _, err := svc.model.ReadQuestionNPrompts()
-	
-	reply, err := svc.openAI.GetReplyFromGPT(input.Message, map[string]string{})
+	data, err := svc.model.ReadQuestionNPrompts()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	reply, err := svc.openAI.GetReplyFromGPT(input.Message, data)
 
 	if err != nil {
 		return nil, nil, err
