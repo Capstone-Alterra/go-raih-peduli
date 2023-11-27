@@ -1,7 +1,11 @@
 package repository
 
 import (
+	"bufio"
 	"context"
+	"encoding/json"
+	"log"
+	"os"
 	"raihpeduli/features/chatbot"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -66,4 +70,32 @@ func (mdl *model) DeleteByUserID(userID int) error {
 	}
 
 	return nil
+}
+
+func (mdl *model) ReadQuestionNPrompts() ([]chatbot.QuestionAndPrompt, error) {
+	var filePath = "./q-and-prompt.json"
+	
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	var qNPrompts []chatbot.QuestionAndPrompt
+
+	var scanner = bufio.NewScanner(file)
+	for scanner.Scan() {
+		var qNPrompt chatbot.QuestionAndPrompt
+		if err := json.Unmarshal(scanner.Bytes(), &qNPrompt); err != nil {
+			log.Println("Error unmarshaling JSON:", err)
+			continue
+		}
+		qNPrompts = append(qNPrompts, qNPrompt)
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	return qNPrompts, nil
 }

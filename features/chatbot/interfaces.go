@@ -11,6 +11,7 @@ type Repository interface {
 	SelectByUserID(chatbotID int) (*ChatHistory, error)
 	DeleteByUserID(chatbotID int) error
 	SelectUserByID(userID int) (*User, error)
+	ReadQuestionNPrompts() ([]QuestionAndPrompt, error)
 }
 
 type Usecase interface {

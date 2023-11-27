@@ -51,11 +51,17 @@ func (svc *service) SetReplyMessage(input dtos.InputMessage, userID int) (*dtos.
 		return nil, errMap, errors.New("message must not be empty") 
 	}
 
+	qNPrompts, err := svc.model.ReadQuestionNPrompts()
+
+	if err != nil {
+		return nil, nil, err
+	}
+
 	var chatMessage = chatbot.QuestionAndReply{
 		Question: input.Message,
 		Reply: "test",
 	}
-
+	
 	if userID != 0 {
 		if err := svc.model.SaveChat(chatMessage, userID); err != nil {
 			return nil, nil, err

@@ -14,3 +14,8 @@ type User struct {
 	ID    int
 	Email string
 }
+
+type QuestionAndPrompt struct {
+	Question string `json:"question"`
+	Prompt   string `json:"prompt"`
+}
