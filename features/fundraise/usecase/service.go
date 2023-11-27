@@ -249,6 +249,12 @@ func (svc *service) ModifyStatus(input dtos.InputFundraiseStatus, oldData dtos.R
 	}
 
 	newFundraise.Status = input.Status
+	if input.Status == "rejected" {
+		if input.RejectedReason == "" {
+			return []string{"rejected_reason field is required when the status is rejected"}, errors.New("error reason empty string")
+		}
+		newFundraise.RejectedReason = input.RejectedReason
+	}
 
 	if err := svc.model.Update(newFundraise); err != nil {
 		logrus.Error(err)
