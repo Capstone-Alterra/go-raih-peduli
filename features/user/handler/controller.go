@@ -1,14 +1,13 @@
 package handler
 
 import (
+	"mime/multipart"
 	"raihpeduli/helpers"
-	helper "raihpeduli/helpers"
 	"strconv"
 
 	"raihpeduli/features/user"
 	"raihpeduli/features/user/dtos"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 )
 
@@ -22,28 +21,29 @@ func New(service user.Usecase) user.Handler {
 	}
 }
 
-var validate *validator.Validate
-
 func (ctl *controller) GetUsers() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		pagination := dtos.Pagination{}
 		ctx.Bind(&pagination)
 
-		page := pagination.Page
-		size := pagination.Size
-
-		if page <= 0 || size <= 0 {
-			return ctx.JSON(400, helper.Response("Please provide query `page` and `size` in number!"))
+		if pagination.Page < 1 || pagination.PageSize < 1 {
+			pagination.Page = 1
+			pagination.PageSize = 20
 		}
 
-		users := ctl.service.FindAll(page, size)
+		page := pagination.Page
+		size := pagination.PageSize
+		users, totalData := ctl.service.FindAll(page, size)
 
 		if users == nil {
-			return ctx.JSON(404, helper.Response("There is No Users!"))
+			return ctx.JSON(404, helpers.Response("there is no users"))
 		}
 
-		return ctx.JSON(200, helper.Response("Success!", map[string]any{
-			"data": users,
+		paginationResponse := helpers.PaginationResponse(page, size, int(totalData))
+
+		return ctx.JSON(200, helpers.Response("success", map[string]any{
+			"data":       users,
+			"pagination": paginationResponse,
 		}))
 	}
 }
@@ -53,16 +53,16 @@ func (ctl *controller) UserDetails() echo.HandlerFunc {
 		userID, err := strconv.Atoi(ctx.Param("id"))
 
 		if err != nil {
-			return ctx.JSON(400, helper.Response(err.Error()))
+			return ctx.JSON(400, helpers.Response(err.Error()))
 		}
 
 		user := ctl.service.FindByID(userID)
 
 		if user == nil {
-			return ctx.JSON(404, helper.Response("User Not Found!"))
+			return ctx.JSON(404, helpers.Response("user not found"))
 		}
 
-		return ctx.JSON(200, helper.Response("Success!", map[string]any{
+		return ctx.JSON(200, helpers.Response("success", map[string]any{
 			"data": user,
 		}))
 	}
@@ -74,25 +74,20 @@ func (ctl *controller) CreateUser() echo.HandlerFunc {
 
 		ctx.Bind(&input)
 
-		validate = validator.New(validator.WithRequiredStructEnabled())
-
-		err := validate.Struct(input)
-
-		if err != nil {
-			errMap := helpers.ErrorMapValidation(err)
-			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any{
+		user, errMap, err := ctl.service.Create(input)
+		if errMap != nil {
+			return ctx.JSON(400, helpers.Response("missing some data", map[string]any{
 				"error": errMap,
 			}))
 		}
 
-		user, errCreate := ctl.service.Create(input)
-		if errCreate != nil {
-			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any{
-				"error": errCreate.Error(),
+		if err != nil {
+			return ctx.JSON(400, helpers.Response("bad request", map[string]any{
+				"error": err.Error(),
 			}))
 		}
 
-		return ctx.JSON(200, helper.Response("Success!", map[string]any{
+		return ctx.JSON(200, helpers.Response("success", map[string]any{
 			"data": user,
 		}))
 	}
@@ -100,39 +95,82 @@ func (ctl *controller) CreateUser() echo.HandlerFunc {
 
 func (ctl *controller) UpdateUser() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		input := dtos.InputUser{}
+		input := dtos.InputUpdate{}
 
-		userID, errParam := strconv.Atoi(ctx.Param("id"))
-
-		if errParam != nil {
-			return ctx.JSON(400, helper.Response(errParam.Error()))
-		}
+		userID := ctx.Get("user_id").(int)
 
 		user := ctl.service.FindByID(userID)
 
 		if user == nil {
-			return ctx.JSON(404, helper.Response("User Not Found!"))
+			return ctx.JSON(404, helpers.Response("user not found"))
 		}
 
 		ctx.Bind(&input)
 
-		validate = validator.New(validator.WithRequiredStructEnabled())
-		err := validate.Struct(input)
+		fileHeader, err := ctx.FormFile("profile_picture")
+		var file multipart.File
 
-		if err != nil {
-			errMap := helpers.ErrorMapValidation(err)
-			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any{
+		if err == nil {
+			formFile, err := fileHeader.Open()
+
+			if err != nil {
+				return ctx.JSON(500, helpers.Response("something went wrong"))
+			}
+
+			file = formFile
+		}
+
+		update, errMap := ctl.service.Modify(input, file, *user)
+		if errMap != nil {
+			return ctx.JSON(400, helpers.Response("missing some data", map[string]any{
 				"error": errMap,
 			}))
 		}
 
-		update := ctl.service.Modify(input, userID)
-
 		if !update {
-			return ctx.JSON(500, helper.Response("Something Went Wrong!"))
+			return ctx.JSON(500, helpers.Response("something went wrong"))
 		}
 
-		return ctx.JSON(200, helper.Response("User Success Updated!"))
+		return ctx.JSON(200, helpers.Response("success updated user"))
+	}
+}
+
+func (ctl *controller) UpdateProfilePicture() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		input := dtos.InputUpdateProfilePicture{}
+
+		userID := ctx.Get("user_id").(int)
+
+		user := ctl.service.FindByID(userID)
+
+		if user == nil {
+			return ctx.JSON(404, helpers.Response("user not found"))
+		}
+
+		fileHeader, err := ctx.FormFile("profile_picture")
+
+		if err == nil {
+			formFile, err := fileHeader.Open()
+
+			if err != nil {
+				return ctx.JSON(500, helpers.Response("something went wrong"))
+			}
+
+			input.ProfilePicture = formFile
+		}
+
+		update, errMap := ctl.service.ModifyProfilePicture(input, *user)
+		if errMap != nil {
+			return ctx.JSON(400, helpers.Response("missing some data", map[string]any{
+				"error": errMap,
+			}))
+		}
+
+		if !update {
+			return ctx.JSON(500, helpers.Response("something went wrong"))
+		}
+
+		return ctx.JSON(200, helpers.Response("success updated user"))
 	}
 }
 
@@ -141,22 +179,22 @@ func (ctl *controller) DeleteUser() echo.HandlerFunc {
 		userID, err := strconv.Atoi(ctx.Param("id"))
 
 		if err != nil {
-			return ctx.JSON(400, helper.Response(err.Error()))
+			return ctx.JSON(400, helpers.Response(err.Error()))
 		}
 
 		user := ctl.service.FindByID(userID)
 
 		if user == nil {
-			return ctx.JSON(404, helper.Response("User Not Found!"))
+			return ctx.JSON(404, helpers.Response("user not found"))
 		}
 
 		delete := ctl.service.Remove(userID)
 
 		if !delete {
-			return ctx.JSON(500, helper.Response("Something Went Wrong!"))
+			return ctx.JSON(500, helpers.Response("something went wrong"))
 		}
 
-		return ctx.JSON(200, helper.Response("User Success Deleted!", nil))
+		return ctx.JSON(200, helpers.Response("success deleted user", nil))
 	}
 }
 
@@ -166,23 +204,12 @@ func (ctl *controller) VerifyEmail() echo.HandlerFunc {
 
 		ctx.Bind(&input)
 
-		validate = validator.New(validator.WithRequiredStructEnabled())
-
-		err := validate.Struct(input)
-
-		if err != nil {
-			errMap := helpers.ErrorMapValidation(err)
-			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any{
-				"error": errMap,
-			}))
-		}
-
 		verifyOTP := ctl.service.ValidateVerification(input.OTP)
-		if verifyOTP != true {
-			return ctx.JSON(500, helper.Response("Incorrect / Expired OTP"))
+		if !verifyOTP {
+			return ctx.JSON(400, helpers.Response("incorrect / expired OTP"))
 		}
 
-		return ctx.JSON(200, helper.Response("Success verify email!"))
+		return ctx.JSON(200, helpers.Response("success verify email"))
 	}
 }
 
@@ -194,10 +221,10 @@ func (ctl *controller) ForgetPassword() echo.HandlerFunc {
 
 		err := ctl.service.ForgetPassword(email)
 		if err != nil {
-			return ctx.JSON(404, helper.Response("User Not Found!"))
+			return ctx.JSON(404, helpers.Response("user not found"))
 		}
 
-		return ctx.JSON(200, helper.Response("OTP has been sent via email"))
+		return ctx.JSON(200, helpers.Response("OTP has been sent via email"))
 	}
 }
 
@@ -207,23 +234,12 @@ func (ctl *controller) VerifyOTP() echo.HandlerFunc {
 
 		ctx.Bind(&input)
 
-		validate = validator.New(validator.WithRequiredStructEnabled())
-
-		err := validate.Struct(input)
-
-		if err != nil {
-			errMap := helpers.ErrorMapValidation(err)
-			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any{
-				"error": errMap,
-			}))
-		}
-
 		token := ctl.service.VerifyOTP(input.OTP)
 		if token == "" {
-			return ctx.JSON(500, helper.Response("Incorrect / Expired OTP"))
+			return ctx.JSON(400, helpers.Response("incorrect / expired OTP"))
 		}
 
-		return ctx.JSON(200, helper.Response("Success verify email!", map[string]any{
+		return ctx.JSON(200, helpers.Response("success verify email", map[string]any{
 			"access_token": token,
 		}))
 	}
@@ -235,23 +251,27 @@ func (ctl *controller) ResetPassword() echo.HandlerFunc {
 
 		ctx.Bind(&input)
 
-		validate = validator.New(validator.WithRequiredStructEnabled())
-
-		err := validate.Struct(input)
+		err := ctl.service.ResetPassword(input)
 
 		if err != nil {
-			errMap := helpers.ErrorMapValidation(err)
-			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any{
-				"error": errMap,
-			}))
+			return ctx.JSON(500, helpers.Response("something went wrong"))
 		}
 
-		err = ctl.service.ResetPassword(input)
+		return ctx.JSON(200, helpers.Response("success reset password"))
+	}
+}
 
-		if err != nil {
-			return ctx.JSON(500, helper.Response("Something Went Wrong!"))
+func (ctl *controller) MyProfile() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		userID := ctx.Get("user_id").(int)
+
+		user := ctl.service.FindByID(userID)
+		if user == nil {
+			return ctx.JSON(404, helpers.Response("user not found"))
 		}
 
-		return ctx.JSON(200, helper.Response("Success Reset Password!"))
+		return ctx.JSON(200, helpers.Response("success", map[string]any{
+			"data": user,
+		}))
 	}
 }

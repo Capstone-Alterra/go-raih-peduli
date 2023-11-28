@@ -3,13 +3,11 @@ package handler
 import (
 	"mime/multipart"
 	"raihpeduli/helpers"
-	helper "raihpeduli/helpers"
 	"strconv"
 
 	"raihpeduli/features/volunteer"
 	"raihpeduli/features/volunteer/dtos"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 )
 
@@ -23,129 +21,174 @@ func New(service volunteer.Usecase) volunteer.Handler {
 	}
 }
 
-var validate *validator.Validate
-
-func (ctl *controller) GetVolunteers() echo.HandlerFunc {
+func (ctl *controller) GetVacancies(suffix string) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		pagination := dtos.Pagination{}
 		ctx.Bind(&pagination)
 
+		if pagination.Page < 1 || pagination.PageSize < 1 {
+			pagination.Page = 1
+			pagination.PageSize = 20
+		}
+
+		searchAndFilter := dtos.SearchAndFilter{}
+		ctx.Bind(&searchAndFilter)
+
+		userID := 0
+		if ctx.Get("user_id") != nil {
+			userID = ctx.Get("user_id").(int)
+		}
+
 		page := pagination.Page
-		size := pagination.Size
-		title := ctx.QueryParam("title")
-		skill := ctx.QueryParam("skill")
+		size := pagination.PageSize
 
-		if page <= 0 || size <= 0 {
-			return ctx.JSON(400, helper.Response("Please provide query `page` and `size` in number!"))
+		vacancies, totalData := ctl.service.FindAllVacancies(page, size, searchAndFilter, userID, suffix)
+
+		if vacancies == nil {
+			return ctx.JSON(404, helpers.Response("there is no volunteer vacancies"))
 		}
 
-		volunteers := ctl.service.FindAll(page, size, title, skill)
+		paginationResponse := helpers.PaginationResponse(page, size, int(totalData))
 
-		if volunteers == nil {
-			return ctx.JSON(404, helper.Response("There is No Volunteers!"))
-		}
-
-		return ctx.JSON(200, helper.Response("Success!", map[string]any{
-			"data": volunteers,
+		return ctx.JSON(200, helpers.Response("success", map[string]any{
+			"data":       vacancies,
+			"pagination": paginationResponse,
 		}))
 	}
 }
 
-func (ctl *controller) VolunteerDetails() echo.HandlerFunc {
+func (ctl *controller) VacancyDetails() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		volunteerID, err := strconv.Atoi(ctx.Param("id"))
+		vacancyID, err := strconv.Atoi(ctx.Param("id"))
 
 		if err != nil {
-			return ctx.JSON(400, helper.Response(err.Error()))
+			return ctx.JSON(400, helpers.Response(err.Error()))
 		}
 
-		volunteer := ctl.service.FindByID(volunteerID)
+		userID := 0
 
-		if volunteer == nil {
-			return ctx.JSON(404, helper.Response("Volunteer Not Found!"))
+		if ctx.Get("user_id") != nil {
+			userID = ctx.Get("user_id").(int)
 		}
 
-		return ctx.JSON(200, helper.Response("Success!", map[string]any{
-			"data": volunteer,
+		vacancy := ctl.service.FindVacancyByID(vacancyID, userID)
+
+		if vacancy == nil {
+			return ctx.JSON(404, helpers.Response("volunteer vacancy not found"))
+		}
+
+		return ctx.JSON(200, helpers.Response("success", map[string]any{
+			"data": vacancy,
 		}))
 	}
 }
 
-func (ctl *controller) UpdateVolunteer() echo.HandlerFunc {
+func (ctl *controller) UpdateVacancy() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		input := dtos.InputVolunteer{}
+		input := dtos.InputVacancy{}
 
-		volunteerID, errParam := strconv.Atoi(ctx.Param("id"))
+		vacancyID, errParam := strconv.Atoi(ctx.Param("id"))
 
 		if errParam != nil {
-			return ctx.JSON(400, helper.Response(errParam.Error()))
+			return ctx.JSON(400, helpers.Response(errParam.Error()))
 		}
 
-		volunteer := ctl.service.FindByID(volunteerID)
+		vacancy := ctl.service.FindVacancyByID(vacancyID, 0)
 
-		if volunteer == nil {
-			return ctx.JSON(404, helper.Response("Volunteer Not Found!"))
+		if vacancy == nil {
+			return ctx.JSON(404, helpers.Response("volunteer vacancy not found"))
 		}
 
 		ctx.Bind(&input)
 
-		validate = validator.New(validator.WithRequiredStructEnabled())
-		err := validate.Struct(input)
+		fileHeader, err := ctx.FormFile("photo")
+		var file multipart.File
 
-		if err != nil {
-			errMap := helpers.ErrorMapValidation(err)
-			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any{
+		if err == nil {
+			formFile, err := fileHeader.Open()
+
+			if err != nil {
+				return ctx.JSON(500, helpers.Response("something went wrong"))
+			}
+
+			file = formFile
+		}
+
+		result, errMap := ctl.service.ModifyVacancy(input, file, *vacancy)
+		if errMap != nil {
+			return ctx.JSON(400, helpers.Response("error missing some data", map[string]any{
 				"error": errMap,
 			}))
 		}
 
-		update := ctl.service.Modify(input, volunteerID)
-
-		if !update {
-			return ctx.JSON(500, helper.Response("Something Went Wrong!"))
+		if !result {
+			return ctx.JSON(500, helpers.Response("something went wrong"))
 		}
 
-		return ctx.JSON(200, helper.Response("Volunteer Success Updated!"))
+		return ctx.JSON(200, helpers.Response("success updated volunteer vacancy"))
 	}
 }
 
-func (ctl *controller) DeleteVolunteer() echo.HandlerFunc {
+func (ctl *controller) UpdateStatusVacancy() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		input := dtos.StatusVacancies{}
+
+		vacancyID, err := strconv.Atoi(ctx.Param("id"))
+
+		if err != nil {
+			return ctx.JSON(400, helpers.Response(err.Error()))
+		}
+
+		vacancy := ctl.service.FindVacancyByID(vacancyID, 0)
+
+		if vacancy == nil {
+			return ctx.JSON(404, helpers.Response("volunteer vacancy not found"))
+		}
+
+		ctx.Bind(&input)
+
+		result, errMap := ctl.service.ModifyVacancyStatus(input, *vacancy)
+		if errMap != nil {
+			return ctx.JSON(400, helpers.Response("error missing some data", map[string]any{
+				"error": errMap,
+			}))
+		}
+
+		if !result {
+			return ctx.JSON(500, helpers.Response("something went wrong"))
+		}
+
+		return ctx.JSON(200, helpers.Response("success updated volunteer vacancy status"))
+	}
+}
+
+func (ctl *controller) DeleteVacancy() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		volunteerID, err := strconv.Atoi(ctx.Param("id"))
 
 		if err != nil {
-			return ctx.JSON(400, helper.Response(err.Error()))
+			return ctx.JSON(400, helpers.Response(err.Error()))
 		}
 
-		volunteer := ctl.service.FindByID(volunteerID)
+		volunteer := ctl.service.FindVacancyByID(volunteerID, 0)
 
 		if volunteer == nil {
-			return ctx.JSON(404, helper.Response("Volunteer Not Found!"))
+			return ctx.JSON(404, helpers.Response("volunteer vacancy not found"))
 		}
 
-		delete := ctl.service.Remove(volunteerID)
-
-		if !delete {
-			return ctx.JSON(500, helper.Response("Something Went Wrong!"))
+		if err := ctl.service.RemoveVacancy(volunteerID, *volunteer); err != nil {
+			return ctx.JSON(500, helpers.Response(err.Error()))
 		}
 
-		return ctx.JSON(200, helper.Response("Volunteer Success Deleted!", nil))
+		return ctx.JSON(200, helpers.Response("success deleted volunteer vacancy", nil))
 	}
 }
 
-func (ctl *controller) CreateVolunteer() echo.HandlerFunc{
-	return func (ctx echo.Context) error {
-		input := dtos.InputVolunteer{}
+func (ctl *controller) CreateVacancy() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		input := dtos.InputVacancy{}
 
 		ctx.Bind(&input)
-		 validate = validator.New(validator.WithRequiredStructEnabled())
-
-		if err := validate.Struct(input); err != nil {
-			errMap := helpers.ErrorMapValidation(err)
-			return ctx.JSON(400, helper.Response("missing some data", map[string]any{
-				"error": errMap,
-			}))
-		}
 
 		userID := ctx.Get("user_id")
 
@@ -156,27 +199,167 @@ func (ctl *controller) CreateVolunteer() echo.HandlerFunc{
 			formFile, err := fileHeader.Open()
 
 			if err != nil {
-				return ctx.JSON(500, helper.Response("something went wrong"))
+				return ctx.JSON(500, helpers.Response("something went wrong"))
 			}
 
 			file = formFile
 		}
-		
-		 err = validate.Struct(input)
 
-		 if err != nil {
-		 	errMap := helpers.ErrorMapValidation(err)
-		 	return ctx.JSON(400, helpers.Response("Controller : Bad Request", map[string]any{
-		 		"error": errMap,
-		 	}))
-		 }
-		volun, _ := ctl.service.Create(input, userID.(int), file)
+		volun, errMap, err := ctl.service.CreateVacancy(input, userID.(int), file)
+
+		if errMap != nil {
+			return ctx.JSON(400, helpers.Response("missing some data", map[string]any{
+				"error": errMap,
+			}))
+		}
 
 		if volun == nil {
-			return ctx.JSON(500, helpers.Response("Controller : Something when wrong!", nil))
+			return ctx.JSON(500, helpers.Response("something when wrong", nil))
 		}
-		return ctx.JSON(200, helpers.Response("Succes", map[string]any{
+
+		if err != nil {
+			return ctx.JSON(500, helpers.Response(err.Error()))
+		}
+
+		return ctx.JSON(200, helpers.Response("succes", map[string]any{
 			"data": volun,
+		}))
+	}
+}
+
+func (ctl *controller) ApplyVacancy() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		input := dtos.ApplyVacancy{}
+
+		ctx.Bind(&input)
+
+		userID := ctx.Get("user_id").(int)
+
+		checkUser := ctl.service.CheckUser(userID)
+		if !checkUser {
+			return ctx.JSON(401, helpers.Response("please fill in your NIK first before register"))
+		}
+
+		volunteer := ctl.service.FindUserInVacancy(input.VacancyID, userID)
+		if volunteer {
+			return ctx.JSON(400, helpers.Response("user already registered"))
+		}
+
+		fileHeader, err := ctx.FormFile("photo")
+		if err == nil {
+			formFile, err := fileHeader.Open()
+
+			if err != nil {
+				return ctx.JSON(500, helpers.Response("something went wrong"))
+			}
+
+			input.Photo = formFile
+		}
+
+		result, errMap := ctl.service.RegisterVacancy(input, userID)
+		if errMap != nil {
+			return ctx.JSON(400, helpers.Response("missing some data", map[string]any{
+				"error": errMap,
+			}))
+		}
+
+		if !result {
+			return ctx.JSON(500, helpers.Response("something when wrong"))
+		}
+
+		return ctx.JSON(200, helpers.Response("success apply volunteer", nil))
+	}
+}
+
+func (ctl *controller) UpdateStatusRegistrar() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		input := dtos.StatusRegistrar{}
+
+		ctx.Bind(&input)
+
+		vacancyID, err := strconv.Atoi(ctx.Param("vacancy_id"))
+		if err != nil {
+			return ctx.JSON(400, helpers.Response(err.Error()))
+		}
+
+		volunteerID, err := strconv.Atoi(ctx.Param("volunteer_id"))
+		if err != nil {
+			return ctx.JSON(400, helpers.Response(err.Error()))
+		}
+
+		volunteer := ctl.service.FindDetailVolunteers(vacancyID, volunteerID)
+
+		if volunteer.Fullname == "" {
+			return ctx.JSON(404, helpers.Response("volunteer not found"))
+		}
+
+		update, errMap := ctl.service.UpdateStatusRegistrar(input, volunteerID)
+		if errMap != nil {
+			return ctx.JSON(400, helpers.Response("missing some data", map[string]any{
+				"error": errMap,
+			}))
+		}
+
+		if !update {
+			return ctx.JSON(500, helpers.Response("something went wrong"))
+		}
+
+		return ctx.JSON(200, helpers.Response("success updated registrar status"))
+	}
+}
+
+func (ctl *controller) GetVolunteersByVacancyID() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		pagination := dtos.Pagination{}
+
+		vacancyID, errParam := strconv.Atoi(ctx.Param("vacancy_id"))
+		if errParam != nil {
+			return ctx.JSON(400, helpers.Response(errParam.Error()))
+		}
+
+		ctx.Bind(&pagination)
+
+		if pagination.Page < 1 || pagination.PageSize < 1 {
+			pagination.Page = 1
+			pagination.PageSize = 20
+		}
+
+		page := pagination.Page
+		size := pagination.PageSize
+		name := ctx.QueryParam("fullname")
+
+		volunteers, totalData := ctl.service.FindAllVolunteersByVacancyID(page, size, vacancyID, name)
+
+		if volunteers == nil {
+			return ctx.JSON(404, helpers.Response("there is no volunteers"))
+		}
+
+		paginationResponse := helpers.PaginationResponse(page, size, int(totalData))
+
+		return ctx.JSON(200, helpers.Response("success!", map[string]any{
+			"data":       volunteers,
+			"pagination": paginationResponse,
+		}))
+	}
+}
+
+func (ctl *controller) GetVolunteer() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		vacancyID, err := strconv.Atoi(ctx.Param("vacancy_id"))
+		volunteerID, err := strconv.Atoi(ctx.Param("volunteer_id"))
+
+		if err != nil {
+			return ctx.JSON(400, helpers.Response(err.Error()))
+		}
+
+		volunteer := ctl.service.FindDetailVolunteers(vacancyID, volunteerID)
+
+		if volunteer.Fullname == "" {
+			return ctx.JSON(404, helpers.Response("volunteer not found"))
+		}
+
+		return ctx.JSON(200, helpers.Response("success!", map[string]any{
+			"data": volunteer,
 		}))
 	}
 }

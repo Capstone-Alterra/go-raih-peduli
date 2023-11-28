@@ -1,0 +1,14 @@
+[
+  {
+    "question": "how to view available fundraising programs?",
+    "prompt": "explain how a fundraising programs can be viewed through an app. The available one is the one that has status accepted, not pending or rejected"
+  },
+  {
+    "question": "i want to know about fundraising programs",
+    "prompt": "explain what is a fundraising programs."
+  },
+  {
+    "question": "how to donate to a fundraising program?",
+    "prompt": "explain step by step how to donate to a fundraising program or post. choose one of the fundraising details, click donate button, choose the payment type, and then pay the bill. generate better answers"
+  }
+]

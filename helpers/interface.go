@@ -4,6 +4,9 @@ import (
 	"mime/multipart"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/midtrans/midtrans-go/coreapi"
+
+	"raihpeduli/features/transaction"
 )
 
 type ValidationInterface interface {
@@ -16,6 +19,7 @@ type JWTInterface interface {
 	GenerateTokenResetPassword(userID string, roleID string) string
 	ExtractToken(token *jwt.Token) any
 	ValidateToken(token string, secret string) (*jwt.Token, error)
+	RefereshJWT(refreshToken *jwt.Token) map[string]any
 }
 
 type HashInterface interface {
@@ -25,12 +29,25 @@ type HashInterface interface {
 
 type GeneratorInterface interface {
 	GenerateRandomOTP() string
+	GenerateRandomID() int
+}
+
+type MidtransInterface interface {
+	CreateTransactionBank(IDTransaction string, PaymentType string, Amount int64) (string, error)
+	CreateTransactionGopay(IDTransaction string, PaymentType string, Amount int64) (string, error)
+	CreateTransactionQris(IDTransaction string, PaymentType string, Amount int64) (string, error)
+	TransactionStatus(transactionStatusResp *coreapi.TransactionStatusResponse) transaction.Status
 }
 
 type CloudStorageInterface interface {
 	UploadFile(file multipart.File, object string) error
+	DeleteFile(object string) error
 }
 
 type ConverterInterface interface {
 	Convert(target any, value any) error
+}
+
+type OpenAIInterface interface {
+	GetReplyFromGPT(question string, qnaList map[string]string) (string, error)
 }

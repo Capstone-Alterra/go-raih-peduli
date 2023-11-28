@@ -7,10 +7,12 @@ import (
 )
 
 type ResNews struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	Photo       string `json:"photo"`
-	UserID      int    `json:"user_id"`
+	ID          int     `json:"id"`
+	Title       string  `json:"title"`
+	Description string  `json:"description"`
+	Photo       string  `json:"photo"`
+	UserID      int     `json:"user_id"`
+	BookmarkID  *string `json:"bookmark_id"`
 
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`

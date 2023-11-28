@@ -1,16 +1,20 @@
 package utils
 
 import (
+	"context"
 	"raihpeduli/config"
 	"raihpeduli/features/auth"
 	"raihpeduli/features/fundraise"
 	"raihpeduli/features/news"
+	"raihpeduli/features/transaction"
 	"raihpeduli/features/volunteer"
 
 	"fmt"
 
 	"github.com/go-redis/redis"
 	"github.com/sirupsen/logrus"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -31,7 +35,7 @@ func InitDB() *gorm.DB {
 }
 
 func migrate(db *gorm.DB) {
-	db.AutoMigrate(fundraise.Fundraise{}, &auth.User{}, &volunteer.VolunteerVacancies{}, news.News{})
+	db.AutoMigrate(fundraise.Fundraise{}, &auth.User{}, &volunteer.VolunteerVacancies{}, news.News{}, transaction.Transaction{}, &volunteer.VolunteerRelations{}, )
 }
 
 func ConnectRedis() *redis.Client {
@@ -51,4 +55,17 @@ func ConnectRedis() *redis.Client {
 	logrus.Info("Connection established")
 
 	return client
+}
+
+func ConnectMongo() *mongo.Database {
+	config := config.LoadMongoConfig()
+
+	clientOptions := options.Client()
+    clientOptions.ApplyURI(config.MONGO_URI)
+    client, err := mongo.Connect(context.Background(), clientOptions)
+    if err != nil {
+        return nil
+    }
+
+    return client.Database(config.MONGO_DB_NAME)
 }

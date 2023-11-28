@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"raihpeduli/config"
 	"raihpeduli/helpers"
+	"raihpeduli/middlewares"
 	"raihpeduli/routes"
 	"raihpeduli/utils"
 
@@ -32,6 +33,21 @@ import (
 	nr "raihpeduli/features/news/repository"
 	nu "raihpeduli/features/news/usecase"
 
+	"raihpeduli/features/transaction"
+	th "raihpeduli/features/transaction/handler"
+	tr "raihpeduli/features/transaction/repository"
+	tu "raihpeduli/features/transaction/usecase"
+
+	"raihpeduli/features/bookmark"
+	bh "raihpeduli/features/bookmark/handler"
+	br "raihpeduli/features/bookmark/repository"
+	bu "raihpeduli/features/bookmark/usecase"
+
+	"raihpeduli/features/chatbot"
+	ch "raihpeduli/features/chatbot/handler"
+	cr "raihpeduli/features/chatbot/repository"
+	cu "raihpeduli/features/chatbot/usecase"
+
 	"github.com/labstack/echo/v4"
 )
 
@@ -45,6 +61,11 @@ func main() {
 	routes.Fundraises(e, FundraiseHandler(), jwtService, *cfg)
 	routes.Volunteers(e, VolunteerHandler(), jwtService, *cfg)
 	routes.News(e, NewsHandler(), jwtService, *cfg)
+	routes.Transactions(e, TransactionHandler(), jwtService, *cfg)
+	routes.Bookmarks(e, BookmarkHandler(), jwtService, *cfg)
+	routes.Chatbots(e, ChatbotHandler(cfg), jwtService, *cfg)
+
+	middlewares.LogMiddlewares(e)
 
 	e.Start(fmt.Sprintf(":%s", cfg.SERVER_PORT))
 }
@@ -55,56 +76,108 @@ func FundraiseHandler() fundraise.Handler {
 
 	db := utils.InitDB()
 	clStorage := helpers.NewCloudStorage(config.CLOUD_PROJECT_ID, config.CLOUD_BUCKET_NAME, "fundraises/")
-	repo := fr.New(db, clStorage)
+	mongoDB := utils.ConnectMongo()
+	collection := mongoDB.Collection("bookmarks")
+
+	repo := fr.New(db, clStorage, collection)
 	uc := fu.New(repo, validation)
 	return fh.New(uc)
 }
 
 func UserHandler() user.Handler {
+	cloud := config.LoadCloudStorageConfig()
 	config := config.InitConfig()
 
 	db := utils.InitDB()
 	jwt := helpers.NewJWT(*config)
 	hash := helpers.NewHash()
 	generator := helpers.NewGenerator()
+	validation := helpers.NewValidationRequest()
 	redis := utils.ConnectRedis()
+	clStorage := helpers.NewCloudStorage(cloud.CLOUD_PROJECT_ID, cloud.CLOUD_BUCKET_NAME, "users/")
 
-	repo := ur.New(db, redis)
-	uc := uu.New(repo, jwt, hash, generator)
+	repo := ur.New(db, redis, clStorage)
+	uc := uu.New(repo, jwt, hash, generator, validation)
 	return uh.New(uc)
 }
 
 func AuthHandler() auth.Handler {
+	smtpConfig := config.LoadSMTPConfig()
 	config := config.InitConfig()
 
 	db := utils.InitDB()
 	jwt := helpers.NewJWT(*config)
 	hash := helpers.NewHash()
 	generator := helpers.NewGenerator()
+	validation := helpers.NewValidationRequest()
 	redis := utils.ConnectRedis()
 
-	repo := ar.New(db, redis)
-	uc := au.New(repo, jwt, hash, generator)
+	repo := ar.New(db, redis, smtpConfig)
+	uc := au.New(repo, jwt, hash, generator, validation)
 	return ah.New(uc)
 }
 
 func VolunteerHandler() volunteer.Handler {
 	config := config.LoadCloudStorageConfig()
+	validation := helpers.NewValidationRequest()
 
 	db := utils.InitDB()
+	mongoDB := utils.ConnectMongo()
+	collection := mongoDB.Collection("bookmarks")
 
-	clStorage := helpers.NewCloudStorage(config.CLOUD_PROJECT_ID, config.CLOUD_BUCKET_NAME, "fundraises/")
-	repo := vr.New(db, clStorage)
-	uc := vu.New(repo)
+	clStorage := helpers.NewCloudStorage(config.CLOUD_PROJECT_ID, config.CLOUD_BUCKET_NAME, "vacancies/")
+
+	repo := vr.New(db, clStorage, collection)
+	uc := vu.New(repo, validation)
 	return vh.New(uc)
 }
 
 func NewsHandler() news.Handler {
 	db := utils.InitDB()
 	config := config.LoadCloudStorageConfig()
+	validation := helpers.NewValidationRequest()
 
 	clStorage := helpers.NewCloudStorage(config.CLOUD_PROJECT_ID, config.CLOUD_BUCKET_NAME, "news/")
-	repo := nr.New(db, clStorage)
-	uc := nu.New(repo)
+	mongoDB := utils.ConnectMongo()
+	collection := mongoDB.Collection("bookmarks")
+
+	repo := nr.New(db, clStorage, collection)
+	uc := nu.New(repo, validation)
 	return nh.New(uc)
+}
+
+func TransactionHandler() transaction.Handler {
+	db := utils.InitDB()
+	repo := tr.New(db)
+	coreAPIClient := utils.MidtransCoreAPIClient()
+	validation := helpers.NewValidationRequest()
+
+	generator := helpers.NewGenerator()
+	midtrans := helpers.NewMidtransRequest()
+	tc := tu.New(repo, generator, midtrans, coreAPIClient, validation)
+	return th.New(tc)
+}
+
+func BookmarkHandler() bookmark.Handler {
+	db := utils.InitDB()
+	mongoDB := utils.ConnectMongo()
+	collection := mongoDB.Collection("bookmarks")
+	validation := helpers.NewValidationRequest()
+
+	repo := br.New(db, collection)
+	uc := bu.New(repo, validation)
+	return bh.New(uc)
+}
+
+func ChatbotHandler(cfg *config.ProgramConfig) chatbot.Handler {
+	db := utils.InitDB()
+	mongoDB := utils.ConnectMongo()
+	collection := mongoDB.Collection("chatbot_histories")
+
+	validation := helpers.NewValidationRequest()
+	openAI := helpers.NewOpenAI(cfg.OPENAI_KEY)
+
+	repo := cr.New(db, collection)
+	uc := cu.New(repo, validation, openAI)
+	return ch.New(uc)
 }

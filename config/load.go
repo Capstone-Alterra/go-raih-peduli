@@ -1,6 +1,7 @@
 package config
 
 import (
+	"io"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -8,6 +9,8 @@ import (
 )
 
 func InitConfig() *ProgramConfig {
+	godotenv.Load()
+
 	var res = new(ProgramConfig)
 	res = loadConfig()
 
@@ -32,10 +35,20 @@ type RedisConfig struct {
 	REDIS_PORT string
 }
 
+type MongoConfig struct {
+	MONGO_URI string
+	MONGO_DB_NAME string
+}
+
 type CloudStorageConfig struct {
 	GOOGLE_APPLICATION_CREDENTIALS string
 	CLOUD_PROJECT_ID               string
 	CLOUD_BUCKET_NAME              string
+}
+
+type MidtransConfig struct {
+	MT_SERVER_KEY string
+	MT_CLIENT_KEY string
 }
 
 type ProgramConfig struct {
@@ -43,17 +56,17 @@ type ProgramConfig struct {
 	REFRESH_SECRET string
 	SERVER_PORT    string
 	OTP_SECRET     string
+	OPENAI_KEY	   string
+}
+
+type SMTPConfig struct {
+	SMTP_USER string
+	SMTP_PASS string
+	SMTP_PORT string
 }
 
 func LoadDBConfig() *DatabaseConfig {
 	var res = new(DatabaseConfig)
-
-	err := godotenv.Load(".env")
-
-	if err != nil {
-		logrus.Error("Config : Cannot load config file,", err.Error())
-		return nil
-	}
 
 	if val, found := os.LookupEnv("DB_USER"); found {
 		res.DB_USER = val
@@ -81,13 +94,6 @@ func LoadDBConfig() *DatabaseConfig {
 func LoadRedisConfig() *RedisConfig {
 	var res = new(RedisConfig)
 
-	err := godotenv.Load(".env")
-
-	if err != nil {
-		logrus.Error("Config : Cannot load config file,", err.Error())
-		return nil
-	}
-
 	if val, found := os.LookupEnv("REDIS_HOST"); found {
 		res.REDIS_HOST = val
 	}
@@ -99,17 +105,37 @@ func LoadRedisConfig() *RedisConfig {
 	return res
 }
 
+func LoadMongoConfig() *MongoConfig {
+	var res = new(MongoConfig)
+
+	if val, found := os.LookupEnv("MONGO_URI"); found {
+		res.MONGO_URI = val
+	}
+
+	if val, found := os.LookupEnv("MONGO_DB_NAME"); found {
+		res.MONGO_DB_NAME = val
+	}
+
+	return res
+}
+
 func LoadCloudStorageConfig() *CloudStorageConfig {
 	var res = new(CloudStorageConfig)
 
-	err := godotenv.Load(".env")
-
-	if err != nil {
-		logrus.Error("Config : Cannot load config file,", err.Error())
-		return nil
-	}
-
 	if val, found := os.LookupEnv("GOOGLE_APPLICATION_CREDENTIALS"); found {
+		gcredentials, _ := os.LookupEnv("APPLICATION_DEFAULT_CREDENTIALS")
+
+		file, err := os.Create("credentials.json")
+		if err != nil {
+			panic(err)
+		}
+		defer file.Close()
+
+		_, err = io.WriteString(file, gcredentials)
+		if err != nil {
+			panic(err)
+		}
+
 		res.GOOGLE_APPLICATION_CREDENTIALS = val
 	}
 
@@ -124,15 +150,40 @@ func LoadCloudStorageConfig() *CloudStorageConfig {
 	return res
 }
 
+func LoadMidtransConfig() *MidtransConfig {
+	var res = new(MidtransConfig)
+
+	if val, found := os.LookupEnv("MT_SERVER_KEY"); found {
+		res.MT_SERVER_KEY = val
+	}
+
+	if val, found := os.LookupEnv("MT_CLIENT_KEY"); found {
+		res.MT_CLIENT_KEY = val
+	}
+
+	return res
+}
+
+func LoadSMTPConfig() *SMTPConfig {
+	var res = new(SMTPConfig)
+
+	if val, found := os.LookupEnv("SMTP_USER"); found {
+		res.SMTP_USER = val
+	}
+
+	if val, found := os.LookupEnv("SMTP_PASS"); found {
+		res.SMTP_PASS = val
+	}
+
+	if val, found := os.LookupEnv("SMTP_PORT"); found {
+		res.SMTP_PORT = val
+	}
+
+	return res
+}
+
 func loadConfig() *ProgramConfig {
 	var res = new(ProgramConfig)
-
-	err := godotenv.Load(".env")
-
-	if err != nil {
-		logrus.Error("Config : Cannot load config file,", err.Error())
-		return nil
-	}
 
 	if val, found := os.LookupEnv("SECRET"); found {
 		res.SECRET = val
@@ -148,6 +199,10 @@ func loadConfig() *ProgramConfig {
 
 	if val, found := os.LookupEnv("OTP_SECRET"); found {
 		res.OTP_SECRET = val
+	}
+
+	if val, found := os.LookupEnv("OPENAI_KEY"); found {
+		res.OPENAI_KEY = val
 	}
 
 	return res

@@ -4,9 +4,7 @@ import (
 	"raihpeduli/features/auth"
 	"raihpeduli/features/auth/dtos"
 	"raihpeduli/helpers"
-	helper "raihpeduli/helpers"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 )
 
@@ -20,22 +18,20 @@ func New(service auth.Usecase) auth.Handler {
 	}
 }
 
-var validate *validator.Validate
-
-func (ctl *controller) LoginCustomer() echo.HandlerFunc {
+func (ctl *controller) Login() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		loginData := dtos.RequestLogin{}
 
 		if err := ctx.Bind(&loginData); err != nil {
-			return ctx.JSON(400, helpers.Response("Invalid request body!"))
+			return ctx.JSON(400, helpers.Response("invalid request body"))
 		}
 
 		loginRes, err := ctl.service.Login(loginData)
 		if err != nil {
-			return ctx.JSON(401, helpers.Response("Invalid credentials!"))
+			return ctx.JSON(401, helpers.Response("invalid credentials"))
 		}
 
-		return ctx.JSON(200, helpers.Response("Success!", map[string]any{
+		return ctx.JSON(200, helpers.Response("success", map[string]any{
 			"data": loginRes,
 		}))
 	}
@@ -47,26 +43,56 @@ func (ctl *controller) RegisterUser() echo.HandlerFunc {
 
 		ctx.Bind(&input)
 
-		validate = validator.New(validator.WithRequiredStructEnabled())
-
-		err := validate.Struct(input)
-
-		if err != nil {
-			errMap := helpers.ErrorMapValidation(err)
-			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any{
+		user, errMap, err := ctl.service.Register(input)
+		if errMap != nil {
+			return ctx.JSON(400, helpers.Response("missing some data", map[string]any{
 				"error": errMap,
 			}))
 		}
 
-		user, errCreate := ctl.service.Register(input)
-		if errCreate != nil {
-			return ctx.JSON(400, helper.Response("Bad Request!", map[string]any{
-				"error": errCreate.Error(),
+		if err != nil {
+			return ctx.JSON(400, helpers.Response("bad request", map[string]any{
+				"error": err.Error(),
 			}))
 		}
 
-		return ctx.JSON(200, helper.Response("Success!", map[string]any{
+		return ctx.JSON(200, helpers.Response("success", map[string]any{
 			"data": user,
+		}))
+	}
+}
+
+func (ctl *controller) ResendOTP() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		input := dtos.ResendOTP{}
+
+		ctx.Bind(&input)
+
+		result := ctl.service.ResendOTP(input.Email)
+		if !result {
+			return ctx.JSON(500, helpers.Response("something went wrong"))
+		}
+
+		return ctx.JSON(200, helpers.Response("OTP has been sent via email"))
+	}
+}
+
+func (ctl *controller) RefreshJWT() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		jwt := dtos.RefreshJWT{}
+		ctx.Bind(&jwt)
+
+		refershJWT, err := ctl.service.RefreshJWT(jwt)
+		if err != nil {
+			if err.Error() == "validate token failed" {
+				return ctx.JSON(400, helpers.Response("invalid jwt token"))
+			}
+
+			return ctx.JSON(500, helpers.Response("something went wrong"))
+		}
+
+		return ctx.JSON(200, helpers.Response("success", map[string]any{
+			"data": refershJWT,
 		}))
 	}
 }

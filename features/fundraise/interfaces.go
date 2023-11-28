@@ -8,26 +8,37 @@ import (
 )
 
 type Repository interface {
-	Paginate(page int, size int, title string) ([]Fundraise, error)
-	Insert(newFundraise Fundraise) (int, error)
+	Paginate(pagination dtos.Pagination, searchAndFilter dtos.SearchAndFilter) ([]Fundraise, error)
+	PaginateMobile(pagination dtos.Pagination, searchAndFilter dtos.SearchAndFilter) ([]Fundraise, error)
+	Insert(newFundraise Fundraise) (*Fundraise, error)
 	SelectByID(fundraiseID int) (*Fundraise, error)
-	Update(fundraise Fundraise) (int, error)
-	DeleteByID(fundraiseID int) (int, error)
-	UploadFile(file multipart.File, objectName string) (string, error)
+	TotalFundAcquired(fundraiseID int) (int32, error)
+	Update(fundraise Fundraise) error
+	DeleteByID(fundraiseID int) error
+	UploadFile(file multipart.File) (string, error)
+	DeleteFile(filename string) error
+	SelectBookmarkedFundraiseID(ownerID int) (map[int]string, error)
+	SelectBookmarkByFundraiseAndOwnerID(fundraiseID, ownerID int) (string, error)
+	GetTotalData() int64
+	GetTotalDataMobile() int64
+	GetTotalDataBySearchAndFilter(searchAndFilter dtos.SearchAndFilter) int64
+	GetTotalDataBySearchAndFilterMobile(searchAndFilter dtos.SearchAndFilter) int64
 }
 
 type Usecase interface {
-	FindAll(page int, size int, title string) []dtos.ResFundraise
-	FindByID(fundraiseID int) *dtos.ResFundraise
+	FindAll(pagination dtos.Pagination, searchAndFilter dtos.SearchAndFilter, ownerID int, suffix string) ([]dtos.ResFundraise, int64)
+	FindByID(fundraiseID, ownerID int) *dtos.ResFundraise
 	Create(newFundraise dtos.InputFundraise, userID int, file multipart.File) (*dtos.ResFundraise, []string, error)
-	Modify(fundraiseData dtos.InputFundraise, file multipart.File, oldData dtos.ResFundraise) bool
-	Remove(fundraiseID int) bool
+	Modify(fundraiseData dtos.InputFundraise, file multipart.File, oldData dtos.ResFundraise) ([]string, error)
+	ModifyStatus(fundraiseData dtos.InputFundraiseStatus, oldData dtos.ResFundraise) ([]string, error)
+	Remove(fundraiseID int, oldData dtos.ResFundraise) error
 }
 
 type Handler interface {
-	GetFundraises() echo.HandlerFunc
+	GetFundraises(suffix string) echo.HandlerFunc
 	FundraiseDetails() echo.HandlerFunc
 	CreateFundraise() echo.HandlerFunc
 	UpdateFundraise() echo.HandlerFunc
+	UpdateFundraiseStatus() echo.HandlerFunc
 	DeleteFundraise() echo.HandlerFunc
 }

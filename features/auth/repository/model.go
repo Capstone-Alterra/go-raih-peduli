@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"os"
+	"raihpeduli/config"
 	"raihpeduli/features/auth"
 	"strconv"
 	"time"
@@ -16,12 +16,14 @@ import (
 type model struct {
 	db         *gorm.DB
 	connection *redis.Client
+	config     *config.SMTPConfig
 }
 
-func New(db *gorm.DB, rdClient *redis.Client) auth.Repository {
+func New(db *gorm.DB, rdClient *redis.Client, config *config.SMTPConfig) auth.Repository {
 	return &model{
 		db:         db,
 		connection: rdClient,
+		config:     config,
 	}
 }
 
@@ -48,30 +50,6 @@ func (mdl *model) SelectByEmail(email string) (*auth.User, error) {
 	}
 
 	return &user, nil
-}
-
-func (mdl *model) GetNameAdmin(id int) (string, error) {
-	var fullname string
-
-	result := mdl.db.Table("admins").Where("user_id = ?", id).Select("fullname").Scan(&fullname)
-	if result.Error != nil {
-		log.Error(result.Error)
-		return "", result.Error
-	}
-
-	return fullname, nil
-}
-
-func (mdl *model) GetNameCustomer(id int) (string, error) {
-	var fullname string
-
-	result := mdl.db.Table("customers").Where("user_id = ?", id).Select("fullname").Scan(&fullname)
-	if result.Error != nil {
-		log.Error(result.Error)
-		return "", result.Error
-	}
-
-	return fullname, nil
 }
 
 func (mdl *model) Register(newUser *auth.User) (*auth.User, error) {
@@ -103,17 +81,17 @@ func (mdl *model) InsertVerification(email string, verificationKey string) error
 }
 
 func (mdl *model) SendOTPByEmail(email string, otp string) error {
-	secret_user := os.Getenv("SMTP_USER")
-	secret_pass := os.Getenv("SMTP_PASS")
-	secret_port := os.Getenv("SMTP_PORT")
+	user := mdl.config.SMTP_USER
+	password := mdl.config.SMTP_PASS
+	port := mdl.config.SMTP_PORT
 
-	convPort, err := strconv.Atoi(secret_port)
+	convPort, err := strconv.Atoi(port)
 	if err != nil {
 		return err
 	}
 
 	m := mail.NewMsg()
-	if err := m.From(secret_user); err != nil {
+	if err := m.From(user); err != nil {
 		return err
 	}
 	if err := m.To(email); err != nil {
@@ -122,7 +100,7 @@ func (mdl *model) SendOTPByEmail(email string, otp string) error {
 	m.Subject("Verifikasi Email - Raih Peduli")
 	m.SetBodyString(mail.TypeTextPlain, "Kode OTP anda adalah : "+otp)
 
-	c, err := mail.NewClient("smtp.gmail.com", mail.WithPort(convPort), mail.WithSMTPAuth(mail.SMTPAuthPlain), mail.WithUsername(secret_user), mail.WithPassword(secret_pass))
+	c, err := mail.NewClient("smtp.gmail.com", mail.WithPort(convPort), mail.WithSMTPAuth(mail.SMTPAuthPlain), mail.WithUsername(user), mail.WithPassword(password))
 	if err != nil {
 		return err
 	}
