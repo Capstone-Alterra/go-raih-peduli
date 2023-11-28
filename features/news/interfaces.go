@@ -26,7 +26,7 @@ type Usecase interface {
 	FindByID(newsID, ownerID int) *dtos.ResNews
 	Create(newNews dtos.InputNews, userID int, file multipart.File) (*dtos.ResNews, []string, error)
 	Modify(newsData dtos.InputNews, file multipart.File, oldData dtos.ResNews) ([]string, error)
-	Remove(newsID int) bool
+	Remove(newsID int, oldData dtos.ResNews) error
 }
 
 type Handler interface {

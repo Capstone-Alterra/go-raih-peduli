@@ -23,7 +23,7 @@ type Repository interface {
 type Usecase interface {
 	FindAll(page, size, roleID, userID int, keyword string) ([]dtos.ResTransaction, int64)
 	FindByID(transactionID int) *dtos.ResTransaction
-	Create(userID int, newTransaction dtos.InputTransaction) (*dtos.ResTransaction, error)
+	Create(userID int, newTransaction dtos.InputTransaction) (*dtos.ResTransaction, error, []string)
 	Modify(transactionData dtos.InputTransaction, transactionID int) bool
 	Remove(transactionID int) bool
 	Notifications(notificationPayload map[string]any) error

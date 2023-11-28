@@ -176,10 +176,8 @@ func (ctl *controller) DeleteVacancy() echo.HandlerFunc {
 			return ctx.JSON(404, helpers.Response("volunteer vacancy not found"))
 		}
 
-		delete := ctl.service.RemoveVacancy(volunteerID)
-
-		if !delete {
-			return ctx.JSON(500, helpers.Response("something went wrong"))
+		if err := ctl.service.RemoveVacancy(volunteerID, *volunteer); err != nil {
+			return ctx.JSON(500, helpers.Response(err.Error()))
 		}
 
 		return ctx.JSON(200, helpers.Response("success deleted volunteer vacancy", nil))

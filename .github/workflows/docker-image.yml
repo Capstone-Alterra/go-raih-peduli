@@ -70,4 +70,5 @@ jobs:
             -e MT_CLIENT_KEY=${{ secrets.MT_CLIENT_KEY }} \
             -e MONGO_URI="$(echo '${{ secrets.MONGO_URI }}')" \
             -e MONGO_DB_NAME=${{ secrets.MONGO_DB_NAME }} \
+            -e OPENAI_KEY=${{ secrets.OPENAI_KEY }} \
             ${{ secrets.DOCKERHUB_USERNAME }}/imgoraihpeduli
