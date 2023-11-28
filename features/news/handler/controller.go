@@ -81,7 +81,7 @@ func (ctl *controller) NewsDetails() echo.HandlerFunc {
 		news := ctl.service.FindByID(newsID, userID)
 
 		if news == nil {
-			return ctx.JSON(404, helper.Response("news not found!"))
+			return ctx.JSON(404, helper.Response("news not found"))
 		}
 
 		return ctx.JSON(200, helper.Response("success", map[string]any{
@@ -121,7 +121,7 @@ func (ctl *controller) CreateNews() echo.HandlerFunc {
 			return ctx.JSON(500, helper.Response(err.Error(), nil))
 		}
 
-		return ctx.JSON(200, helper.Response("success created fundraise", map[string]any{
+		return ctx.JSON(200, helper.Response("success created news", map[string]any{
 			"data": news,
 		}))
 	}
@@ -188,7 +188,7 @@ func (ctl *controller) DeleteNews() echo.HandlerFunc {
 			return ctx.JSON(404, helper.Response("news not found"))
 		}
 
-		delete := ctl.service.Remove(newsID)
+		delete := ctl.service.Remove(newsID, *news)
 
 		if !delete {
 			return ctx.JSON(500, helper.Response("something went wrong"))
