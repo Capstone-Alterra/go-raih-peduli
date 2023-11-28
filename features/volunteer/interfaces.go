@@ -40,7 +40,7 @@ type Usecase interface {
 	RemoveVacancy(vacancyID int) bool
 	CreateVacancy(newVacancy dtos.InputVacancy, UserID int, file multipart.File) (*dtos.ResVacancy, []string, error)
 	RegisterVacancy(newApply dtos.ApplyVacancy, userID int) (bool, []string)
-	UpdateStatusRegistrar(status string, registrarID int) bool
+	UpdateStatusRegistrar(input dtos.StatusRegistrar, registrarID int) (bool, []string)
 	FindAllVolunteersByVacancyID(page, size int, vacancyID int, name string) ([]dtos.ResRegistrantVacancy, int64)
 	FindDetailVolunteers(vacancyID, volunteerID int) *dtos.ResRegistrantVacancy
 	CheckUser(userID int) bool

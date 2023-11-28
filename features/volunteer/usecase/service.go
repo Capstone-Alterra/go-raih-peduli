@@ -207,21 +207,33 @@ func (svc *service) ModifyVacancyStatus(input dtos.StatusVacancies, oldData dtos
 	return true, nil
 }
 
-func (svc *service) UpdateStatusRegistrar(status string, registrarID int) bool {
+func (svc *service) UpdateStatusRegistrar(input dtos.StatusRegistrar, registrarID int) (bool, []string) {
+	errMap := svc.validation.ValidateRequest(input)
+	if errMap != nil {
+		return false, errMap
+	}
+
 	registrar := svc.model.SelectRegistrarByID(registrarID)
 
 	if registrar == nil {
-		return false
+		return false, nil
 	}
 
-	registrar.Status = status
+	registrar.Status = input.Status
+	if input.Status == "rejected" {
+		if input.RejectedReason == "" {
+			return false, []string{"rejected_reason field is required when the status is rejected"}
+		}
+		registrar.RejectedReason = input.RejectedReason
+	}
+
 	rowsAffected := svc.model.UpdateStatusRegistrar(*registrar)
 	if rowsAffected <= 0 {
 		log.Error("Update status registrar failed")
-		return false
+		return false, nil
 	}
 
-	return true
+	return true, nil
 }
 
 func (svc *service) RemoveVacancy(volunteerID int) bool {

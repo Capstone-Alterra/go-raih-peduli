@@ -295,7 +295,12 @@ func (ctl *controller) UpdateStatusRegistrar() echo.HandlerFunc {
 			return ctx.JSON(404, helpers.Response("volunteer not found"))
 		}
 
-		update := ctl.service.UpdateStatusRegistrar(input.Status, volunteerID)
+		update, errMap := ctl.service.UpdateStatusRegistrar(input, volunteerID)
+		if errMap != nil {
+			return ctx.JSON(400, helpers.Response("missing some data", map[string]any{
+				"error": errMap,
+			}))
+		}
 
 		if !update {
 			return ctx.JSON(500, helpers.Response("something went wrong"))

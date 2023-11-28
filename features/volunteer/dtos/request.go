@@ -34,7 +34,8 @@ type ApplyVacancy struct {
 }
 
 type StatusRegistrar struct {
-	Status string `json:"status" form:"status"`
+	Status         string `json:"status" form:"status" validate:"oneof=pending accepted rejected"`
+	RejectedReason string `json:"rejected_reason" form:"rejected_reason"`
 }
 
 type Pagination struct {
