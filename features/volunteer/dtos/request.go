@@ -21,18 +21,21 @@ type InputVacancy struct {
 }
 
 type StatusVacancies struct {
-	Status string `json:"status" form:"status" validate:"oneof=pending accepted rejected"`
+	Status         string `json:"status" form:"status" validate:"oneof=pending accepted rejected"`
+	RejectedReason string `json:"rejected_reason" form:"rejected_reason"`
 }
 
 type ApplyVacancy struct {
-	VacancyID int    `json:"vacancy_id" form:"vacancy_id" validate:"required"`
-	Skills    string `json:"skills" form:"skills" validate:"required"`
-	Resume    string `json:"resume" form:"resume" validate:"required"`
-	Reason    string `json:"reason" form:"reason" validate:"required"`
+	VacancyID int            `json:"vacancy_id" form:"vacancy_id" validate:"required"`
+	Skills    []string       `json:"skills" form:"skills" validate:"required"`
+	Resume    string         `json:"resume" form:"resume" validate:"required"`
+	Reason    string         `json:"reason" form:"reason" validate:"required"`
+	Photo     multipart.File `json:"photo" form:"photo" validate:"required"`
 }
 
 type StatusRegistrar struct {
-	Status string `json:"status" form:"status"`
+	Status         string `json:"status" form:"status" validate:"oneof=pending accepted rejected"`
+	RejectedReason string `json:"rejected_reason" form:"rejected_reason"`
 }
 
 type Pagination struct {
