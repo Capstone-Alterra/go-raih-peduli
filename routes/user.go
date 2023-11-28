@@ -28,8 +28,6 @@ func Users(e *echo.Echo, handler user.Handler, jwt helpers.JWTInterface, config 
 	users.POST("/verify-otp", handler.VerifyOTP(), m.AuthorizeJWT(jwt, -1, config.SECRET))
 	users.POST("/reset-password", handler.ResetPassword(), m.AuthorizeJWT(jwt, 2, config.OTP_SECRET))
 	users.GET("/:id", handler.UserDetails(), m.AuthorizeJWT(jwt, 2, config.SECRET))
-	users.GET("/my-profile", handler.MyProfile(), m.AuthorizeJWT(jwt, 2, config.SECRET))
-	users.PUT("", handler.UpdateUser(), m.AuthorizeJWT(jwt, 2, config.SECRET))
-	users.PATCH("", handler.UpdateProfilePicture(), m.AuthorizeJWT(jwt, 2, config.SECRET))
+	users.PUT("/:id", handler.UpdateUser(), m.AuthorizeJWT(jwt, 2, config.SECRET))
 	users.DELETE("/:id", handler.DeleteUser(), m.AuthorizeJWT(jwt, 2, config.SECRET))
 }

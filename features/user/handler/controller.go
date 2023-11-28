@@ -95,20 +95,25 @@ func (ctl *controller) CreateUser() echo.HandlerFunc {
 
 func (ctl *controller) UpdateUser() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		input := dtos.InputUpdate{}
+		var roleID = ctx.Get("role_id")
+		var userID int
+		var input dtos.InputUpdate
 
-		userID := ctx.Get("user_id").(int)
+		if roleID == 2 {
+			userID, _ = strconv.Atoi(ctx.Param("id"))
+		} else {
+			userID = ctx.Get("user_id").(int)
+		}
 
 		user := ctl.service.FindByID(userID)
-
 		if user == nil {
 			return ctx.JSON(404, helpers.Response("user not found"))
 		}
 
 		ctx.Bind(&input)
 
-		fileHeader, err := ctx.FormFile("profile_picture")
 		var file multipart.File
+		fileHeader, err := ctx.FormFile("profile_picture")
 
 		if err == nil {
 			formFile, err := fileHeader.Open()
