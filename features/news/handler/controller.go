@@ -188,9 +188,9 @@ func (ctl *controller) DeleteNews() echo.HandlerFunc {
 			return ctx.JSON(404, helper.Response("news not found"))
 		}
 
-		delete := ctl.service.Remove(newsID, *news)
+		err = ctl.service.Remove(newsID, *news)
 
-		if !delete {
+		if err != nil {
 			return ctx.JSON(500, helper.Response("something went wrong"))
 		}
 
