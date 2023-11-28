@@ -11,7 +11,6 @@ import (
 
 	"github.com/labstack/gommon/log"
 	"github.com/mashingan/smapping"
-	"github.com/sirupsen/logrus"
 )
 
 type service struct {
@@ -280,35 +279,23 @@ func (svc *service) CreateVacancy(newVolunteer dtos.InputVacancy, UserID int, fi
 	return &resVolun, nil, nil
 }
 
-func (svc *service) RegisterVacancy(newApply dtos.ApplyVacancy, userID int, file multipart.File) (bool, []string) {
+func (svc *service) RegisterVacancy(newApply dtos.ApplyVacancy, userID int) (bool, []string) {
 	if errMap := svc.validation.ValidateRequest(newApply); errMap != nil {
 		return false, errMap
 	}
 
 	registrar := volunteer.VolunteerRelations{}
 
-	var url string = ""
-
-	if file != nil {
-		imageURL, err := svc.model.UploadFile(file, "")
-
-		if err != nil {
-			logrus.Error(err)
-			return false, nil
-		}
-
-		url = imageURL
-	} else {
+	url, err := svc.model.UploadFile(newApply.Photo, "")
+	if err != nil {
 		return false, nil
 	}
 
 	registrar.UserID = userID
-	err := smapping.FillStruct(&registrar, smapping.MapFields(newApply))
-	if err != nil {
-		log.Error(err)
-		return false, nil
-	}
-
+	registrar.VolunteerID = newApply.VacancyID
+	registrar.Skills = strings.Join(newApply.Skills, ", ")
+	registrar.Reason = newApply.Reason
+	registrar.Resume = newApply.Resume
 	registrar.Photo = url
 
 	err = svc.model.RegisterVacancy(&registrar)
@@ -361,6 +348,15 @@ func (svc *service) FindDetailVolunteers(vacancyID, volunteerID int) *dtos.ResRe
 
 func (svc *service) CheckUser(userID int) bool {
 	result := svc.model.CheckUser(userID)
+	if !result {
+		return false
+	}
+
+	return true
+}
+
+func (svc *service) FindUserInVacancy(vacancyID, userID int) bool {
+	result := svc.model.FindUserInVacancy(vacancyID, userID)
 	if !result {
 		return false
 	}

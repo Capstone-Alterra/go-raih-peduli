@@ -356,3 +356,17 @@ func (mdl *model) CheckUser(userID int) bool {
 
 	return true
 }
+
+func (mdl *model) FindUserInVacancy(vacancyID, userID int) bool {
+	var data volunteer.VolunteerRelations
+
+	result := mdl.db.Table("volunteer_relations").
+		Where("user_id = ? AND volunteer_id = ?", userID, vacancyID).
+		First(&data)
+
+	if result.Error != nil {
+		return false
+	}
+
+	return true
+}

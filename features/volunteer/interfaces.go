@@ -29,6 +29,7 @@ type Repository interface {
 	GetTotalVolunteers(vacancyID int, name string) int64
 	SelectVolunteerDetails(vacancyID int, volunteerID int) *Volunteer
 	CheckUser(userID int) bool
+	FindUserInVacancy(vacancyID, userID int) bool
 }
 
 type Usecase interface {
@@ -38,11 +39,12 @@ type Usecase interface {
 	ModifyVacancyStatus(input dtos.StatusVacancies, oldData dtos.ResVacancy) (bool, []string)
 	RemoveVacancy(vacancyID int) bool
 	CreateVacancy(newVacancy dtos.InputVacancy, UserID int, file multipart.File) (*dtos.ResVacancy, []string, error)
-	RegisterVacancy(newApply dtos.ApplyVacancy, userID int, file multipart.File) (bool, []string)
+	RegisterVacancy(newApply dtos.ApplyVacancy, userID int) (bool, []string)
 	UpdateStatusRegistrar(status string, registrarID int) bool
 	FindAllVolunteersByVacancyID(page, size int, vacancyID int, name string) ([]dtos.ResRegistrantVacancy, int64)
 	FindDetailVolunteers(vacancyID, volunteerID int) *dtos.ResRegistrantVacancy
 	CheckUser(userID int) bool
+	FindUserInVacancy(vacancyID, userID int) bool
 }
 
 type Handler interface {

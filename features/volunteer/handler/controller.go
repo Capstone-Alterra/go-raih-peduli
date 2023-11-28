@@ -242,14 +242,12 @@ func (ctl *controller) ApplyVacancy() echo.HandlerFunc {
 			return ctx.JSON(401, helpers.Response("please fill in your NIK first before register"))
 		}
 
-		volunteer := ctl.service.FindDetailVolunteers(input.VacancyID, userID)
-		if volunteer != nil {
+		volunteer := ctl.service.FindUserInVacancy(input.VacancyID, userID)
+		if volunteer {
 			return ctx.JSON(400, helpers.Response("user already registered"))
 		}
 
 		fileHeader, err := ctx.FormFile("photo")
-		var file multipart.File
-
 		if err == nil {
 			formFile, err := fileHeader.Open()
 
@@ -257,10 +255,10 @@ func (ctl *controller) ApplyVacancy() echo.HandlerFunc {
 				return ctx.JSON(500, helpers.Response("something went wrong"))
 			}
 
-			file = formFile
+			input.Photo = formFile
 		}
 
-		result, errMap := ctl.service.RegisterVacancy(input, userID, file)
+		result, errMap := ctl.service.RegisterVacancy(input, userID)
 		if errMap != nil {
 			return ctx.JSON(400, helpers.Response("missing some data", map[string]any{
 				"error": errMap,
