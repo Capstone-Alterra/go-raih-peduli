@@ -18,14 +18,16 @@ type service struct {
 	generator     helpers.GeneratorInterface
 	mtRequest     helpers.MidtransInterface
 	coreAPIClient coreapi.Client
+	validation    helpers.ValidationInterface
 }
 
-func New(model transaction.Repository, generator helpers.GeneratorInterface, mtRequest helpers.MidtransInterface, coreAPIClient coreapi.Client) transaction.Usecase {
+func New(model transaction.Repository, generator helpers.GeneratorInterface, mtRequest helpers.MidtransInterface, coreAPIClient coreapi.Client, validation helpers.ValidationInterface) transaction.Usecase {
 	return &service{
 		model:         model,
 		generator:     generator,
 		mtRequest:     mtRequest,
 		coreAPIClient: coreAPIClient,
+		validation:    validation,
 	}
 }
 
@@ -131,23 +133,31 @@ func (svc *service) FindByID(transactionID int) *dtos.ResTransaction {
 
 	return &res
 }
-func (svc *service) Create(userID int, newTransaction dtos.InputTransaction) (*dtos.ResTransaction, error) {
+func (svc *service) Create(userID int, newTransaction dtos.InputTransaction) (*dtos.ResTransaction, error, []string) {
+	if errMap := svc.validation.ValidateRequest(newTransaction); errMap != nil {
+		return nil, nil, errMap
+	}
+
 	transaction := transaction.Transaction{}
 	resTransaction := dtos.ResTransaction{}
+
+	if newTransaction.Amount < 10000 {
+		return nil, errors.New("Minimum domation ammount is Rp. 10.000"), nil
+	}
 
 	err := smapping.FillStruct(&transaction, smapping.MapFields(newTransaction))
 	if err != nil {
 		log.Error(err)
-		return nil, err
+		return nil, err, nil
 	}
 
 	checkFundraise, err := svc.model.CountByID(newTransaction.FundraiseID)
 	if err != nil {
-		return nil, err
+		return nil, err, nil
 	}
 
 	if checkFundraise <= 0 {
-		return nil, errors.New("Fundraise not found")
+		return nil, errors.New("Fundraise not found"), nil
 	}
 
 	user := svc.model.SelectUserByID(userID)
@@ -161,16 +171,16 @@ func (svc *service) Create(userID int, newTransaction dtos.InputTransaction) (*d
 		req, err := svc.mtRequest.CreateTransactionBank(strconv.Itoa(transaction.ID), transaction.PaymentType, int64(transaction.Amount))
 		if err != nil {
 			log.Error(err.Error())
-			return nil, err
+			return nil, err, nil
 		}
 		transactionID := svc.model.Insert(transaction)
 		if transactionID == -1 {
-			return nil, err
+			return nil, err, nil
 		}
 		transaction.VirtualAccount = req
 		update := svc.model.Update(transaction)
 		if update == -1 {
-			return nil, err
+			return nil, err, nil
 		}
 		resTransaction.Fullname = transaction.User.Fullname
 		resTransaction.PaymentType = "Bank Transfer"
@@ -188,16 +198,16 @@ func (svc *service) Create(userID int, newTransaction dtos.InputTransaction) (*d
 		req, err := svc.mtRequest.CreateTransactionGopay(strconv.Itoa(transaction.ID), transaction.PaymentType, int64(transaction.Amount))
 		if err != nil {
 			log.Error(err.Error())
-			return nil, err
+			return nil, err, nil
 		}
 		transactionID := svc.model.Insert(transaction)
 		if transactionID == -1 {
-			return nil, err
+			return nil, err, nil
 		}
 		transaction.UrlCallback = req
 		update := svc.model.Update(transaction)
 		if update == -1 {
-			return nil, err
+			return nil, err, nil
 		}
 		resTransaction.PaymentType = "Gopay"
 		resTransaction.VirtualAccount = req
@@ -214,16 +224,16 @@ func (svc *service) Create(userID int, newTransaction dtos.InputTransaction) (*d
 		req, err := svc.mtRequest.CreateTransactionQris(strconv.Itoa(transaction.ID), transaction.PaymentType, int64(transaction.Amount))
 		if err != nil {
 			log.Error(err.Error())
-			return nil, err
+			return nil, err, nil
 		}
 		transactionID := svc.model.Insert(transaction)
 		if transactionID == -1 {
-			return nil, err
+			return nil, err, nil
 		}
 		transaction.UrlCallback = req
 		update := svc.model.Update(transaction)
 		if update == -1 {
-			return nil, err
+			return nil, err, nil
 		}
 		resTransaction.PaymentType = "Qris"
 		resTransaction.VirtualAccount = req
@@ -239,15 +249,15 @@ func (svc *service) Create(userID int, newTransaction dtos.InputTransaction) (*d
 	default:
 		req, err := svc.mtRequest.CreateTransactionBank(strconv.Itoa(transaction.ID), transaction.PaymentType, int64(transaction.Amount))
 		if err != nil {
-			return nil, err
+			return nil, err, nil
 		}
 		transactionID := svc.model.Insert(transaction)
 		if transactionID == -1 {
-			return nil, err
+			return nil, err, nil
 		}
 		update := svc.model.Update(transaction)
 		if update == -1 {
-			return nil, err
+			return nil, err, nil
 		}
 		resTransaction.PaymentType = "Bank Transfer"
 		resTransaction.VirtualAccount = req
@@ -262,7 +272,7 @@ func (svc *service) Create(userID int, newTransaction dtos.InputTransaction) (*d
 		resTransaction.FundraiseID = transaction.FundraiseID
 	}
 
-	return &resTransaction, nil
+	return &resTransaction, nil, nil
 }
 
 func (svc *service) Modify(transactionData dtos.InputTransaction, transactionID int) bool {

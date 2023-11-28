@@ -96,7 +96,7 @@ func (ctl *controller) CreateTransaction() echo.HandlerFunc {
 		}
 
 		userID := ctx.Get("user_id").(int)
-		transaction, err := ctl.service.Create(userID, input)
+		transaction, err, validate := ctl.service.Create(userID, input)
 
 		if err != nil {
 			return ctx.JSON(400, helper.BuildErrorResponse(err.Error()))
@@ -104,6 +104,12 @@ func (ctl *controller) CreateTransaction() echo.HandlerFunc {
 
 		if transaction == nil {
 			return ctx.JSON(500, helper.Response("Something went Wrong!", nil))
+		}
+
+		if validate != nil {
+			return ctx.JSON(400, helper.Response("error missing some data", map[string]any{
+				"error": validate,
+			}))
 		}
 
 		return ctx.JSON(200, map[string]interface{}{
