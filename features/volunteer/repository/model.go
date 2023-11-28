@@ -184,12 +184,25 @@ func (mdl *model) UpdateStatusRegistrar(registrar volunteer.VolunteerRelations) 
 	return result.RowsAffected
 }
 
-func (mdl *model) UploadFile(file multipart.File, objectName string) (string, error) {
-	config := config.LoadCloudStorageConfig()
-	randomChar := uuid.New().String()
-	if objectName == "" {
-		objectName = randomChar
+func (mdl *model) UploadFile(file multipart.File, oldFilename string) (string, error) {
+	var config = config.LoadCloudStorageConfig()
+	var urlLength int = len("https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/vacancies/")
+	var objectName string
+
+	if file == nil {
+		return "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/vacancies/volunteer-vacancy.jpg", nil
 	}
+
+	if oldFilename != "" {
+		objectName = oldFilename[urlLength:]
+
+		if objectName == "volunteer-vacancy.jpg" {
+			objectName = ""
+		} else if err := mdl.clStorage.DeleteFile(objectName); err != nil {
+			return "", err
+		}
+	}
+	objectName = uuid.New().String()
 
 	if err := mdl.clStorage.UploadFile(file, objectName); err != nil {
 		return "", err

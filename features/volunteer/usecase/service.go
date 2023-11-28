@@ -4,7 +4,6 @@ import (
 	"errors"
 	"math"
 	"mime/multipart"
-	"raihpeduli/config"
 	"raihpeduli/features/volunteer"
 	"raihpeduli/features/volunteer/dtos"
 	"raihpeduli/helpers"
@@ -150,26 +149,10 @@ func (svc *service) ModifyVacancy(vacancyData dtos.InputVacancy, file multipart.
 	}
 
 	var newVacancy volunteer.VolunteerVacancies
-	var url string = ""
-	var config = config.LoadCloudStorageConfig()
-	var oldFilename string = oldData.Photo
-	var urlLength int = len("https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/vacancies/")
 
-	if file != nil {
-		if oldFilename == "https://storage.googleapis.com/raih_peduli/vacancies/volunteer-vacancy.jpg" {
-			oldFilename = ""
-		} else if len(oldFilename) > urlLength {
-			oldFilename = oldFilename[urlLength:]
-		}
-
-		imageURL, err := svc.model.UploadFile(file, oldFilename)
-
-		if err != nil {
-			logrus.Error(err)
-			return false, nil
-		}
-
-		url = imageURL
+	url, err := svc.model.UploadFile(file, oldData.Photo)
+	if err != nil {
+		return false, nil
 	}
 
 	newVacancy.ID = oldData.ID
@@ -251,20 +234,10 @@ func (svc *service) CreateVacancy(newVolunteer dtos.InputVacancy, UserID int, fi
 	}
 
 	vacancy := volunteer.VolunteerVacancies{}
-	var url string = ""
 
-	if file != nil {
-		imageURL, err := svc.model.UploadFile(file, "")
-
-		if err != nil {
-			logrus.Error(err)
-			return nil, nil, err
-		}
-
-		url = imageURL
-	} else {
-		config := config.LoadCloudStorageConfig()
-		url = "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/vacancies/volunteer-vacancy.jpg"
+	url, err := svc.model.UploadFile(file, "")
+	if err != nil {
+		return nil, nil, err
 	}
 
 	vacancy.UserID = UserID
