@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math"
 	"mime/multipart"
+	"raihpeduli/config"
 	"raihpeduli/features/volunteer"
 	"raihpeduli/features/volunteer/dtos"
 	"raihpeduli/helpers"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/labstack/gommon/log"
 	"github.com/mashingan/smapping"
+	"github.com/sirupsen/logrus"
 )
 
 type service struct {
@@ -236,15 +238,25 @@ func (svc *service) UpdateStatusRegistrar(input dtos.StatusRegistrar, registrarI
 	return true, nil
 }
 
-func (svc *service) RemoveVacancy(volunteerID int) bool {
-	rowsAffected := svc.model.DeleteVacancyByID(volunteerID)
+func (svc *service) RemoveVacancy(volunteerID int, oldData dtos.ResVacancy) error {
+	var config = config.LoadCloudStorageConfig()
+	var oldFilename string = oldData.Photo
+	var urlLength int = len("https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/vacancies/")
 
-	if rowsAffected <= 0 {
-		log.Error("There is No Volunteer Deleted!")
-		return false
+	if len(oldFilename) > urlLength {
+		oldFilename = oldFilename[urlLength:]
 	}
 
-	return true
+	if oldFilename != "default" {
+		svc.model.DeleteFile(oldFilename)
+	}
+
+	if err := svc.model.DeleteVacancyByID(volunteerID); err != nil {
+		logrus.Error(err)
+		return err 
+	}
+
+	return nil
 }
 
 func (svc *service) CreateVacancy(newVolunteer dtos.InputVacancy, UserID int, file multipart.File) (*dtos.ResVacancy, []string, error) {
