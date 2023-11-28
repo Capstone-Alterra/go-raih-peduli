@@ -26,31 +26,43 @@ func New(model news.Repository, validation helpers.ValidationInterface) news.Use
 	}
 }
 
-func (svc *service) FindAll(page, size int, keyword string, ownerID int) []dtos.ResNews {
+func (svc *service) FindAll(pagination dtos.Pagination, searchAndFilter dtos.SearchAndFilter, ownerID int) ([]dtos.ResNews, int64) {
 	var newss []dtos.ResNews
 	var bookmarkIDs map[int]string
 
-	newsEnt, err := svc.model.Paginate(page, size, keyword)
+	if pagination.Page == 0 {
+		pagination.Page = 1
+	}
 
+	if pagination.PageSize == 0 {
+		pagination.PageSize = 10
+	}
+
+	entities, err := svc.model.Paginate(pagination, searchAndFilter)
+
+	if err != nil {
+		logrus.Error(err)
+		return nil, 0
+	}
 	if ownerID != 0 {
 		bookmarkIDs, err = svc.model.SelectBookmarkedNewsID(ownerID)
 		if err != nil {
-			log.Error(err)
-			return nil
+			logrus.Error(err)
+			return nil, 0
 		}
 		fmt.Println(bookmarkIDs)
 	}
 
 	if err != nil {
-		log.Error(err)
-		return nil
+		logrus.Error(err)
+		return nil, 0
 	}
 
-	for _, news := range newsEnt {
+	for _, news := range entities {
 		var data dtos.ResNews
 
 		if err := smapping.FillStruct(&data, smapping.MapFields(news)); err != nil {
-			log.Error(err.Error())
+			logrus.Error(err.Error())
 		}
 
 		if bookmarkIDs != nil {
@@ -63,7 +75,14 @@ func (svc *service) FindAll(page, size int, keyword string, ownerID int) []dtos.
 		newss = append(newss, data)
 	}
 
-	return newss
+	var totalData int64 = 0
+
+	if searchAndFilter.Title != "" {
+		totalData = svc.model.GetTotalDataBySearchAndFilter(searchAndFilter)
+	} else {
+		totalData = svc.model.GetTotalData()
+	}
+	return newss, totalData
 }
 
 func (svc *service) FindByID(newsID, ownerID int) *dtos.ResNews {
@@ -99,13 +118,17 @@ func (svc *service) Create(newNews dtos.InputNews, userID int, file multipart.Fi
 	var url string
 
 	if file != nil {
-		imgURL, err := svc.model.UploadFile(file, "")
+		imgURL, err := svc.model.UploadFile(file)
 
 		if err != nil {
+			log.Error(err)
 			return nil, nil, err
 		}
 
 		url = imgURL
+	} else {
+		config := config.LoadCloudStorageConfig()
+		url = "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/news/default"
 	}
 	news.UserID = userID
 	news.Photo = url
@@ -129,7 +152,10 @@ func (svc *service) Create(newNews dtos.InputNews, userID int, file multipart.Fi
 	return &resNews, nil, nil
 }
 
-func (svc *service) Modify(newsData dtos.InputNews, file multipart.File, oldData dtos.ResNews) bool {
+func (svc *service) Modify(newsData dtos.InputNews, file multipart.File, oldData dtos.ResNews) ([]string, error) {
+	if errMap := svc.validation.ValidateRequest(newsData); errMap != nil {
+		return errMap, errors.New("error")
+	}
 	var newNews news.News
 	var url string = ""
 	var config = config.LoadCloudStorageConfig()
@@ -140,11 +166,16 @@ func (svc *service) Modify(newsData dtos.InputNews, file multipart.File, oldData
 		if len(oldFilename) > urlLength {
 			oldFilename = oldFilename[urlLength:]
 		}
-		imageURL, err := svc.model.UploadFile(file, oldFilename)
+
+		if err := svc.model.DeleteFile(oldFilename); err != nil {
+			return nil, err
+		}
+
+		imageURL, err := svc.model.UploadFile(file)
 
 		if err != nil {
 			logrus.Error(err)
-			return false
+			return nil, err
 		}
 
 		url = imageURL
@@ -152,25 +183,25 @@ func (svc *service) Modify(newsData dtos.InputNews, file multipart.File, oldData
 
 	if err := smapping.FillStruct(&newNews, smapping.MapFields(newsData)); err != nil {
 		logrus.Error(err)
-		return false
+		return nil, err
 	}
 
 	newNews.Photo = url
 	newNews.ID = oldData.ID
 	newNews.UserID = oldData.UserID
-	_, err := svc.model.Update(newNews)
+	err := svc.model.Update(newNews)
 
 	if err != nil {
 		logrus.Error(err)
-		return false
+		return nil, err
 	}
 
-	return true
+	return nil, nil
 
 }
 
 func (svc *service) Remove(newsID int) bool {
-	_, err := svc.model.DeleteByID(newsID)
+	err := svc.model.DeleteByID(newsID)
 
 	if err != nil {
 		logrus.Error(err)
