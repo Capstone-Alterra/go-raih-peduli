@@ -13,7 +13,8 @@ type Repository interface {
 	SelectByID(newsID int) (*News, error)
 	Update(news News) error
 	DeleteByID(newsID int) error
-	UploadFile(file multipart.File, objectName string) (string, error)
+	UploadFile(file multipart.File) (string, error)
+	DeleteFile(filename string) error
 	SelectBookmarkedNewsID(ownerID int) (map[int]string, error)
 	SelectBoockmarkByNewsAndOwnerID(newsID, ownerID int) (string, error)
 	GetTotalData() int64
@@ -24,7 +25,7 @@ type Usecase interface {
 	FindAll(pagination dtos.Pagination, searchAndFilter dtos.SearchAndFilter, ownerID int) ([]dtos.ResNews, int64)
 	FindByID(newsID, ownerID int) *dtos.ResNews
 	Create(newNews dtos.InputNews, userID int, file multipart.File) (*dtos.ResNews, []string, error)
-	Modify(newsData dtos.InputNews, file multipart.File, oldData dtos.ResNews) bool
+	Modify(newsData dtos.InputNews, file multipart.File, oldData dtos.ResNews) ([]string, error)
 	Remove(newsID int) bool
 }
 

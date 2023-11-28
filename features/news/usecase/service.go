@@ -118,13 +118,17 @@ func (svc *service) Create(newNews dtos.InputNews, userID int, file multipart.Fi
 	var url string
 
 	if file != nil {
-		imgURL, err := svc.model.UploadFile(file, "")
+		imgURL, err := svc.model.UploadFile(file)
 
 		if err != nil {
+			log.Error(err)
 			return nil, nil, err
 		}
 
 		url = imgURL
+	} else {
+		config := config.LoadCloudStorageConfig()
+		url = "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/news/default"
 	}
 	news.UserID = userID
 	news.Photo = url
@@ -148,7 +152,10 @@ func (svc *service) Create(newNews dtos.InputNews, userID int, file multipart.Fi
 	return &resNews, nil, nil
 }
 
-func (svc *service) Modify(newsData dtos.InputNews, file multipart.File, oldData dtos.ResNews) bool {
+func (svc *service) Modify(newsData dtos.InputNews, file multipart.File, oldData dtos.ResNews) ([]string, error) {
+	if errMap := svc.validation.ValidateRequest(newsData); errMap != nil {
+		return errMap, errors.New("error")
+	}
 	var newNews news.News
 	var url string = ""
 	var config = config.LoadCloudStorageConfig()
@@ -159,11 +166,16 @@ func (svc *service) Modify(newsData dtos.InputNews, file multipart.File, oldData
 		if len(oldFilename) > urlLength {
 			oldFilename = oldFilename[urlLength:]
 		}
-		imageURL, err := svc.model.UploadFile(file, oldFilename)
+
+		if err := svc.model.DeleteFile(oldFilename); err != nil {
+			return nil, err
+		}
+
+		imageURL, err := svc.model.UploadFile(file)
 
 		if err != nil {
 			logrus.Error(err)
-			return false
+			return nil, err
 		}
 
 		url = imageURL
@@ -171,7 +183,7 @@ func (svc *service) Modify(newsData dtos.InputNews, file multipart.File, oldData
 
 	if err := smapping.FillStruct(&newNews, smapping.MapFields(newsData)); err != nil {
 		logrus.Error(err)
-		return false
+		return nil, err
 	}
 
 	newNews.Photo = url
@@ -181,10 +193,10 @@ func (svc *service) Modify(newsData dtos.InputNews, file multipart.File, oldData
 
 	if err != nil {
 		logrus.Error(err)
-		return false
+		return nil, err
 	}
 
-	return true
+	return nil, nil
 
 }
 

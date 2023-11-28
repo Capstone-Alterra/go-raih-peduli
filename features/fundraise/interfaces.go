@@ -29,7 +29,7 @@ type Usecase interface {
 	FindAll(pagination dtos.Pagination, searchAndFilter dtos.SearchAndFilter, ownerID int, suffix string) ([]dtos.ResFundraise, int64)
 	FindByID(fundraiseID, ownerID int) *dtos.ResFundraise
 	Create(newFundraise dtos.InputFundraise, userID int, file multipart.File) (*dtos.ResFundraise, []string, error)
-	Modify(fundraiseData dtos.InputFundraise, file multipart.File, oldData dtos.ResFundraise) ([]string , error)
+	Modify(fundraiseData dtos.InputFundraise, file multipart.File, oldData dtos.ResFundraise) ([]string, error)
 	ModifyStatus(fundraiseData dtos.InputFundraiseStatus, oldData dtos.ResFundraise) ([]string, error)
 	Remove(fundraiseID int) bool
 }
