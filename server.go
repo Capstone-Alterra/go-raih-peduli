@@ -150,10 +150,11 @@ func TransactionHandler() transaction.Handler {
 	db := utils.InitDB()
 	repo := tr.New(db)
 	coreAPIClient := utils.MidtransCoreAPIClient()
+	validation := helpers.NewValidationRequest()
 
 	generator := helpers.NewGenerator()
 	midtrans := helpers.NewMidtransRequest()
-	tc := tu.New(repo, generator, midtrans, coreAPIClient)
+	tc := tu.New(repo, generator, midtrans, coreAPIClient, validation)
 	return th.New(tc)
 }
 
