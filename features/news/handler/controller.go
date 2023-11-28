@@ -187,12 +187,10 @@ func (ctl *controller) DeleteNews() echo.HandlerFunc {
 			return ctx.JSON(404, helper.Response("news not found"))
 		}
 
-		delete := ctl.service.Remove(newsID)
-
-		if !delete {
-			return ctx.JSON(500, helper.Response("something went wrong"))
+		if err := ctl.service.Remove(newsID, *news); err != nil {
+			return ctx.JSON(500, helper.Response(err.Error()))
 		}
 
-		return ctx.JSON(200, helper.Response("success deleted news", nil))
+		return ctx.JSON(200, helper.Response("success deleted news"))
 	}
 }
