@@ -23,6 +23,7 @@ type ResVacancy struct {
 	Status              string         `json:"status"`
 	TotalRegistrar      int            `json:"total_registrar"`
 	BookmarkID          *string        `json:"bookmark_id"`
+	RejectedReason      string         `json:"rejected_reason,omitempty"`
 	CreatedAt           time.Time      `json:"created_at"`
 	UpdatedAt           time.Time      `json:"updated_at"`
 	DeletedAt           gorm.DeletedAt `json:"deleted_at"`
