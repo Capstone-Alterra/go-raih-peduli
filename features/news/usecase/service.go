@@ -138,14 +138,15 @@ func (svc *service) Create(newNews dtos.InputNews, userID int, file multipart.Fi
 		return nil, nil, err
 	}
 
-	if _, err := svc.model.Insert(news); err != nil {
+	inserted, err := svc.model.Insert(news)
+	if err != nil {
 		return nil, nil, err
 	}
 
 	resNews := dtos.ResNews{}
-	resNews.UserID = userID
-	resNews.Photo = url
-	if err := smapping.FillStruct(&resNews, smapping.MapFields(newNews)); err != nil {
+	// resNews.UserID = userID
+	// resNews.Photo = url
+	if err := smapping.FillStruct(&resNews, smapping.MapFields(inserted)); err != nil {
 		return nil, nil, err
 	}
 
@@ -167,8 +168,10 @@ func (svc *service) Modify(newsData dtos.InputNews, file multipart.File, oldData
 			oldFilename = oldFilename[urlLength:]
 		}
 
-		if err := svc.model.DeleteFile(oldFilename); err != nil {
-			return nil, err
+		if oldFilename != "default" {
+			if err := svc.model.DeleteFile(oldFilename); err != nil {
+				return nil, err
+			}
 		}
 
 		imageURL, err := svc.model.UploadFile(file)
