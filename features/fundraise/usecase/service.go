@@ -249,6 +249,12 @@ func (svc *service) ModifyStatus(input dtos.InputFundraiseStatus, oldData dtos.R
 	}
 
 	newFundraise.Status = input.Status
+	if input.Status == "rejected" {
+		if input.RejectedReason == "" {
+			return []string{"rejected_reason field is required when the status is rejected"}, errors.New("error reason empty string")
+		}
+		newFundraise.RejectedReason = input.RejectedReason
+	}
 
 	if err := svc.model.Update(newFundraise); err != nil {
 		logrus.Error(err)
@@ -258,11 +264,23 @@ func (svc *service) ModifyStatus(input dtos.InputFundraiseStatus, oldData dtos.R
 	return nil, nil
 }
 
-func (svc *service) Remove(fundraiseID int) bool {
-	if err := svc.model.DeleteByID(fundraiseID); err != nil {
-		logrus.Error(err)
-		return false
+func (svc *service) Remove(fundraiseID int, oldData dtos.ResFundraise) error {
+	var config = config.LoadCloudStorageConfig()
+	var oldFilename string = oldData.Photo
+	var urlLength int = len("https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/fundraises/")
+
+	if len(oldFilename) > urlLength {
+		oldFilename = oldFilename[urlLength:]
 	}
 
-	return true
+	if oldFilename != "default" {
+		svc.model.DeleteFile(oldFilename)
+	}
+	
+	if err := svc.model.DeleteByID(fundraiseID); err != nil {
+		logrus.Error(err)
+		return err
+	}
+
+	return nil
 }

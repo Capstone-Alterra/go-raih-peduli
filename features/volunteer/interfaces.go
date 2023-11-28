@@ -14,9 +14,10 @@ type Repository interface {
 	SelectBookmarkedVacancyID(ownerID int) (map[int]string, error)
 	SelectBookmarkByVacancyAndOwnerID(vacancyID, ownerID int) string
 	UpdateVacancy(vacancy VolunteerVacancies) int64
-	DeleteVacancyByID(vacancyID int) int64
+	DeleteVacancyByID(vacancyID int) error
 	InsertVacancy(*VolunteerVacancies) (*VolunteerVacancies, error)
 	UploadFile(file multipart.File, objectName string) (string, error)
+	DeleteFile(filename string) error
 	GetTotalDataVacancies() int64
 	GetTotalDataVacanciesMobile() int64
 	GetTotalDataVacanciesBySearchAndFilter(searchAndFilter dtos.SearchAndFilter) int64
@@ -29,6 +30,7 @@ type Repository interface {
 	GetTotalVolunteers(vacancyID int, name string) int64
 	SelectVolunteerDetails(vacancyID int, volunteerID int) *Volunteer
 	CheckUser(userID int) bool
+	FindUserInVacancy(vacancyID, userID int) bool
 }
 
 type Usecase interface {
@@ -36,13 +38,14 @@ type Usecase interface {
 	FindVacancyByID(vacancyID, ownerID int) *dtos.ResVacancy
 	ModifyVacancy(vacancyData dtos.InputVacancy, file multipart.File, oldData dtos.ResVacancy) (bool, []string)
 	ModifyVacancyStatus(input dtos.StatusVacancies, oldData dtos.ResVacancy) (bool, []string)
-	RemoveVacancy(vacancyID int) bool
+	RemoveVacancy(vacancyID int, oldData dtos.ResVacancy) error
 	CreateVacancy(newVacancy dtos.InputVacancy, UserID int, file multipart.File) (*dtos.ResVacancy, []string, error)
-	RegisterVacancy(newApply dtos.ApplyVacancy, userID int, file multipart.File) (bool, []string)
-	UpdateStatusRegistrar(status string, registrarID int) bool
+	RegisterVacancy(newApply dtos.ApplyVacancy, userID int) (bool, []string)
+	UpdateStatusRegistrar(input dtos.StatusRegistrar, registrarID int) (bool, []string)
 	FindAllVolunteersByVacancyID(page, size int, vacancyID int, name string) ([]dtos.ResRegistrantVacancy, int64)
 	FindDetailVolunteers(vacancyID, volunteerID int) *dtos.ResRegistrantVacancy
 	CheckUser(userID int) bool
+	FindUserInVacancy(vacancyID, userID int) bool
 }
 
 type Handler interface {

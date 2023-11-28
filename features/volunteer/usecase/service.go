@@ -67,6 +67,7 @@ func (svc *service) FindAllVacancies(page, size int, searchAndFilter dtos.Search
 		data.SubDistrict = volunteer.SubDistrict
 		data.Photo = volunteer.Photo
 		data.Status = volunteer.Status
+		data.RejectedReason = volunteer.RejectedReason
 		data.CreatedAt = volunteer.CreatedAt
 		data.UpdatedAt = volunteer.UpdatedAt
 		data.DeletedAt = volunteer.DeletedAt
@@ -134,6 +135,7 @@ func (svc *service) FindVacancyByID(vacancyID, ownerID int) *dtos.ResVacancy {
 	res.SubDistrict = vacancy.SubDistrict
 	res.Photo = vacancy.Photo
 	res.Status = vacancy.Status
+	res.RejectedReason = vacancy.RejectedReason
 	res.CreatedAt = vacancy.CreatedAt
 	res.UpdatedAt = vacancy.UpdatedAt
 	res.DeletedAt = vacancy.DeletedAt
@@ -150,26 +152,10 @@ func (svc *service) ModifyVacancy(vacancyData dtos.InputVacancy, file multipart.
 	}
 
 	var newVacancy volunteer.VolunteerVacancies
-	var url string = ""
-	var config = config.LoadCloudStorageConfig()
-	var oldFilename string = oldData.Photo
-	var urlLength int = len("https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/vacancies/")
 
-	if file != nil {
-		if oldFilename == "https://storage.googleapis.com/raih_peduli/vacancies/volunteer-vacancy.jpg" {
-			oldFilename = ""
-		} else if len(oldFilename) > urlLength {
-			oldFilename = oldFilename[urlLength:]
-		}
-
-		imageURL, err := svc.model.UploadFile(file, oldFilename)
-
-		if err != nil {
-			logrus.Error(err)
-			return false, nil
-		}
-
-		url = imageURL
+	url, err := svc.model.UploadFile(file, oldData.Photo)
+	if err != nil {
+		return false, nil
 	}
 
 	newVacancy.ID = oldData.ID
@@ -206,6 +192,12 @@ func (svc *service) ModifyVacancyStatus(input dtos.StatusVacancies, oldData dtos
 
 	newVacancy.ID = oldData.ID
 	newVacancy.Status = input.Status
+	if input.Status == "rejected" {
+		if input.RejectedReason == "" {
+			return false, []string{"rejected_reason field is required when the status is rejected"}
+		}
+		newVacancy.RejectedReason = input.RejectedReason
+	}
 
 	rowsAffected := svc.model.UpdateVacancy(newVacancy)
 
@@ -217,32 +209,54 @@ func (svc *service) ModifyVacancyStatus(input dtos.StatusVacancies, oldData dtos
 	return true, nil
 }
 
-func (svc *service) UpdateStatusRegistrar(status string, registrarID int) bool {
+func (svc *service) UpdateStatusRegistrar(input dtos.StatusRegistrar, registrarID int) (bool, []string) {
+	errMap := svc.validation.ValidateRequest(input)
+	if errMap != nil {
+		return false, errMap
+	}
+
 	registrar := svc.model.SelectRegistrarByID(registrarID)
 
 	if registrar == nil {
-		return false
+		return false, nil
 	}
 
-	registrar.Status = status
+	registrar.Status = input.Status
+	if input.Status == "rejected" {
+		if input.RejectedReason == "" {
+			return false, []string{"rejected_reason field is required when the status is rejected"}
+		}
+		registrar.RejectedReason = input.RejectedReason
+	}
+
 	rowsAffected := svc.model.UpdateStatusRegistrar(*registrar)
 	if rowsAffected <= 0 {
 		log.Error("Update status registrar failed")
-		return false
+		return false, nil
 	}
 
-	return true
+	return true, nil
 }
 
-func (svc *service) RemoveVacancy(volunteerID int) bool {
-	rowsAffected := svc.model.DeleteVacancyByID(volunteerID)
+func (svc *service) RemoveVacancy(volunteerID int, oldData dtos.ResVacancy) error {
+	var config = config.LoadCloudStorageConfig()
+	var oldFilename string = oldData.Photo
+	var urlLength int = len("https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/vacancies/")
 
-	if rowsAffected <= 0 {
-		log.Error("There is No Volunteer Deleted!")
-		return false
+	if len(oldFilename) > urlLength {
+		oldFilename = oldFilename[urlLength:]
 	}
 
-	return true
+	if oldFilename != "default" {
+		svc.model.DeleteFile(oldFilename)
+	}
+
+	if err := svc.model.DeleteVacancyByID(volunteerID); err != nil {
+		logrus.Error(err)
+		return err 
+	}
+
+	return nil
 }
 
 func (svc *service) CreateVacancy(newVolunteer dtos.InputVacancy, UserID int, file multipart.File) (*dtos.ResVacancy, []string, error) {
@@ -251,20 +265,10 @@ func (svc *service) CreateVacancy(newVolunteer dtos.InputVacancy, UserID int, fi
 	}
 
 	vacancy := volunteer.VolunteerVacancies{}
-	var url string = ""
 
-	if file != nil {
-		imageURL, err := svc.model.UploadFile(file, "")
-
-		if err != nil {
-			logrus.Error(err)
-			return nil, nil, err
-		}
-
-		url = imageURL
-	} else {
-		config := config.LoadCloudStorageConfig()
-		url = "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/vacancies/volunteer-vacancy.jpg"
+	url, err := svc.model.UploadFile(file, "")
+	if err != nil {
+		return nil, nil, err
 	}
 
 	vacancy.UserID = UserID
@@ -307,35 +311,23 @@ func (svc *service) CreateVacancy(newVolunteer dtos.InputVacancy, UserID int, fi
 	return &resVolun, nil, nil
 }
 
-func (svc *service) RegisterVacancy(newApply dtos.ApplyVacancy, userID int, file multipart.File) (bool, []string) {
+func (svc *service) RegisterVacancy(newApply dtos.ApplyVacancy, userID int) (bool, []string) {
 	if errMap := svc.validation.ValidateRequest(newApply); errMap != nil {
 		return false, errMap
 	}
 
 	registrar := volunteer.VolunteerRelations{}
 
-	var url string = ""
-
-	if file != nil {
-		imageURL, err := svc.model.UploadFile(file, "")
-
-		if err != nil {
-			logrus.Error(err)
-			return false, nil
-		}
-
-		url = imageURL
-	} else {
+	url, err := svc.model.UploadFile(newApply.Photo, "")
+	if err != nil {
 		return false, nil
 	}
 
 	registrar.UserID = userID
-	err := smapping.FillStruct(&registrar, smapping.MapFields(newApply))
-	if err != nil {
-		log.Error(err)
-		return false, nil
-	}
-
+	registrar.VolunteerID = newApply.VacancyID
+	registrar.Skills = strings.Join(newApply.Skills, ", ")
+	registrar.Reason = newApply.Reason
+	registrar.Resume = newApply.Resume
 	registrar.Photo = url
 
 	err = svc.model.RegisterVacancy(&registrar)
@@ -388,6 +380,15 @@ func (svc *service) FindDetailVolunteers(vacancyID, volunteerID int) *dtos.ResRe
 
 func (svc *service) CheckUser(userID int) bool {
 	result := svc.model.CheckUser(userID)
+	if !result {
+		return false
+	}
+
+	return true
+}
+
+func (svc *service) FindUserInVacancy(vacancyID, userID int) bool {
+	result := svc.model.FindUserInVacancy(vacancyID, userID)
 	if !result {
 		return false
 	}

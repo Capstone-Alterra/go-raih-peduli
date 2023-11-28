@@ -131,15 +131,12 @@ func (mdl *model) UpdateVacancy(volunteer volunteer.VolunteerVacancies) int64 {
 	return result.RowsAffected
 }
 
-func (mdl *model) DeleteVacancyByID(volunteerID int) int64 {
-	result := mdl.db.Delete(&volunteer.VolunteerVacancies{}, volunteerID)
-
-	if result.Error != nil {
-		log.Error(result.Error)
-		return 0
+func (mdl *model) DeleteVacancyByID(volunteerID int) error {
+	if err := mdl.db.Delete(&volunteer.VolunteerVacancies{}, volunteerID).Error; err != nil {
+		return err
 	}
 
-	return result.RowsAffected
+	return nil
 }
 
 func (mdl *model) InsertVacancy(newVolunteer *volunteer.VolunteerVacancies) (*volunteer.VolunteerVacancies, error) {
@@ -184,18 +181,39 @@ func (mdl *model) UpdateStatusRegistrar(registrar volunteer.VolunteerRelations) 
 	return result.RowsAffected
 }
 
-func (mdl *model) UploadFile(file multipart.File, objectName string) (string, error) {
-	config := config.LoadCloudStorageConfig()
-	randomChar := uuid.New().String()
-	if objectName == "" {
-		objectName = randomChar
+func (mdl *model) UploadFile(file multipart.File, oldFilename string) (string, error) {
+	var config = config.LoadCloudStorageConfig()
+	var urlLength int = len("https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/vacancies/")
+	var objectName string
+
+	if file == nil {
+		return "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/vacancies/volunteer-vacancy.jpg", nil
 	}
+
+	if oldFilename != "" {
+		objectName = oldFilename[urlLength:]
+
+		if objectName == "volunteer-vacancy.jpg" {
+			objectName = ""
+		} else if err := mdl.clStorage.DeleteFile(objectName); err != nil {
+			return "", err
+		}
+	}
+	objectName = uuid.New().String()
 
 	if err := mdl.clStorage.UploadFile(file, objectName); err != nil {
 		return "", err
 	}
 
 	return "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/vacancies/" + objectName, nil
+}
+
+func (mdl *model) DeleteFile(filename string) error {
+	if err := mdl.clStorage.DeleteFile(filename); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (mdl *model) GetTotalDataVacancies() int64 {
@@ -338,6 +356,20 @@ func (mdl *model) CheckUser(userID int) bool {
 	}
 
 	if nik == "" {
+		return false
+	}
+
+	return true
+}
+
+func (mdl *model) FindUserInVacancy(vacancyID, userID int) bool {
+	var data volunteer.VolunteerRelations
+
+	result := mdl.db.Table("volunteer_relations").
+		Where("user_id = ? AND volunteer_id = ?", userID, vacancyID).
+		First(&data)
+
+	if result.Error != nil {
 		return false
 	}
 
