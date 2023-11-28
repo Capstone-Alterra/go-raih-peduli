@@ -5,9 +5,11 @@ import (
 	"mime/multipart"
 	"raihpeduli/config"
 	"raihpeduli/features/news"
+	"raihpeduli/features/news/dtos"
 	"raihpeduli/helpers"
 
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -29,25 +31,25 @@ func New(db *gorm.DB, clStorage helpers.CloudStorageInterface, collection *mongo
 	}
 }
 
-func (mdl *model) Paginate(page, size int, keyword string) ([]news.News, error) {
+func (mdl *model) Paginate(pagination dtos.Pagination, searchAndFilter dtos.SearchAndFilter) ([]news.News, error) {
 	var news []news.News
 
-	offset := (page - 1) * size
-	searching := "%" + keyword + "%"
+	offset := (pagination.Page - 1) * pagination.PageSize
+	title := "%" + searchAndFilter.Title + "%"
 
-	if err := mdl.db.Offset(offset).Limit(size).Where("title LIKE ?", searching).Find(&news).Error; err != nil {
+	if err := mdl.db.Offset(offset).Limit(pagination.PageSize).Where("title LIKE ?", title).Find(&news).Error; err != nil {
 		return nil, err
 	}
 
 	return news, nil
 }
 
-func (mdl *model) Insert(newNews news.News) (int, error) {
+func (mdl *model) Insert(newNews news.News) (*news.News, error) {
 	if err := mdl.db.Create(&newNews).Error; err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	return newNews.ID, nil
+	return &newNews, nil
 }
 
 func (mdl *model) SelectByID(newsID int) (*news.News, error) {
@@ -60,38 +62,44 @@ func (mdl *model) SelectByID(newsID int) (*news.News, error) {
 	return &news, nil
 }
 
-func (mdl *model) Update(news news.News) (int, error) {
+func (mdl *model) Update(news news.News) error {
 	result := mdl.db.Save(&news)
 
 	if result.Error != nil {
-		return 0, result.Error
+		return result.Error
 	}
 
-	return int(result.RowsAffected), nil
+	return nil
 }
 
-func (mdl *model) DeleteByID(newsID int) (int, error) {
+func (mdl *model) DeleteByID(newsID int) error {
 	result := mdl.db.Delete(&news.News{}, newsID)
 
 	if result.Error != nil {
-		return 0, result.Error
+		return result.Error
 	}
 
-	return int(result.RowsAffected), nil
+	return nil
 }
 
-func (mdl *model) UploadFile(file multipart.File, objectName string) (string, error) {
+func (mdl *model) UploadFile(file multipart.File) (string, error) {
 	config := config.LoadCloudStorageConfig()
 	randomChar := uuid.New().String()
-	if objectName == "" {
-		objectName = randomChar
-	}
 
-	if err := mdl.clStorage.UploadFile(file, objectName); err != nil {
+	filename := randomChar
+
+	if err := mdl.clStorage.UploadFile(file, filename); err != nil {
 		return "", err
 	}
 
-	return "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/news/" + objectName, nil
+	return "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/news/" + filename, nil
+}
+
+func (mdl *model) DeleteFile(filename string) error {
+	if err := mdl.clStorage.DeleteFile(filename); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (mdl *model) SelectBookmarkedNewsID(ownerID int) (map[int]string, error) {
@@ -127,4 +135,29 @@ func (mdl *model) SelectBoockmarkByNewsAndOwnerID(newsID, ownerID int) (string, 
 	objectIDString := result["_id"].(primitive.ObjectID).Hex()
 
 	return objectIDString, nil
+}
+
+func (mdl *model) GetTotalData() int64 {
+	var totalData int64
+
+	result := mdl.db.Table("news").Where("deleted_at IS NULL").Count(&totalData)
+
+	if result.Error != nil {
+		logrus.Error(result.Error)
+		return 0
+	}
+	return totalData
+}
+func (mdl *model) GetTotalDataBySearchAndFilter(searchAndFilter dtos.SearchAndFilter) int64 {
+	var totalData int64
+
+	title := "%" + searchAndFilter.Title + "%"
+
+	result := mdl.db.Table("news").Where("deleted_at IS NULL").Where("title LIKE ? ", title).Count(&totalData)
+
+	if result.Error != nil {
+		logrus.Error(result.Error)
+		return 0
+	}
+	return totalData
 }

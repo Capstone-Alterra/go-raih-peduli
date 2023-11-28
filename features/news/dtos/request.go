@@ -12,3 +12,7 @@ type Pagination struct {
 	Page     int `query:"page"`
 	PageSize int `query:"page_size"`
 }
+
+type SearchAndFilter struct {
+	Title string `query:"title"`
+}
