@@ -21,6 +21,7 @@ type VolunteerVacancies struct {
 	DetailLocation      string `gorm:"type:varchar(255)"`
 	Photo               string `gorm:"type:varchar(255)"`
 	Status              string `gorm:"type:enum('pending','accepted','rejected'); default: 'pending'"`
+	RejectedReason      string `gorm:"type:varchar(255)"`
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
 	DeletedAt           gorm.DeletedAt `gorm:"index"`
@@ -39,12 +40,13 @@ type Volunteer struct {
 }
 
 type VolunteerRelations struct {
-	ID          int    `gorm:"type:int(11); primaryKey"`
-	UserID      int    `gorm:"type:int(11)"`
-	VolunteerID int    `gorm:"type:int(11)"`
-	Skills      string `gorm:"type:varchar(255)"`
-	Reason      string
-	Resume      string `gorm:"type:varchar(255)"`
-	Photo       string `gorm:"type:varchar(255)"`
-	Status      string `gorm:"type:enum('pending','accepted','rejected'); default: 'pending'"`
+	ID             int    `gorm:"type:int(11); primaryKey"`
+	UserID         int    `gorm:"type:int(11)"`
+	VolunteerID    int    `gorm:"type:int(11)"`
+	Skills         string `gorm:"type:varchar(255)"`
+	Reason         string
+	Resume         string `gorm:"type:varchar(255)"`
+	Photo          string `gorm:"type:varchar(255)"`
+	Status         string `gorm:"type:enum('pending','accepted','rejected'); default: 'pending'"`
+	RejectedReason string `gorm:"type:varchar(255)"`
 }

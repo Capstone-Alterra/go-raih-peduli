@@ -21,7 +21,8 @@ type InputVacancy struct {
 }
 
 type StatusVacancies struct {
-	Status string `json:"status" form:"status" validate:"oneof=pending accepted rejected"`
+	Status         string `json:"status" form:"status" validate:"oneof=pending accepted rejected"`
+	RejectedReason string `json:"rejected_reason" form:"rejected_reason"`
 }
 
 type ApplyVacancy struct {

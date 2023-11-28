@@ -65,6 +65,7 @@ func (svc *service) FindAllVacancies(page, size int, searchAndFilter dtos.Search
 		data.SubDistrict = volunteer.SubDistrict
 		data.Photo = volunteer.Photo
 		data.Status = volunteer.Status
+		data.RejectedReason = volunteer.RejectedReason
 		data.CreatedAt = volunteer.CreatedAt
 		data.UpdatedAt = volunteer.UpdatedAt
 		data.DeletedAt = volunteer.DeletedAt
@@ -132,6 +133,7 @@ func (svc *service) FindVacancyByID(vacancyID, ownerID int) *dtos.ResVacancy {
 	res.SubDistrict = vacancy.SubDistrict
 	res.Photo = vacancy.Photo
 	res.Status = vacancy.Status
+	res.RejectedReason = vacancy.RejectedReason
 	res.CreatedAt = vacancy.CreatedAt
 	res.UpdatedAt = vacancy.UpdatedAt
 	res.DeletedAt = vacancy.DeletedAt
@@ -188,6 +190,12 @@ func (svc *service) ModifyVacancyStatus(input dtos.StatusVacancies, oldData dtos
 
 	newVacancy.ID = oldData.ID
 	newVacancy.Status = input.Status
+	if input.Status == "rejected" {
+		if input.RejectedReason == "" {
+			return false, []string{"rejected_reason field is required when the status is rejected"}
+		}
+		newVacancy.RejectedReason = input.RejectedReason
+	}
 
 	rowsAffected := svc.model.UpdateVacancy(newVacancy)
 
