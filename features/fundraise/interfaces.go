@@ -31,7 +31,7 @@ type Usecase interface {
 	Create(newFundraise dtos.InputFundraise, userID int, file multipart.File) (*dtos.ResFundraise, []string, error)
 	Modify(fundraiseData dtos.InputFundraise, file multipart.File, oldData dtos.ResFundraise) ([]string, error)
 	ModifyStatus(fundraiseData dtos.InputFundraiseStatus, oldData dtos.ResFundraise) ([]string, error)
-	Remove(fundraiseID int) bool
+	Remove(fundraiseID int, oldData dtos.ResFundraise) error
 }
 
 type Handler interface {

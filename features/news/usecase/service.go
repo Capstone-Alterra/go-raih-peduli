@@ -200,13 +200,23 @@ func (svc *service) Modify(newsData dtos.InputNews, file multipart.File, oldData
 
 }
 
-func (svc *service) Remove(newsID int) bool {
-	err := svc.model.DeleteByID(newsID)
+func (svc *service) Remove(newsID int, oldData dtos.ResNews) error {
+	var config = config.LoadCloudStorageConfig()
+	var oldFilename string = oldData.Photo
+	var urlLength int = len("https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/news/")
 
-	if err != nil {
-		logrus.Error(err)
-		return false
+	if len(oldFilename) > urlLength {
+		oldFilename = oldFilename[urlLength:]
 	}
 
-	return true
+	if oldFilename != "default" {
+		svc.model.DeleteFile(oldFilename)
+	}
+
+	if err := svc.model.DeleteByID(newsID); err != nil {
+		logrus.Error(err)
+		return err
+	}
+
+	return nil
 }

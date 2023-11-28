@@ -264,11 +264,23 @@ func (svc *service) ModifyStatus(input dtos.InputFundraiseStatus, oldData dtos.R
 	return nil, nil
 }
 
-func (svc *service) Remove(fundraiseID int) bool {
-	if err := svc.model.DeleteByID(fundraiseID); err != nil {
-		logrus.Error(err)
-		return false
+func (svc *service) Remove(fundraiseID int, oldData dtos.ResFundraise) error {
+	var config = config.LoadCloudStorageConfig()
+	var oldFilename string = oldData.Photo
+	var urlLength int = len("https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/fundraises/")
+
+	if len(oldFilename) > urlLength {
+		oldFilename = oldFilename[urlLength:]
 	}
 
-	return true
+	if oldFilename != "default" {
+		svc.model.DeleteFile(oldFilename)
+	}
+	
+	if err := svc.model.DeleteByID(fundraiseID); err != nil {
+		logrus.Error(err)
+		return err
+	}
+
+	return nil
 }
