@@ -280,3 +280,49 @@ func (ctl *controller) MyProfile() echo.HandlerFunc {
 		}))
 	}
 }
+
+func (ctl *controller) CheckPassword() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		userID := ctx.Get("user_id").(int)
+
+		var input dtos.CheckPassword
+
+		ctx.Bind(&input)
+
+		errMap, err := ctl.service.CheckPassword(input, userID)
+		if errMap != nil {
+			return ctx.JSON(400, helpers.Response("missing some data", map[string]any{
+				"error": errMap,
+			}))
+		}
+
+		if err != nil {
+			return ctx.JSON(500, helpers.Response("something went wrong"))
+		}
+
+		return ctx.JSON(200, helpers.Response("success check password"))
+	}
+}
+
+func (ctl *controller) ChangePassword() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		userID := ctx.Get("user_id").(int)
+
+		var input dtos.ChangePassword
+
+		ctx.Bind(&input)
+
+		errMap, err := ctl.service.ChangePassword(input, userID)
+		if errMap != nil {
+			return ctx.JSON(400, helpers.Response("missing some data", map[string]any{
+				"error": errMap,
+			}))
+		}
+
+		if err != nil {
+			return ctx.JSON(500, helpers.Response("something went wrong"))
+		}
+
+		return ctx.JSON(200, helpers.Response("success change password"))
+	}
+}

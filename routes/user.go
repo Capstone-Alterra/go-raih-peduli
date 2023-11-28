@@ -17,6 +17,8 @@ func Users(e *echo.Echo, handler user.Handler, jwt helpers.JWTInterface, config 
 	mobile.POST("/forget-password", handler.ForgetPassword(), m.AuthorizeJWT(jwt, -1, config.SECRET))
 	mobile.POST("/verify-otp", handler.VerifyOTP(), m.AuthorizeJWT(jwt, -1, config.SECRET))
 	mobile.POST("/reset-password", handler.ResetPassword(), m.AuthorizeJWT(jwt, 1, config.OTP_SECRET))
+	mobile.POST("/check-password", handler.CheckPassword(), m.AuthorizeJWT(jwt, 1, config.SECRET))
+	mobile.POST("/change-password", handler.ChangePassword(), m.AuthorizeJWT(jwt, 1, config.SECRET))
 	mobile.PUT("", handler.UpdateUser(), m.AuthorizeJWT(jwt, 1, config.SECRET))
 	mobile.PATCH("", handler.UpdateProfilePicture(), m.AuthorizeJWT(jwt, 1, config.SECRET))
 

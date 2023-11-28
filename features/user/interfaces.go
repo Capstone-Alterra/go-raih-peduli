@@ -32,6 +32,8 @@ type Usecase interface {
 	ForgetPassword(email dtos.ForgetPassword) error
 	VerifyOTP(verificationKey string) string
 	ResetPassword(newData dtos.ResetPassword) error
+	CheckPassword(checkPassword dtos.CheckPassword, userID int) ([]string, error)
+	ChangePassword(changePassword dtos.ChangePassword, userID int) ([]string, error)
 }
 
 type Handler interface {
@@ -46,4 +48,6 @@ type Handler interface {
 	VerifyOTP() echo.HandlerFunc
 	ResetPassword() echo.HandlerFunc
 	MyProfile() echo.HandlerFunc
+	CheckPassword() echo.HandlerFunc
+	ChangePassword() echo.HandlerFunc
 }

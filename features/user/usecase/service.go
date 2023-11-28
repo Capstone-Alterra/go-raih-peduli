@@ -265,3 +265,41 @@ func (svc *service) ResetPassword(newData dtos.ResetPassword) error {
 
 	return nil
 }
+
+func (svc *service) CheckPassword(checkPassword dtos.CheckPassword, userID int) ([]string, error) {
+	errMap := svc.validation.ValidateRequest(checkPassword)
+	if errMap != nil {
+		return errMap, nil
+	}
+
+	user := svc.model.SelectByID(userID)
+	if user == nil {
+		return nil, errors.New("user not found")
+	}
+
+	result := svc.hash.CompareHash(checkPassword.OldPassword, user.Password)
+	if !result {
+		return nil, errors.New("password not match")
+	}
+
+	return nil, nil
+}
+
+func (svc *service) ChangePassword(changePassword dtos.ChangePassword, userID int) ([]string, error) {
+	errMap := svc.validation.ValidateRequest(changePassword)
+	if errMap != nil {
+		return errMap, nil
+	}
+
+	var user user.User
+
+	user.ID = userID
+	user.Password = svc.hash.HashPassword(changePassword.NewPassword)
+
+	rowsAffected := svc.model.UpdateUser(user)
+	if rowsAffected == 0 {
+		return nil, errors.New("change password failed")
+	}
+
+	return nil, nil
+}
