@@ -81,7 +81,7 @@ func (ctl *controller) NewsDetails() echo.HandlerFunc {
 		news := ctl.service.FindByID(newsID, userID)
 
 		if news == nil {
-			return ctx.JSON(404, helper.Response("news not found!"))
+			return ctx.JSON(404, helper.Response("news not found"))
 		}
 
 		return ctx.JSON(200, helper.Response("success", map[string]any{
@@ -107,7 +107,6 @@ func (ctl *controller) CreateNews() echo.HandlerFunc {
 			if err != nil {
 				return ctx.JSON(500, helper.Response("something went wrong"))
 			}
-
 			file = formFile
 		}
 		news, errMap, err := ctl.service.Create(input, userID.(int), file)
@@ -122,7 +121,7 @@ func (ctl *controller) CreateNews() echo.HandlerFunc {
 			return ctx.JSON(500, helper.Response(err.Error(), nil))
 		}
 
-		return ctx.JSON(200, helper.Response("success created fundraise", map[string]any{
+		return ctx.JSON(200, helper.Response("success created news", map[string]any{
 			"data": news,
 		}))
 	}
@@ -161,7 +160,9 @@ func (ctl *controller) UpdateNews() echo.HandlerFunc {
 		errMap, err := ctl.service.Modify(input, file, *news)
 
 		if errMap != nil {
-			return ctx.JSON(500, helper.Response("something went wrong"))
+			return ctx.JSON(400, helper.Response("error missing some data", map[string]any{
+				"error": errMap,
+			}))
 		}
 
 		if err != nil {
