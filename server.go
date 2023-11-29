@@ -12,6 +12,7 @@ import (
 	ah "raihpeduli/features/auth/handler"
 	ar "raihpeduli/features/auth/repository"
 	au "raihpeduli/features/auth/usecase"
+	"raihpeduli/features/history"
 
 	"raihpeduli/features/user"
 	uh "raihpeduli/features/user/handler"
@@ -48,6 +49,10 @@ import (
 	cr "raihpeduli/features/chatbot/repository"
 	cu "raihpeduli/features/chatbot/usecase"
 
+	hh "raihpeduli/features/history/handler"
+	hr "raihpeduli/features/history/repository"
+	hu "raihpeduli/features/history/usecase"
+
 	"github.com/labstack/echo/v4"
 )
 
@@ -64,6 +69,7 @@ func main() {
 	routes.Transactions(e, TransactionHandler(), jwtService, *cfg)
 	routes.Bookmarks(e, BookmarkHandler(), jwtService, *cfg)
 	routes.Chatbots(e, ChatbotHandler(cfg), jwtService, *cfg)
+	routes.History(e, HistoryHandler(), jwtService, *cfg)
 
 	middlewares.LogMiddlewares(e)
 
@@ -180,4 +186,15 @@ func ChatbotHandler(cfg *config.ProgramConfig) chatbot.Handler {
 	repo := cr.New(db, collection)
 	uc := cu.New(repo, validation, openAI)
 	return ch.New(uc)
+}
+
+func HistoryHandler() history.Handler {
+	db := utils.InitDB()
+
+	mongoDB := utils.ConnectMongo()
+	collection := mongoDB.Collection("bookmarks")
+
+	repo := hr.New(db, collection)
+	uc := hu.New(repo)
+	return hh.New(uc)
 }
