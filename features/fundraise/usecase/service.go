@@ -10,6 +10,7 @@ import (
 	"raihpeduli/features/fundraise"
 	"raihpeduli/features/fundraise/dtos"
 	"raihpeduli/helpers"
+	"time"
 
 	"github.com/mashingan/smapping"
 	"github.com/sirupsen/logrus"
@@ -64,11 +65,6 @@ func (svc *service) FindAll(pagination dtos.Pagination, searchAndFilter dtos.Sea
 			logrus.Error(err)
 			return nil, 0
 		}
-	}
-
-	if err != nil {
-		logrus.Error(err)
-		return nil, 0
 	}
 
 	for _, fundraise := range entities {
@@ -351,6 +347,19 @@ func (svc *service) validateInput(input dtos.InputFundraise, file multipart.File
 
 	if input.EndDate.Before(input.StartDate) {
 		errorList = append(errorList, "end_date can not be earlier than start_date")
+	}
+
+	wibLocation, err := time.LoadLocation("Asia/Jakarta")
+	if err != nil {
+		logrus.Error(err)
+		return nil, err
+	}
+
+	startDate := input.StartDate.Truncate(24 * time.Hour)
+	currentDate := time.Now().In(wibLocation).Truncate(24 * time.Hour)
+
+	if startDate.Sub(currentDate).Milliseconds() < 0 {
+		errorList = append(errorList, "start_date can not be earlier than current date")
 	}
 
 	return errorList, nil
