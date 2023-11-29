@@ -15,7 +15,7 @@ type Repository interface {
 }
 
 type Usecase interface {
-	Login(dtos.RequestLogin) (*dtos.LoginResponse, error)
+	Login(dtos.RequestLogin) (*dtos.LoginResponse, []string, error)
 	Register(newUser dtos.InputUser) (*dtos.ResUser, []string, error)
 	ResendOTP(email string) bool
 	RefreshJWT(jwt dtos.RefreshJWT) (*dtos.ResJWT, error)

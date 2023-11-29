@@ -18,8 +18,7 @@ type Repository interface {
 	InsertVerification(email string, verificationKey string) error
 	ValidateVerification(verificationKey string) string
 	GetTotalData() int64
-	UploadFile(file multipart.File) (string, error)
-	DeleteFile(filename string) error
+	UploadFile(file multipart.File, oldFilename string) (string, error)
 }
 
 type Usecase interface {
@@ -33,6 +32,8 @@ type Usecase interface {
 	ForgetPassword(email dtos.ForgetPassword) error
 	VerifyOTP(verificationKey string) string
 	ResetPassword(newData dtos.ResetPassword) error
+	CheckPassword(checkPassword dtos.CheckPassword, userID int) ([]string, error)
+	ChangePassword(changePassword dtos.ChangePassword, userID int) ([]string, error)
 }
 
 type Handler interface {
@@ -47,4 +48,6 @@ type Handler interface {
 	VerifyOTP() echo.HandlerFunc
 	ResetPassword() echo.HandlerFunc
 	MyProfile() echo.HandlerFunc
+	CheckPassword() echo.HandlerFunc
+	ChangePassword() echo.HandlerFunc
 }

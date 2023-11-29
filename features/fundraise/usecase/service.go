@@ -34,7 +34,7 @@ func (svc *service) FindAll(pagination dtos.Pagination, searchAndFilter dtos.Sea
 	if pagination.Page == 0 {
 		pagination.Page = 1
 	}
-	
+
 	if pagination.PageSize == 0 {
 		pagination.PageSize = 10
 	}
@@ -108,7 +108,6 @@ func (svc *service) FindAll(pagination dtos.Pagination, searchAndFilter dtos.Sea
 			totalData = svc.model.GetTotalData()
 		}
 	}
-
 
 	return fundraises, totalData
 }
@@ -282,7 +281,7 @@ func (svc *service) Remove(fundraiseID int, oldData dtos.ResFundraise) error {
 	if oldFilename != "default" {
 		svc.model.DeleteFile(oldFilename)
 	}
-	
+
 	if err := svc.model.DeleteByID(fundraiseID); err != nil {
 		logrus.Error(err)
 		return err

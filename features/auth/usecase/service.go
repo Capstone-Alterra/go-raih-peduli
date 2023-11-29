@@ -78,14 +78,19 @@ func (svc *service) Register(newData dtos.InputUser) (*dtos.ResUser, []string, e
 	return &resCustomer, nil, nil
 }
 
-func (svc *service) Login(data dtos.RequestLogin) (*dtos.LoginResponse, error) {
+func (svc *service) Login(data dtos.RequestLogin) (*dtos.LoginResponse, []string, error) {
+	errMap := svc.validator.ValidateRequest(data)
+	if errMap != nil {
+		return nil, errMap, nil
+	}
+
 	user, err := svc.model.Login(data.Email)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if !svc.hash.CompareHash(data.Password, user.Password) {
-		return nil, errors.New("invalid password")
+		return nil, nil, errors.New("invalid password")
 	}
 
 	resUser := dtos.LoginResponse{}
@@ -93,7 +98,7 @@ func (svc *service) Login(data dtos.RequestLogin) (*dtos.LoginResponse, error) {
 	err = smapping.FillStruct(&resUser, smapping.MapFields(user))
 	if err != nil {
 		log.Error(err)
-		return nil, err
+		return nil, nil, err
 	}
 
 	userID := strconv.Itoa(user.ID)
@@ -102,13 +107,13 @@ func (svc *service) Login(data dtos.RequestLogin) (*dtos.LoginResponse, error) {
 
 	if tokenData == nil {
 		log.Error("Token process failed")
-		return nil, errors.New("generate token failed")
+		return nil, nil, errors.New("generate token failed")
 	}
 
 	resUser.AccessToken = tokenData["access_token"].(string)
 	resUser.RefreshToken = tokenData["refresh_token"].(string)
 
-	return &resUser, nil
+	return &resUser, nil, nil
 }
 
 func (svc *service) ResendOTP(email string) bool {

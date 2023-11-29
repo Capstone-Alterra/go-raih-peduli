@@ -34,7 +34,7 @@ func AuthorizeJWT(jwtService helpers.JWTInterface, role int, secret string) echo
 				roleID, _ := strconv.Atoi(claims["role_id"].(string))
 
 				ctx.Set("user_id", userID)
-				ctx.Set("role_id", claims["role_id"])
+				ctx.Set("role_id", roleID)
 
 				if role == 0 || role == -1 || roleID == 3 {
 					return next(ctx)
