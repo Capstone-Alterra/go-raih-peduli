@@ -2,8 +2,10 @@ package usecase
 
 import (
 	"errors"
+	"io"
 	"math"
 	"mime/multipart"
+	"net/http"
 	"raihpeduli/config"
 	"raihpeduli/features/fundraise"
 	"raihpeduli/features/fundraise/dtos"
@@ -143,8 +145,8 @@ func (svc *service) FindByID(fundraiseID, ownerID int) *dtos.ResFundraise {
 }
 
 func (svc *service) Create(newFundraise dtos.InputFundraise, userID int, file multipart.File) (*dtos.ResFundraise, []string, error) {
-	if errMap := svc.validation.ValidateRequest(newFundraise); errMap != nil {
-		return nil, errMap, errors.New("error")
+	if errorList, err := svc.validateInput(newFundraise, file); err != nil || len(errorList) > 0 {
+		return nil, errorList, err
 	}
 
 	var fundraise fundraise.Fundraise
@@ -188,8 +190,8 @@ func (svc *service) Create(newFundraise dtos.InputFundraise, userID int, file mu
 }
 
 func (svc *service) Modify(fundraiseData dtos.InputFundraise, file multipart.File, oldData dtos.ResFundraise) ([]string, error) {
-	if errMap := svc.validation.ValidateRequest(fundraiseData); errMap != nil {
-		return errMap, errors.New("error")
+	if errorList, err := svc.validateInput(fundraiseData, file); len(errorList) > 0 || err != nil {
+		return errorList, errors.New("error")
 	}
 
 	var newFundraise fundraise.Fundraise
@@ -252,6 +254,10 @@ func (svc *service) ModifyStatus(input dtos.InputFundraiseStatus, oldData dtos.R
 		if input.RejectedReason == "" {
 			return []string{"rejected_reason field is required when the status is rejected"}, errors.New("error reason empty string")
 		}
+
+		if len(input.RejectedReason) < 20 {
+			return []string{"rejected_reason must be at leas 20 characters"}, errors.New("characters must be at least 20")
+		}
 		newFundraise.RejectedReason = input.RejectedReason
 	}
 
@@ -282,4 +288,70 @@ func (svc *service) Remove(fundraiseID int, oldData dtos.ResFundraise) error {
 	}
 
 	return nil
+}
+
+func (svc *service) validateInput(input dtos.InputFundraise, file multipart.File) ([]string, error) {
+	var errorList []string 
+	if errMap := svc.validation.ValidateRequest(input); errMap != nil {
+		errorList = append(errorList, errMap...)
+	}
+
+	if len(input.Title) < 20 {
+		errorList = append(errorList, "title must be at least 20 characters")
+	}
+
+	if len(input.Description) < 50 {
+		errorList = append(errorList, "description must be at least 50 characters")
+	}
+
+	if input.Target < 100 {
+		errorList = append(errorList, "target must be at less 100 rupiahs")
+	}
+
+	if file != nil {
+		buffer := make([]byte, 512)
+		
+		if _, err := file.Read(buffer); err != nil {
+			return nil, err
+		}
+
+		contentType := http.DetectContentType(buffer)
+		isImage := contentType[:5] == "image"
+
+		if !isImage {
+			errorList = append(errorList, "photo file has to be an image (png, jpg, or jpeg)")
+		}
+
+		const maxFileSize = 5 * 1024 * 1024
+		var fileSize int64
+
+		buffer = make([]byte, 1024)
+		for {
+			n, err := file.Read(buffer)
+
+			fileSize += int64(n)
+
+			if err == io.EOF {
+				break
+			}
+
+			if err != nil {
+				errorList = append(errorList, "unknown file size")
+			}
+		}
+
+		if _, err := file.Seek(0, io.SeekStart); err != nil {
+			return nil, err
+		}
+
+		if fileSize > maxFileSize {
+			errorList = append(errorList, "fize size exceeds the allowed limit (5MB)")
+		}
+	}
+
+	if input.EndDate.Before(input.StartDate) {
+		errorList = append(errorList, "end_date can not be earlier than start_date")
+	}
+
+	return errorList, errors.New("validation error has to be cleared before insert")
 }

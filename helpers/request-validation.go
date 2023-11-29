@@ -1,6 +1,8 @@
 package helpers
 
 import (
+	"strings"
+
 	"github.com/go-playground/validator/v10"
 )
 
@@ -11,15 +13,12 @@ func NewValidationRequest() ValidationInterface {
 }
 
 func (v validation) ValidateRequest(request any) []string {
-	// var requestType = reflect.TypeOf(request)
-	// var newRequest = reflect.New(requestType).Interface()
-
 	var validate = validator.New()
 
 	if err := validate.Struct(request); err != nil {
 		var errMap = []string{}
 		for _, err := range err.(validator.ValidationErrors) {
-			errMap = append(errMap, err.Error())
+			errMap = append(errMap, strings.ToLower(err.Error()))
 		}
 
 		return errMap
