@@ -3,7 +3,9 @@ package usecase
 import (
 	"errors"
 	"fmt"
+	"io"
 	"mime/multipart"
+	"net/http"
 	"raihpeduli/config"
 	"raihpeduli/features/news"
 	"raihpeduli/features/news/dtos"
@@ -110,8 +112,8 @@ func (svc *service) FindByID(newsID, ownerID int) *dtos.ResNews {
 }
 
 func (svc *service) Create(newNews dtos.InputNews, userID int, file multipart.File) (*dtos.ResNews, []string, error) {
-	if errMap := svc.validation.ValidateRequest(newNews); errMap != nil {
-		return nil, errMap, errors.New("error")
+	if errorList, err := svc.validateInput(newNews, file); err != nil || len(errorList) > 0 {
+		return nil, errorList, err
 	}
 
 	news := news.News{}
@@ -154,8 +156,8 @@ func (svc *service) Create(newNews dtos.InputNews, userID int, file multipart.Fi
 }
 
 func (svc *service) Modify(newsData dtos.InputNews, file multipart.File, oldData dtos.ResNews) ([]string, error) {
-	if errMap := svc.validation.ValidateRequest(newsData); errMap != nil {
-		return errMap, errors.New("error")
+	if errorList, err := svc.validateInput(newsData, file); err != nil || len(errorList) > 0 {
+		return errorList, errors.New("error")
 	}
 	var newNews news.News
 	var url string = ""
@@ -222,4 +224,62 @@ func (svc *service) Remove(newsID int, oldData dtos.ResNews) error {
 	}
 
 	return nil
+}
+
+func (svc *service) validateInput(input dtos.InputNews, file multipart.File) ([]string, error) {
+	var errorList []string
+	if errMap := svc.validation.ValidateRequest(input); errMap != nil {
+		errorList = append(errorList, errMap...)
+	}
+
+	if len(input.Title) < 20 {
+		errorList = append(errorList, "title must be at least 20 characters")
+	}
+
+	if len(input.Description) < 50 {
+		errorList = append(errorList, "description must be at least 50 characters")
+	}
+
+	if file != nil {
+		buffer := make([]byte, 512)
+
+		if _, err := file.Read(buffer); err != nil {
+			return nil, err
+		}
+
+		contentType := http.DetectContentType(buffer)
+		isImage := contentType[:5] == "image"
+
+		if !isImage {
+			errorList = append(errorList, "photo file has to be an image (png, jpg, or jpeg)")
+		}
+
+		const maxFileSize = 5 * 1024 * 1024
+		var fileSize int64
+
+		buffer = make([]byte, 1024)
+		for {
+			n, err := file.Read(buffer)
+
+			fileSize += int64(n)
+
+			if err == io.EOF {
+				break
+			}
+
+			if err != nil {
+				errorList = append(errorList, "unknown file size")
+			}
+		}
+
+		if _, err := file.Seek(0, io.SeekStart); err != nil {
+			return nil, err
+		}
+
+		if fileSize > maxFileSize {
+			errorList = append(errorList, "fize size exceeds the allowed limit (5MB)")
+		}
+	}
+
+	return errorList, nil
 }
