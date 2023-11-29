@@ -171,7 +171,13 @@ func TestLogin(t *testing.T) {
 		"refresh_token": "random_refresh_token",
 	}
 
+	var errValidation = []string{
+		"email required",
+		"password required",
+	}
+
 	t.Run("Success", func(t *testing.T) {
+		validator.On("ValidateRequest", loginData).Return(nil).Once()
 		model.On("Login", loginData.Email).Return(&userData, nil).Once()
 		hash.On("CompareHash", loginData.Password, userData.Password).Return(true).Once()
 
@@ -179,37 +185,53 @@ func TestLogin(t *testing.T) {
 		roleID := strconv.Itoa(userData.RoleID)
 		JWT.On("GenerateJWT", userID, roleID).Return(token).Once()
 
-		result, err := service.Login(loginData)
+		result, errMap, err := service.Login(loginData)
 		assert.Nil(t, err)
+		assert.Nil(t, errMap)
 		assert.Equal(t, loginData.Email, result.Email)
 		model.AssertExpectations(t)
 		hash.AssertExpectations(t)
 		JWT.AssertExpectations(t)
 	})
 
-	t.Run("User not found", func(t *testing.T) {
-		model.On("Login", loginData.Email).Return(nil, errors.New("user not found")).Once()
+	t.Run("Error validation", func(t *testing.T) {
+		validator.On("ValidateRequest", loginData).Return(errValidation).Once()
 
-		result, err := service.Login(loginData)
-		assert.Error(t, err)
-		assert.EqualError(t, err, "user not found")
+		result, errMap, err := service.Login(loginData)
+		assert.Equal(t, errValidation, errMap)
+		assert.Nil(t, err)
 		assert.Nil(t, result)
 		model.AssertExpectations(t)
 	})
 
+	t.Run("User not found", func(t *testing.T) {
+		validator.On("ValidateRequest", loginData).Return(nil).Once()
+		model.On("Login", loginData.Email).Return(nil, errors.New("user not found")).Once()
+
+		result, errMap, err := service.Login(loginData)
+		assert.Error(t, err)
+		assert.EqualError(t, err, "user not found")
+		assert.Nil(t, result)
+		assert.Nil(t, errMap)
+		model.AssertExpectations(t)
+	})
+
 	t.Run("Password not match", func(t *testing.T) {
+		validator.On("ValidateRequest", loginData).Return(nil).Once()
 		model.On("Login", loginData.Email).Return(&userData, nil).Once()
 		hash.On("CompareHash", loginData.Password, userData.Password).Return(false).Once()
 
-		result, err := service.Login(loginData)
+		result, errMap, err := service.Login(loginData)
 		assert.Error(t, err)
 		assert.EqualError(t, err, "invalid password")
 		assert.Nil(t, result)
+		assert.Nil(t, errMap)
 		model.AssertExpectations(t)
 		hash.AssertExpectations(t)
 	})
 
 	t.Run("Generate JWT failed", func(t *testing.T) {
+		validator.On("ValidateRequest", loginData).Return(nil).Once()
 		model.On("Login", loginData.Email).Return(&userData, nil).Once()
 		hash.On("CompareHash", loginData.Password, userData.Password).Return(true).Once()
 
@@ -217,10 +239,11 @@ func TestLogin(t *testing.T) {
 		roleID := strconv.Itoa(userData.RoleID)
 		JWT.On("GenerateJWT", userID, roleID).Return(nil).Once()
 
-		result, err := service.Login(loginData)
+		result, errMap, err := service.Login(loginData)
 		assert.Error(t, err)
 		assert.EqualError(t, err, "generate token failed")
 		assert.Nil(t, result)
+		assert.Nil(t, errMap)
 		model.AssertExpectations(t)
 		hash.AssertExpectations(t)
 		JWT.AssertExpectations(t)

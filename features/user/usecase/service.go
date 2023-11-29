@@ -3,7 +3,6 @@ package usecase
 import (
 	"errors"
 	"mime/multipart"
-	"raihpeduli/config"
 	"raihpeduli/features/user"
 	"raihpeduli/features/user/dtos"
 	"raihpeduli/helpers"
@@ -128,16 +127,21 @@ func (svc *service) Modify(userData dtos.InputUpdate, file multipart.File, oldDa
 		return false, errMap
 	}
 
-	var newUser user.User
-	err := smapping.FillStruct(&newUser, smapping.MapFields(userData))
+	url, err := svc.model.UploadFile(file, oldData.ProfilePicture)
 	if err != nil {
-		log.Error(err)
+		return false, nil
+	}
+
+	var newUser user.User
+	err = smapping.FillStruct(&newUser, smapping.MapFields(userData))
+	if err != nil {
 		return false, nil
 	}
 
 	newUser.ID = oldData.ID
-	rowsAffected := svc.model.UpdateUser(newUser)
+	newUser.ProfilePicture = url
 
+	rowsAffected := svc.model.UpdateUser(newUser)
 	if rowsAffected == 0 {
 		log.Error("There is No Customer Updated!")
 		return false, nil
@@ -152,31 +156,14 @@ func (svc *service) ModifyProfilePicture(file dtos.InputUpdateProfilePicture, ol
 		return false, errMap
 	}
 
-	var newUser user.User
-	var config = config.LoadCloudStorageConfig()
-	var oldFilename string = oldData.ProfilePicture
-	var urlLength int = len("https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/users/")
-
-	if file.ProfilePicture != nil {
-		if len(oldFilename) > urlLength {
-			oldFilename = oldFilename[urlLength:]
-		}
-
-		if err := svc.model.DeleteFile(oldFilename); err != nil {
-			return false, nil
-		}
-
-		imageURL, err := svc.model.UploadFile(file.ProfilePicture)
-
-		if err != nil {
-			logrus.Error(err)
-			return false, nil
-		}
-
-		newUser.ProfilePicture = imageURL
+	url, err := svc.model.UploadFile(file.ProfilePicture, oldData.ProfilePicture)
+	if err != nil {
+		return false, nil
 	}
 
+	var newUser user.User
 	newUser.ID = oldData.ID
+	newUser.ProfilePicture = url
 	rowsAffected := svc.model.UpdateUser(newUser)
 
 	if rowsAffected == 0 {
@@ -277,4 +264,42 @@ func (svc *service) ResetPassword(newData dtos.ResetPassword) error {
 	}
 
 	return nil
+}
+
+func (svc *service) CheckPassword(checkPassword dtos.CheckPassword, userID int) ([]string, error) {
+	errMap := svc.validation.ValidateRequest(checkPassword)
+	if errMap != nil {
+		return errMap, nil
+	}
+
+	user := svc.model.SelectByID(userID)
+	if user == nil {
+		return nil, errors.New("user not found")
+	}
+
+	result := svc.hash.CompareHash(checkPassword.OldPassword, user.Password)
+	if !result {
+		return nil, errors.New("password not match")
+	}
+
+	return nil, nil
+}
+
+func (svc *service) ChangePassword(changePassword dtos.ChangePassword, userID int) ([]string, error) {
+	errMap := svc.validation.ValidateRequest(changePassword)
+	if errMap != nil {
+		return errMap, nil
+	}
+
+	var user user.User
+
+	user.ID = userID
+	user.Password = svc.hash.HashPassword(changePassword.NewPassword)
+
+	rowsAffected := svc.model.UpdateUser(user)
+	if rowsAffected == 0 {
+		return nil, errors.New("change password failed")
+	}
+
+	return nil, nil
 }

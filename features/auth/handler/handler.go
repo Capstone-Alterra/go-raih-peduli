@@ -26,7 +26,13 @@ func (ctl *controller) Login() echo.HandlerFunc {
 			return ctx.JSON(400, helpers.Response("invalid request body"))
 		}
 
-		loginRes, err := ctl.service.Login(loginData)
+		loginRes, errMap, err := ctl.service.Login(loginData)
+		if errMap != nil {
+			return ctx.JSON(400, helpers.Response("missing some data", map[string]any{
+				"error": errMap,
+			}))
+		}
+
 		if err != nil {
 			return ctx.JSON(401, helpers.Response("invalid credentials"))
 		}
