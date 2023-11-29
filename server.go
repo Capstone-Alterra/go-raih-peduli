@@ -61,6 +61,8 @@ func main() {
 	cfg := config.InitConfig()
 	jwtService := helpers.NewJWT(*cfg)
 
+	middlewares.LogMiddlewares(e)
+
 	routes.Auth(e, AuthHandler())
 	routes.Users(e, UserHandler(), jwtService, *cfg)
 	routes.Fundraises(e, FundraiseHandler(), jwtService, *cfg)
@@ -70,8 +72,6 @@ func main() {
 	routes.Bookmarks(e, BookmarkHandler(), jwtService, *cfg)
 	routes.Chatbots(e, ChatbotHandler(cfg), jwtService, *cfg)
 	routes.History(e, HistoryHandler(), jwtService, *cfg)
-
-	middlewares.LogMiddlewares(e)
 
 	e.Start(fmt.Sprintf(":%s", cfg.SERVER_PORT))
 }
