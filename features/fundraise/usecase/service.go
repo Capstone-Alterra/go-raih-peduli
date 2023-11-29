@@ -256,7 +256,7 @@ func (svc *service) ModifyStatus(input dtos.InputFundraiseStatus, oldData dtos.R
 		}
 
 		if len(input.RejectedReason) < 20 {
-			return []string{"rejected_reason must be at leas 20 characters"}, errors.New("characters must be at least 20")
+			return []string{"rejected_reason must be at least 20 characters"}, errors.New("characters must be at least 20")
 		}
 		newFundraise.RejectedReason = input.RejectedReason
 	}
@@ -353,5 +353,5 @@ func (svc *service) validateInput(input dtos.InputFundraise, file multipart.File
 		errorList = append(errorList, "end_date can not be earlier than start_date")
 	}
 
-	return errorList, errors.New("validation error has to be cleared before insert")
+	return errorList, nil
 }
