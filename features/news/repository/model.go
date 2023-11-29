@@ -63,7 +63,7 @@ func (mdl *model) SelectByID(newsID int) (*news.News, error) {
 }
 
 func (mdl *model) Update(news news.News) error {
-	result := mdl.db.Save(&news)
+	result := mdl.db.Updates(&news)
 
 	if result.Error != nil {
 		return result.Error
