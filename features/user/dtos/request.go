@@ -5,18 +5,18 @@ import "mime/multipart"
 type InputUser struct {
 	Fullname    string `json:"fullname" form:"fullname" validate:"required,alpha"`
 	Address     string `json:"address" form:"address" validate:"required"`
-	PhoneNumber string `json:"phone_number" form:"phone_number" validate:"required,min=10,max=13"`
+	PhoneNumber string `json:"phone_number" form:"phone_number" validate:"required,number,min=10,max=13"`
 	Gender      string `json:"gender" form:"gender" validate:"required"`
 	Email       string `json:"email" form:"email" validate:"required,email"`
-	Password    string `json:"password" form:"password" validate:"required,min=8"`
+	Password    string `json:"password" form:"password" validate:"required,alphanum,min=8"`
 }
 
 type InputUpdate struct {
+	Email          string `json:"email" form:"email" validate:"required,email"`
 	Fullname       string `json:"fullname" form:"fullname" validate:"required,alpha"`
 	Address        string `json:"address" form:"address" validate:"required"`
-	PhoneNumber    string `json:"phone_number" form:"phone_number" validate:"required,min=10,max=13"`
-	Gender         string `json:"gender" form:"gender" validate:"required"`
-	Email          string `json:"email" form:"email" validate:"required,email"`
+	PhoneNumber    string `json:"phone_number" form:"phone_number" validate:"required,number,min=10,max=13"`
+	Gender         string `json:"gender" form:"gender"`
 	ProfilePicture string `json:"profile_picture" form:"profile_picture"`
 	Nik            string `json:"nik" form:"nik"`
 }
