@@ -12,16 +12,16 @@ type ResFundraise struct {
 	Description    string    `json:"description"`
 	Photo          string    `json:"photo"`
 	Target         int32     `json:"target"`
-	FundAcquired   int32	 `json:"fund_acquired"`
+	FundAcquired   int32     `json:"fund_acquired"`
 	StartDate      time.Time `json:"start_date"`
 	EndDate        time.Time `json:"end_date"`
 	Status         string    `json:"status"`
 	RejectedReason string    `json:"rejected_reason"`
 	UserID         int       `json:"user_id"`
 
-	BookmarkID     *string   `json:"bookmark_id"`
+	BookmarkID *string `json:"bookmark_id"`
 
-	CreatedAt 	   time.Time      `json:"created_at"`
-	UpdatedAt      time.Time      `json:"updated_at"`
-	DeletedAt 	   gorm.DeletedAt `json:"deleted_at"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `json:"deleted_at"`
 }
