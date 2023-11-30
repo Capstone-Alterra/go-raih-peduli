@@ -208,3 +208,17 @@ func (mdl *model) UploadFile(file multipart.File, oldFilename string) (string, e
 
 	return "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/users/" + objectName, nil
 }
+
+func (mdl *model) DeleteFile(fileName string) error {
+	var config = config.LoadCloudStorageConfig()
+	var urlLength int = len("https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/users/")
+	var objectName = fileName[urlLength:]
+
+	if objectName != "default" {
+		if err := mdl.clStorage.DeleteFile(objectName); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
