@@ -1,22 +1,28 @@
 package repository
 
 import (
+	"fmt"
+	"raihpeduli/config"
 	"raihpeduli/features/user"
+	"strconv"
 
 	"raihpeduli/features/fundraise"
 	"raihpeduli/features/transaction"
 
 	"github.com/labstack/gommon/log"
+	"github.com/wneessen/go-mail"
 	"gorm.io/gorm"
 )
 
 type model struct {
-	db *gorm.DB
+	db     *gorm.DB
+	config *config.SMTPConfig
 }
 
-func New(db *gorm.DB) transaction.Repository {
+func New(db *gorm.DB, config *config.SMTPConfig) transaction.Repository {
 	return &model{
-		db: db,
+		db:     db,
+		config: config,
 	}
 }
 
@@ -61,6 +67,16 @@ func (mdl *model) SelectUserByID(userID int) *user.User {
 	}
 
 	return &user
+}
+
+func (mdl *model) GetFundraiseByID(fundraiseID int) (*fundraise.Fundraise, error) {
+	var result fundraise.Fundraise
+
+	if err := mdl.db.Where("id = ?", fundraiseID).First(&result).Error; err != nil {
+		return nil, err
+	}
+
+	return &result, nil
 }
 
 func (mdl *model) GetTotalData(keyword string) int64 {
@@ -160,4 +176,71 @@ func (mdl *model) DeleteByID(transactionID int) int64 {
 	}
 
 	return result.RowsAffected
+}
+
+func (mdl *model) SendPaymentConfirmation(email string, amount int, idFundraise int, paymentType string) error {
+	user := mdl.config.SMTP_USER
+	password := mdl.config.SMTP_PASS
+	port := mdl.config.SMTP_PORT
+
+	fundraise, err := mdl.GetFundraiseByID(idFundraise)
+	if err != nil {
+		return err
+	}
+
+	convPort, err := strconv.Atoi(port)
+	if err != nil {
+		return err
+	}
+
+	m := mail.NewMsg()
+	if err := m.From(user); err != nil {
+		return err
+	}
+	if err := m.To(email); err != nil {
+		return err
+	}
+	m.Subject("Konfirmasi Pembayaran - Raih Peduli")
+
+	// HTML body
+	body := fmt.Sprintf(`
+        <html>
+            <head>
+                <style>
+                    /* Add your CSS styles here */
+                    body {
+                        font-family: Arial, sans-serif;
+                    }
+                    .confirmation-container {
+                        max-width: 600px;
+                        margin: 0 auto;
+                        padding: 20px;
+                        border: 1px solid #ccc;
+                        border-radius: 5px;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="confirmation-container">
+                    <h2>Terima kasih, Orang Baik!</h2>
+                    <h3>Detail Penggalangan Dana</h3>
+                    <p>Judul: %s</p>
+                    <p>Jumlah Donasi: Rp. %d</p>
+                    <p>Metode Pembayaran: %s</p>
+                </div>
+            </body>
+        </html>
+    `, fundraise.Title, amount, paymentType)
+
+	m.SetBodyString(mail.TypeTextHTML, body)
+
+	c, err := mail.NewClient("smtp.gmail.com", mail.WithPort(convPort), mail.WithSMTPAuth(mail.SMTPAuthPlain), mail.WithUsername(user), mail.WithPassword(password))
+	if err != nil {
+		return err
+	}
+	if err := c.DialAndSend(m); err != nil {
+		return err
+	}
+
+	return nil
 }

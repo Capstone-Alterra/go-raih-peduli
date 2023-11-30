@@ -11,6 +11,7 @@ import (
 	"github.com/labstack/gommon/log"
 	"github.com/mashingan/smapping"
 	"github.com/midtrans/midtrans-go/coreapi"
+	"github.com/sirupsen/logrus"
 )
 
 type service struct {
@@ -108,6 +109,10 @@ func (svc *service) FindByID(transactionID int) *dtos.ResTransaction {
 	}
 
 	switch transaction.PaymentType {
+	case "4":
+		transaction.PaymentType = "Bank Permata"
+	case "5":
+		transaction.PaymentType = "Bank CIMB"
 	case "6":
 		transaction.PaymentType = "Bank BCA"
 	case "7":
@@ -116,6 +121,8 @@ func (svc *service) FindByID(transactionID int) *dtos.ResTransaction {
 		transaction.PaymentType = "Bank BNI"
 	case "10":
 		transaction.PaymentType = "Gopay"
+	case "11":
+		transaction.PaymentType = "Qris"
 	default:
 		transaction.PaymentType = "Other"
 	}
@@ -326,6 +333,56 @@ func (svc *service) Notifications(notificationPayload map[string]any) error {
 			transaction.Status = status.Order
 
 			if transaction.Status == "5" {
+				go func() {
+					switch transaction.PaymentType {
+					case "4":
+						logrus.Println(transaction.User.Email)
+						err := svc.model.SendPaymentConfirmation(transaction.User.Email, transaction.Amount, transaction.FundraiseID, "Bank Permata")
+						if err != nil {
+							logrus.Println(err.Error())
+						}
+					case "5":
+						logrus.Println(transaction.User.Email)
+						err := svc.model.SendPaymentConfirmation(transaction.User.Email, transaction.Amount, transaction.FundraiseID, "Bank CIMB")
+						if err != nil {
+							logrus.Println(err.Error())
+						}
+					case "6":
+						logrus.Println(transaction.User.Email)
+						err := svc.model.SendPaymentConfirmation(transaction.User.Email, transaction.Amount, transaction.FundraiseID, "Bank BCA")
+						if err != nil {
+							logrus.Println(err.Error())
+						}
+					case "7":
+						logrus.Println(transaction.User.Email)
+						err := svc.model.SendPaymentConfirmation(transaction.User.Email, transaction.Amount, transaction.FundraiseID, "Bank BRI")
+						if err != nil {
+							logrus.Println(err.Error())
+						}
+					case "8":
+						logrus.Println(transaction.User.Email)
+						err := svc.model.SendPaymentConfirmation(transaction.User.Email, transaction.Amount, transaction.FundraiseID, "Bank BNI")
+						if err != nil {
+							logrus.Println(err.Error())
+						}
+					case "10":
+						logrus.Println(transaction.User.Email)
+						err := svc.model.SendPaymentConfirmation(transaction.User.Email, transaction.Amount, transaction.FundraiseID, "Gopay")
+						if err != nil {
+							logrus.Println(err.Error())
+						}
+					case "11":
+						logrus.Println(transaction.User.Email)
+						err := svc.model.SendPaymentConfirmation(transaction.User.Email, transaction.Amount, transaction.FundraiseID, "Qris")
+						if err != nil {
+							logrus.Println(err.Error())
+						}
+					default:
+						transaction.PaymentType = "Other"
+					}
+
+				}()
+
 				transaction.PaidAt = time.Now().Format("2006-01-02 15:04:05")
 				update := svc.model.Update(*transaction)
 				if update == -1 {
