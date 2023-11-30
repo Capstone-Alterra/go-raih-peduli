@@ -14,6 +14,6 @@ func History(e *echo.Echo, handler history.Handler, jwt helpers.JWTInterface, co
 
 	history.GET("/fundraises", handler.GetHistoryFundraiseCreatedByUser(), m.AuthorizeJWT(jwt, 1, config.SECRET))
 	history.GET("/volunteer-vacancies", handler.GetHistoryVolunteerVacanciesCreatedByUser())
-	history.GET("/volunteer-vancanies/registered", handler.GetHistoryVolunteerVacanciewsRegisterByUser())
+	history.GET("/volunteer-vancanies/registered", handler.GetHistoryVolunteerVacanciewsRegisterByUser(), m.AuthorizeJWT(jwt, 1, config.SECRET))
 	history.GET("/donations", handler.GetHistoryUserTransaction())
 }

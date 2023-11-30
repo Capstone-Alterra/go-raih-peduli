@@ -62,7 +62,41 @@ func (svc *service) FindAllHistoryVolunteerVacanciesCreatedByUser(userID int) ([
 	return []dtos.ResVolunteersVacancyHistory{}, nil
 }
 func (svc *service) FindAllHistoryVolunteerVacanciewsRegisterByUser(userID int) ([]dtos.ResVolunteersVacancyHistory, error) {
-	return []dtos.ResVolunteersVacancyHistory{}, nil
+	var volunteers []dtos.ResVolunteersVacancyHistory
+	var bookmarkIDs map[int]string
+	var err error
+	var entities []history.VolunteerVacancies
+
+	entities, err = svc.model.HistoryVolunteerVacanciewsRegisterByUser(userID)
+	if err != nil {
+		return nil, err
+	}
+	if userID != 0 {
+		bookmarkIDs, err = svc.model.SelectBookmarkedVacancyID(userID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	for _, volunteer := range entities {
+		var data dtos.ResVolunteersVacancyHistory
+
+		if err := smapping.FillStruct(&data, smapping.MapFields(volunteer)); err != nil {
+			logrus.Error(err)
+		}
+
+		if bookmarkIDs != nil {
+			bookmarkID, ok := bookmarkIDs[data.ID]
+
+			if ok {
+				data.BookmarkID = &bookmarkID
+			}
+		}
+		data.TotalRegistrar = int(svc.model.GetTotalVolunteersByVacancyID(data.ID))
+		volunteers = append(volunteers, data)
+	}
+
+	return volunteers, nil
 }
 func (svc *service) FindAllHistoryUserTransaction(userID int) ([]dtos.ResTransactionHistory, error) {
 	return []dtos.ResTransactionHistory{}, nil

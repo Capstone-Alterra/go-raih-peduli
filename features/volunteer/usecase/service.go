@@ -253,7 +253,7 @@ func (svc *service) RemoveVacancy(volunteerID int, oldData dtos.ResVacancy) erro
 
 	if err := svc.model.DeleteVacancyByID(volunteerID); err != nil {
 		logrus.Error(err)
-		return err 
+		return err
 	}
 
 	return nil

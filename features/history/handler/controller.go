@@ -33,8 +33,7 @@ func (ctl *controller) GetHistoryFundraiseCreatedByUser() echo.HandlerFunc {
 		if err != nil {
 			return ctx.JSON(500, helper.Response("something happend error"))
 		}
-
-		if fundraises == nil {
+		if len(fundraises) == 0 {
 			return ctx.JSON(404, helper.Response("history fundraises not found"))
 		}
 		return ctx.JSON(200, helper.Response(
@@ -52,7 +51,24 @@ func (ctl *controller) GetHistoryVolunteerVacanciesCreatedByUser() echo.HandlerF
 
 func (ctrl *controller) GetHistoryVolunteerVacanciewsRegisterByUser() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		return nil
+		userID := 0
+		if ctx.Get("user_id") != nil {
+			userID = ctx.Get("user_id").(int)
+		}
+
+		vacancies, err := ctrl.service.FindAllHistoryVolunteerVacanciewsRegisterByUser(userID)
+		if err != nil {
+			return ctx.JSON(500, helper.Response("something happend error"))
+		}
+
+		if vacancies == nil {
+			return ctx.JSON(404, helper.Response("history volunteer vacancies not found"))
+
+		}
+		return ctx.JSON(200, helper.Response(
+			"success", map[string]any{
+				"data": vacancies,
+			}))
 	}
 }
 
