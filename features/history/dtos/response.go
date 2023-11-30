@@ -6,10 +6,6 @@ import (
 	"gorm.io/gorm"
 )
 
-type ResOwnerID struct {
-	OwnerID int `bson:"owner_id"`
-}
-
 type ResFundraisesHistory struct {
 	ID             int       `json:"id"`
 	Title          string    `json:"title"`
@@ -46,6 +42,8 @@ type ResVolunteersVacancyHistory struct {
 	Photo               string    `json:"photo"`
 	Status              string    `json:"status"`
 	TotalRegistrar      int       `json:"total_registrar"`
+
+	BookmarkID *string `json:"bookmark_id"`
 
 	RejectedReason string         `json:"rejected_reason,omitempty"`
 	CreatedAt      time.Time      `json:"created_at"`

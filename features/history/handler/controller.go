@@ -33,8 +33,7 @@ func (ctl *controller) GetHistoryFundraiseCreatedByUser() echo.HandlerFunc {
 		if err != nil {
 			return ctx.JSON(500, helper.Response("something happend error"))
 		}
-
-		if fundraises == nil {
+		if fundraises == nil || len(fundraises) == 0 {
 			return ctx.JSON(404, helper.Response("history fundraises not found"))
 		}
 		return ctx.JSON(200, helper.Response(
@@ -46,18 +45,69 @@ func (ctl *controller) GetHistoryFundraiseCreatedByUser() echo.HandlerFunc {
 
 func (ctl *controller) GetHistoryVolunteerVacanciesCreatedByUser() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		return nil
+		userID := 0
+		if ctx.Get("user_id") != nil {
+			userID = ctx.Get("user_id").(int)
+		}
+
+		vacancies, err := ctl.service.FindAllHistoryVolunteerVacanciesCreatedByUser(userID)
+		if err != nil {
+			return ctx.JSON(500, helper.Response("something happend error"))
+		}
+
+		if vacancies == nil || len(vacancies) == 0 {
+			return ctx.JSON(404, helper.Response("history volunteer vacancies not found"))
+
+		}
+		return ctx.JSON(200, helper.Response(
+			"success", map[string]any{
+				"data": vacancies,
+			}))
 	}
 }
 
 func (ctrl *controller) GetHistoryVolunteerVacanciewsRegisterByUser() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		return nil
+		userID := 0
+		if ctx.Get("user_id") != nil {
+			userID = ctx.Get("user_id").(int)
+		}
+
+		vacancies, err := ctrl.service.FindAllHistoryVolunteerVacanciewsRegisterByUser(userID)
+		if err != nil {
+			return ctx.JSON(500, helper.Response("something happend error"))
+		}
+
+		if vacancies == nil || len(vacancies) == 0 {
+			return ctx.JSON(404, helper.Response("history volunteer vacancies not found"))
+
+		}
+		return ctx.JSON(200, helper.Response(
+			"success", map[string]any{
+				"data": vacancies,
+			}))
 	}
 }
 
-func (ctl *controller) GetHistoryUserTransaction() echo.HandlerFunc {
+func (ctrl *controller) GetHistoryUserTransaction() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		return nil
+		userID := 0
+		if ctx.Get("user_id") != nil {
+			userID = ctx.Get("user_id").(int)
+		}
+
+		donations, err := ctrl.service.FindAllHistoryUserTransaction(userID)
+		if err != nil {
+			return ctx.JSON(500, helper.Response("something happend error"))
+		}
+
+		if donations == nil || len(donations) == 0 {
+			return ctx.JSON(404, helper.Response("donation not found"))
+
+		}
+		return ctx.JSON(200, helper.Response(
+			"success", map[string]any{
+				"data": donations,
+			}))
 	}
 }
