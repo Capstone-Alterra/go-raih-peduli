@@ -234,3 +234,14 @@ func (mdl *model) GetTotalDataBySearchAndFilterMobile(searchAndFilter dtos.Searc
 
 	return totalData
 }
+
+func (mdl *model) SelectByTitle(title string) (*fundraise.Fundraise, error) {
+	var fundraise fundraise.Fundraise
+
+	if err := mdl.db.Where("title = ?", title).
+		Where("status = ?", "accepted").First(&fundraise).Error; err != nil {
+			return nil, err
+	}
+
+	return &fundraise, nil
+}

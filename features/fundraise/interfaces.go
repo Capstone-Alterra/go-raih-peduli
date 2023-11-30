@@ -23,6 +23,7 @@ type Repository interface {
 	GetTotalDataMobile() int64
 	GetTotalDataBySearchAndFilter(searchAndFilter dtos.SearchAndFilter) int64
 	GetTotalDataBySearchAndFilterMobile(searchAndFilter dtos.SearchAndFilter) int64
+	SelectByTitle(title string) (*Fundraise, error)
 }
 
 type Usecase interface {
