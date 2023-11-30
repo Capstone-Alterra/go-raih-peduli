@@ -153,8 +153,9 @@ func NewsHandler() news.Handler {
 }
 
 func TransactionHandler() transaction.Handler {
+	smtpConfig := config.LoadSMTPConfig()
 	db := utils.InitDB()
-	repo := tr.New(db)
+	repo := tr.New(db, smtpConfig)
 	coreAPIClient := utils.MidtransCoreAPIClient()
 	validation := helpers.NewValidationRequest()
 

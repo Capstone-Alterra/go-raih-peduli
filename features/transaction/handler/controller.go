@@ -28,18 +28,12 @@ var validate *validator.Validate
 func (ctl *controller) GetTransactions() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		pagination := dtos.Pagination{}
+		var roleID = ctx.Get("role_id")
 
 		ctx.Bind(&pagination)
 
 		keyword := ctx.QueryParam("fullname")
-
 		userID := ctx.Get("user_id").(int)
-		roleID, err := ctx.Get("role_id").(string)
-		roleIDInt, _ := strconv.Atoi(roleID)
-
-		if err {
-			return ctx.JSON(500, helper.Response("Error parsing jwt role"))
-		}
 
 		page := pagination.Page
 		size := pagination.PageSize
@@ -48,7 +42,7 @@ func (ctl *controller) GetTransactions() echo.HandlerFunc {
 			return ctx.JSON(400, helper.Response("Please provide query `page` and `size` in number!"))
 		}
 
-		transactions, totalData := ctl.service.FindAll(page, size, roleIDInt, userID, keyword)
+		transactions, totalData := ctl.service.FindAll(page, size, roleID.(int), userID, keyword)
 
 		if transactions == nil {
 			return ctx.JSON(404, helper.Response("There is No Transactions!"))

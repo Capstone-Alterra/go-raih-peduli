@@ -18,6 +18,7 @@ type Repository interface {
 	DeleteByID(transactionID int) int64
 	GetTotalData(keyword string) int64
 	GetTotalDataByUser(userID int, keyword string) int64
+	SendPaymentConfirmation(email string, amount int, idFundraise int, paymentType string) error
 }
 
 type Usecase interface {
