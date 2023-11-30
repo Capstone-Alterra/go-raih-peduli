@@ -1,7 +1,6 @@
 package history
 
 import (
-	"os/user"
 	"raihpeduli/features/auth"
 	"raihpeduli/features/fundraise"
 	"time"
@@ -76,6 +75,5 @@ type Transaction struct {
 	UrlCallback    string `gorm:"type:varchar(250)"`
 	CreatedAt      time.Time
 
-	User      user.User
 	Fundraise fundraise.Fundraise
 }

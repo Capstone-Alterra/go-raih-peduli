@@ -67,7 +67,12 @@ func (mdl *model) SelectBookmarkedFundraiseID(ownerID int) (map[int]string, erro
 }
 
 func (mdl *model) HistoryVolunteerVacanciesCreatedByUser(userID int) ([]history.VolunteerVacancies, error) {
-	return []history.VolunteerVacancies{}, nil
+	var volunteer_vacancies []history.VolunteerVacancies
+
+	if err := mdl.db.Where("user_id = ? ", userID).Find(&volunteer_vacancies).Error; err != nil {
+		return nil, err
+	}
+	return volunteer_vacancies, nil
 }
 
 func (mdl *model) HistoryVolunteerVacanciewsRegisterByUser(userID int) ([]history.VolunteerVacancies, error) {
@@ -114,6 +119,10 @@ func (mdl *model) GetTotalVolunteersByVacancyID(vacancyID int) int64 {
 }
 
 func (mdl *model) HistoryUserTransaction(userID int) ([]history.Transaction, error) {
-	return []history.Transaction{}, nil
+	var transaction []history.Transaction
 
+	if err := mdl.db.Where("transactions.user_id = ?", userID).Find(&transaction).Error; err != nil {
+		return nil, err
+	}
+	return transaction, nil
 }
