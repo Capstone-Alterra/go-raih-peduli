@@ -16,12 +16,14 @@ type Repository interface {
 
 type Usecase interface {
 	FindAllChat(userID int) []dtos.ResChatReply
+	SetContentForNews(input dtos.InputMessage) (*dtos.ResNewsContent, []string, error)
 	SetReplyMessage(requestMessage dtos.InputMessage, userID int) (*dtos.ResChatReply, []string, error)
 	ClearHistory(userID int) error
 }
 
 type Handler interface {
 	GetChatHistory() echo.HandlerFunc
+	GetNewsContentGeneration() echo.HandlerFunc
 	SendQuestion() echo.HandlerFunc
 	DeleteChatHistory() echo.HandlerFunc
 }

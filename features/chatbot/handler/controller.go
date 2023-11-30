@@ -38,6 +38,30 @@ func (ctl *controller) GetChatHistory() echo.HandlerFunc {
 	}
 }
 
+func (ctl *controller) GetNewsContentGeneration() echo.HandlerFunc {
+	return func (ctx echo.Context) error  {
+		input := dtos.InputMessage{}
+
+		ctx.Bind(&input)
+
+		message, errMap, err := ctl.service.SetContentForNews(input)
+
+		if errMap != nil {
+			return ctx.JSON(400, helper.Response("error missing some data", map[string]any {
+				"error": errMap,
+			}))
+		}
+
+		if err != nil {
+			return ctx.JSON(500, helper.Response(err.Error()))
+		}
+
+		return ctx.JSON(200, helper.Response("success", map[string]any {
+			"data": message,
+		}))
+	}
+}
+
 func (ctl *controller) SendQuestion() echo.HandlerFunc {
 	return func (ctx echo.Context) error  {
 		input := dtos.InputMessage{}

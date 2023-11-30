@@ -49,5 +49,6 @@ type ConverterInterface interface {
 }
 
 type OpenAIInterface interface {
-	GetReplyFromGPT(question string, qnaList map[string]string) (string, error)
+	GetAppInformation(question string, qnaList map[string]string) (string, error)
+	GetNewsContent(prompt string) (string, error)
 }

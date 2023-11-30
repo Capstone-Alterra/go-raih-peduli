@@ -48,6 +48,22 @@ func (svc *service) FindAllChat(userID int) []dtos.ResChatReply {
 	return res
 }
 
+func (svc *service) SetContentForNews(input dtos.InputMessage) (*dtos.ResNewsContent, []string, error) {
+	if errMap := svc.validation.ValidateRequest(input); errMap != nil {
+		return nil, errMap, errors.New("message must not be empty") 
+	}
+
+	reply, err := svc.openAI.GetNewsContent(input.Message)
+
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return &dtos.ResNewsContent{
+		Content: reply,
+	}, nil, nil
+}
+
 func (svc *service) SetReplyMessage(input dtos.InputMessage, userID int) (*dtos.ResChatReply, []string, error) {
 	if errMap := svc.validation.ValidateRequest(input); errMap != nil {
 		return nil, errMap, errors.New("message must not be empty") 
@@ -58,7 +74,7 @@ func (svc *service) SetReplyMessage(input dtos.InputMessage, userID int) (*dtos.
 		return nil, nil, err
 	}
 
-	reply, err := svc.openAI.GetReplyFromGPT(input.Message, data)
+	reply, err := svc.openAI.GetAppInformation(input.Message, data)
 
 	if err != nil {
 		return nil, nil, err
@@ -75,12 +91,10 @@ func (svc *service) SetReplyMessage(input dtos.InputMessage, userID int) (*dtos.
 		}
 	}
 
-	var res = dtos.ResChatReply{
+	return &dtos.ResChatReply{
 		Question: input.Message,
 		Reply: reply,
-	}
-
-	return &res, nil, nil
+	}, nil, nil
 }
 
 func (svc *service) ClearHistory(userID int) error {
