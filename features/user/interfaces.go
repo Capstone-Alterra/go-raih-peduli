@@ -19,6 +19,7 @@ type Repository interface {
 	ValidateVerification(verificationKey string) string
 	GetTotalData() int64
 	UploadFile(file multipart.File, oldFilename string) (string, error)
+	DeleteFile(fileName string) error
 }
 
 type Usecase interface {
