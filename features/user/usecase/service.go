@@ -175,8 +175,17 @@ func (svc *service) ModifyProfilePicture(file dtos.InputUpdateProfilePicture, ol
 }
 
 func (svc *service) Remove(userID int) bool {
-	rowsAffected := svc.model.DeleteByID(userID)
+	user := svc.model.SelectByID(userID)
+	if user == nil {
+		return false
+	}
 
+	err := svc.model.DeleteFile(user.ProfilePicture)
+	if err != nil {
+		return false
+	}
+
+	rowsAffected := svc.model.DeleteByID(userID)
 	if rowsAffected <= 0 {
 		log.Error("There is No Customer Deleted!")
 		return false
