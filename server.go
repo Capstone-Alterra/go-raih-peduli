@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"raihpeduli/config"
+	"raihpeduli/features/home"
 	"raihpeduli/helpers"
 	"raihpeduli/middlewares"
 	"raihpeduli/routes"
@@ -53,6 +54,10 @@ import (
 	hr "raihpeduli/features/history/repository"
 	hu "raihpeduli/features/history/usecase"
 
+	hoh "raihpeduli/features/home/handler"
+	hor "raihpeduli/features/home/repository"
+	hou "raihpeduli/features/home/usecase"
+
 	"github.com/labstack/echo/v4"
 )
 
@@ -72,6 +77,7 @@ func main() {
 	routes.Bookmarks(e, BookmarkHandler(), jwtService, *cfg)
 	routes.Chatbots(e, ChatbotHandler(cfg), jwtService, *cfg)
 	routes.History(e, HistoryHandler(), jwtService, *cfg)
+	routes.Homes(e, HomeHandler(), jwtService, *cfg)
 
 	e.Start(fmt.Sprintf(":%s", cfg.SERVER_PORT))
 }
@@ -88,6 +94,16 @@ func FundraiseHandler() fundraise.Handler {
 	repo := fr.New(db, clStorage, collection)
 	uc := fu.New(repo, validation)
 	return fh.New(uc)
+}
+
+func HomeHandler() home.Handler {
+	validation := helpers.NewValidationRequest()
+
+	db := utils.InitDB()
+
+	repo := hor.New(db)
+	uc := hou.New(repo, validation)
+	return hoh.New(uc)
 }
 
 func UserHandler() user.Handler {
