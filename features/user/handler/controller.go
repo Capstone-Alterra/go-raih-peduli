@@ -326,3 +326,20 @@ func (ctl *controller) ChangePassword() echo.HandlerFunc {
 		return ctx.JSON(200, helpers.Response("success change password"))
 	}
 }
+
+func (ctl *controller) AddPersonalization() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		userID := ctx.Get("user_id").(int)
+
+		var input dtos.InputPersonalization
+
+		ctx.Bind(&input)
+
+		err := ctl.service.AddPersonalization(userID, input)
+		if err != nil {
+			return ctx.JSON(500, helpers.Response("something went wrong"))
+		}
+
+		return ctx.JSON(200, helpers.Response("success add personalization"))
+	}
+}

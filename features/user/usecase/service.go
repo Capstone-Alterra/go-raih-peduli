@@ -7,6 +7,7 @@ import (
 	"raihpeduli/features/user/dtos"
 	"raihpeduli/helpers"
 	"strconv"
+	"strings"
 
 	"github.com/labstack/gommon/log"
 	"github.com/mashingan/smapping"
@@ -311,4 +312,19 @@ func (svc *service) ChangePassword(changePassword dtos.ChangePassword, userID in
 	}
 
 	return nil, nil
+}
+
+func (svc *service) AddPersonalization(userID int, data dtos.InputPersonalization) error {
+	user := svc.model.SelectByID(userID)
+	if user == nil {
+		return errors.New("user not found")
+	}
+
+	user.Personalization = strings.Join(data.Personalization, ", ")
+	rowsAffected := svc.model.UpdateUser(*user)
+	if rowsAffected == 0 {
+		return errors.New("add personalization failed")
+	}
+
+	return nil
 }

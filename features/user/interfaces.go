@@ -35,6 +35,7 @@ type Usecase interface {
 	ResetPassword(newData dtos.ResetPassword) error
 	CheckPassword(checkPassword dtos.CheckPassword, userID int) ([]string, error)
 	ChangePassword(changePassword dtos.ChangePassword, userID int) ([]string, error)
+	AddPersonalization(userID int, data dtos.InputPersonalization) error
 }
 
 type Handler interface {
@@ -51,4 +52,5 @@ type Handler interface {
 	MyProfile() echo.HandlerFunc
 	CheckPassword() echo.HandlerFunc
 	ChangePassword() echo.HandlerFunc
+	AddPersonalization() echo.HandlerFunc
 }
