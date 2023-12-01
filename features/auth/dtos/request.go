@@ -6,7 +6,7 @@ type RequestLogin struct {
 }
 
 type InputUser struct {
-	Fullname    string `json:"fullname" form:"fullname" validate:"required,fullname"`
+	Fullname    string `json:"fullname" form:"fullname" validate:"required,alphabetic"`
 	Address     string `json:"address" form:"address" validate:"required"`
 	PhoneNumber string `json:"phone_number" form:"phone_number" validate:"required,number,min=10,max=13"`
 	Gender      string `json:"gender" form:"gender" validate:"required"`

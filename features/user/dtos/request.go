@@ -13,12 +13,12 @@ type InputUser struct {
 
 type InputUpdate struct {
 	Email          string `json:"email" form:"email" validate:"required,email"`
-	Fullname       string `json:"fullname" form:"fullname" validate:"required,alpha"`
+	Fullname       string `json:"fullname" form:"fullname" validate:"required,alphabetic"`
 	Address        string `json:"address" form:"address" validate:"required"`
 	PhoneNumber    string `json:"phone_number" form:"phone_number" validate:"required,number,min=10,max=13"`
 	Gender         string `json:"gender" form:"gender"`
 	ProfilePicture string `json:"profile_picture" form:"profile_picture"`
-	Nik            string `json:"nik" form:"nik"`
+	Nik            string `json:"nik" form:"nik" validate:"len=16,number"`
 }
 
 type InputUpdateProfilePicture struct {
