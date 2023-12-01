@@ -11,7 +11,7 @@ type InputVacancy struct {
 	SkillsRequired      []string       `form:"skills_required" validate:"required" json:"skills_required"`
 	NumberOfVacancies   int            `form:"number_of_vacancies" validate:"required" json:"number_of_vacancies"`
 	ApplicationDeadline time.Time      `form:"application_deadline" validate:"required" json:"application_deadline"`
-	ContactEmail        string         `form:"contact_email" validate:"required" json:"contact_email"`
+	ContactEmail        string         `form:"contact_email" validate:"required,email" json:"contact_email"`
 	Province            string         `form:"province" validate:"required" json:"province"`
 	City                string         `form:"city" validate:"required" json:"city"`
 	SubDistrict         string         `form:"sub_district" validate:"required" json:"sub_district"`
