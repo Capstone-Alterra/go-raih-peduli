@@ -75,7 +75,7 @@ func (mdl *model) HistoryVolunteerVacanciesCreatedByUser(userID int) ([]history.
 	return volunteer_vacancies, nil
 }
 
-func (mdl *model) HistoryVolunteerVacanciewsRegisterByUser(userID int) ([]history.VolunteerVacancies, error) {
+func (mdl *model) HistoryVolunteerVacanciesRegisterByUser(userID int) ([]history.VolunteerVacancies, error) {
 	var volunteerVacancies []history.VolunteerVacancies
 
 	if err := mdl.db.Joins("JOIN volunteer_relations ON volunteer_relations.volunteer_id = volunteer_vacancies.id").Where("volunteer_relations.user_id = ?", userID).Find(&volunteerVacancies).Error; err != nil {
