@@ -25,6 +25,10 @@ type InputUpdateProfilePicture struct {
 	ProfilePicture multipart.File `validate:"required"`
 }
 
+type InputPersonalization struct {
+	Personalization []string `json:"personalization" form:"personalization"`
+}
+
 type Pagination struct {
 	Page     int `query:"page"`
 	PageSize int `query:"page_size"`
