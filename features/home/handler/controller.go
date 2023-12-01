@@ -27,7 +27,7 @@ func (ctl *controller) GetMobileLanding() echo.HandlerFunc {
 		ctx.Bind(&pagination)
 
 		page := 1
-		size := 2
+		size := 5
 
 		homes := ctl.service.FindAll(page, size)
 
