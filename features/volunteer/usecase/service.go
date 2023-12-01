@@ -421,7 +421,7 @@ func (svc *service) ValidateInput(input dtos.InputVacancy, file multipart.File) 
 		errorList = append(errorList, "numberOfVacancies must be greater than 1")
 	}
 	if input.ApplicationDeadline.Before(time.Now()) {
-		errorList = append(errorList, "applicationDeadline must be greater than today's deadline")
+		errorList = append(errorList, "applicationDeadline must be greater than today")
 	}
 	if file != nil {
 		buffer := make([]byte, 512)
