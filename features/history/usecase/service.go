@@ -3,6 +3,7 @@ package usecase
 import (
 	"raihpeduli/features/history"
 	"raihpeduli/features/history/dtos"
+	"strings"
 
 	"github.com/mashingan/smapping"
 	"github.com/sirupsen/logrus"
@@ -78,9 +79,23 @@ func (svc *service) FindAllHistoryVolunteerVacanciesCreatedByUser(userID int) ([
 	for _, volunteer := range entities {
 		var data dtos.ResVolunteersVacancyHistory
 
-		if err := smapping.FillStruct(&data, smapping.MapFields(volunteer)); err != nil {
-			logrus.Error(err)
-		}
+		data.ID = volunteer.ID
+		data.UserID = volunteer.UserID
+		data.Title = volunteer.Title
+		data.Description = volunteer.Description
+		data.SkillsRequired = strings.Split(volunteer.SkillsRequired, ",")
+		data.NumberOfVacancies = volunteer.NumberOfVacancies
+		data.ApplicationDeadline = volunteer.ApplicationDeadline
+		data.ContactEmail = volunteer.ContactEmail
+		data.Province = volunteer.Province
+		data.City = volunteer.City
+		data.SubDistrict = volunteer.SubDistrict
+		data.Photo = volunteer.Photo
+		data.Status = volunteer.Status
+		data.RejectedReason = volunteer.RejectedReason
+		data.CreatedAt = volunteer.CreatedAt
+		data.UpdatedAt = volunteer.UpdatedAt
+		data.DeletedAt = volunteer.DeletedAt
 
 		if bookmarkIDs != nil {
 			bookmarkID, ok := bookmarkIDs[data.ID]
@@ -95,13 +110,13 @@ func (svc *service) FindAllHistoryVolunteerVacanciesCreatedByUser(userID int) ([
 
 	return volunteers, nil
 }
-func (svc *service) FindAllHistoryVolunteerVacanciewsRegisterByUser(userID int) ([]dtos.ResVolunteersVacancyHistory, error) {
+func (svc *service) FindAllHistoryVolunteerVacanciesRegisterByUser(userID int) ([]dtos.ResVolunteersVacancyHistory, error) {
 	var volunteers []dtos.ResVolunteersVacancyHistory
 	var bookmarkIDs map[int]string
 	var err error
 	var entities []history.VolunteerVacancies
 
-	entities, err = svc.model.HistoryVolunteerVacanciewsRegisterByUser(userID)
+	entities, err = svc.model.HistoryVolunteerVacanciesRegisterByUser(userID)
 	if err != nil {
 		return nil, err
 	}

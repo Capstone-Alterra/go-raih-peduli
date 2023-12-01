@@ -141,6 +141,10 @@ func (svc *service) FindByID(fundraiseID, ownerID int) *dtos.ResFundraise {
 }
 
 func (svc *service) Create(newFundraise dtos.InputFundraise, userID int, file multipart.File) (*dtos.ResFundraise, []string, error) {
+	if _, err := svc.model.SelectByTitle(newFundraise.Title); err == nil {
+		return nil, nil, errors.New("title already used by another fundraise")
+	}
+
 	if errorList, err := svc.validateInput(newFundraise, file); err != nil || len(errorList) > 0 {
 		return nil, errorList, err
 	}
@@ -255,6 +259,12 @@ func (svc *service) ModifyStatus(input dtos.InputFundraiseStatus, oldData dtos.R
 			return []string{"rejected_reason must be at least 20 characters"}, errors.New("characters must be at least 20")
 		}
 		newFundraise.RejectedReason = input.RejectedReason
+	}
+
+	if input.Status == "accepted" {
+		if _, err := svc.model.SelectByTitle(newFundraise.Title); err == nil {
+			return nil, errors.New("there is a fundraise that has the same title and status as accepted. change the title first before changing status to accepted")
+		}
 	}
 
 	if err := svc.model.Update(newFundraise); err != nil {
