@@ -82,13 +82,13 @@ func (j JWT) RefereshJWT(refreshToken *jwt.Token) map[string]any {
 		newAccessClaim["exp"] = time.Now().Add(time.Minute * 10).Unix()
 
 		var newAccessToken = jwt.NewWithClaims(refreshToken.Method, newAccessClaim)
-		newSignedAccessToken, _ := newAccessToken.SignedString(refreshToken.Signature)
+		newSignedAccessToken, _ := newAccessToken.SignedString([]byte(j.signKey))
 
 		var newRefreshClaim = refreshToken.Claims.(jwt.MapClaims)
 		newRefreshClaim["exp"] = time.Now().Add(time.Hour * 24).Unix()
 
 		var newRefreshToken = jwt.NewWithClaims(refreshToken.Method, newRefreshClaim)
-		newSignedRefreshToken, _ := newRefreshToken.SignedString(refreshToken.Signature)
+		newSignedRefreshToken, _ := newRefreshToken.SignedString([]byte(j.refreshKey))
 
 		result["access_token"] = newSignedAccessToken
 		result["refresh_token"] = newSignedRefreshToken
