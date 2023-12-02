@@ -86,6 +86,17 @@ func (mdl *model) SelectVacancyByID(volunteerID int) *volunteer.VolunteerVacanci
 	return &volunteer
 }
 
+func (mdl *model) SelectByTittle(title string) error {
+	var vacancy volunteer.VolunteerVacancies
+
+	if err := mdl.db.Table("volunteer_vacancies").Where("title = ?", title).
+		Where("status = ?", "accepted").First(&vacancy).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (mdl *model) SelectBookmarkedVacancyID(ownerID int) (map[int]string, error) {
 	opts := options.Find().SetProjection(bson.M{"post_id": 1, "_id": 1})
 	cursor, err := mdl.collection.Find(context.Background(), bson.M{"owner_id": ownerID, "post_type": "vacancy"}, opts)

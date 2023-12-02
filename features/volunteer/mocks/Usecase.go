@@ -163,26 +163,26 @@ func (_m *Usecase) FindVacancyByID(vacancyID int, ownerID int) *dtos.ResVacancy 
 }
 
 // ModifyVacancy provides a mock function with given fields: vacancyData, file, oldData
-func (_m *Usecase) ModifyVacancy(vacancyData dtos.InputVacancy, file multipart.File, oldData dtos.ResVacancy) (bool, []string) {
+func (_m *Usecase) ModifyVacancy(vacancyData dtos.InputVacancy, file multipart.File, oldData dtos.ResVacancy) ([]string, error) {
 	ret := _m.Called(vacancyData, file, oldData)
 
-	var r0 bool
-	var r1 []string
-	if rf, ok := ret.Get(0).(func(dtos.InputVacancy, multipart.File, dtos.ResVacancy) (bool, []string)); ok {
+	var r0 []string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(dtos.InputVacancy, multipart.File, dtos.ResVacancy) ([]string, error)); ok {
 		return rf(vacancyData, file, oldData)
 	}
-	if rf, ok := ret.Get(0).(func(dtos.InputVacancy, multipart.File, dtos.ResVacancy) bool); ok {
+	if rf, ok := ret.Get(0).(func(dtos.InputVacancy, multipart.File, dtos.ResVacancy) []string); ok {
 		r0 = rf(vacancyData, file, oldData)
 	} else {
-		r0 = ret.Get(0).(bool)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
 	}
 
-	if rf, ok := ret.Get(1).(func(dtos.InputVacancy, multipart.File, dtos.ResVacancy) []string); ok {
+	if rf, ok := ret.Get(1).(func(dtos.InputVacancy, multipart.File, dtos.ResVacancy) error); ok {
 		r1 = rf(vacancyData, file, oldData)
 	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).([]string)
-		}
+		r1 = ret.Error(1)
 	}
 
 	return r0, r1
