@@ -148,17 +148,21 @@ func (svc *service) FindVacancyByID(vacancyID, ownerID int) *dtos.ResVacancy {
 	return &res
 }
 
-func (svc *service) ModifyVacancy(vacancyData dtos.InputVacancy, file multipart.File, oldData dtos.ResVacancy) (bool, []string) {
+func (svc *service) ModifyVacancy(vacancyData dtos.InputVacancy, file multipart.File, oldData dtos.ResVacancy) ([]string, error) {
+	if err := svc.model.SelectByTittle(vacancyData.Title); err == nil {
+		return nil, errors.New("title already used by another vacancy")
+	}
+
 	errMap := svc.validation.ValidateRequest(vacancyData)
 	if errMap != nil {
-		return false, errMap
+		return errMap, nil
 	}
 
 	var newVacancy volunteer.VolunteerVacancies
 
 	url, err := svc.model.UploadFile(file, oldData.Photo)
 	if err != nil {
-		return false, nil
+		return nil, errors.New("upload file failed")
 	}
 
 	newVacancy.ID = oldData.ID
@@ -179,10 +183,10 @@ func (svc *service) ModifyVacancy(vacancyData dtos.InputVacancy, file multipart.
 
 	if rowsAffected <= 0 {
 		log.Error("There is No Volunteer Updated!")
-		return false, nil
+		return nil, errors.New("there is no vacancy updated")
 	}
 
-	return true, nil
+	return nil, nil
 }
 
 func (svc *service) ModifyVacancyStatus(input dtos.StatusVacancies, oldData dtos.ResVacancy) (bool, []string) {
@@ -263,7 +267,11 @@ func (svc *service) RemoveVacancy(volunteerID int, oldData dtos.ResVacancy) erro
 }
 
 func (svc *service) CreateVacancy(newVolunteer dtos.InputVacancy, UserID int, file multipart.File) (*dtos.ResVacancy, []string, error) {
-	if errorList, err := svc.ValidateInput(newVolunteer, file); err != nil || len(errorList)>0{
+	if err := svc.model.SelectByTittle(newVolunteer.Title); err == nil {
+		return nil, nil, errors.New("title already used by another vacancy")
+	}
+
+	if errorList, err := svc.ValidateInput(newVolunteer, file); err != nil || len(errorList) > 0 {
 		return nil, errorList, err
 	}
 	if errMap := svc.validation.ValidateRequest(newVolunteer); errMap != nil {
@@ -402,7 +410,7 @@ func (svc *service) FindUserInVacancy(vacancyID, userID int) bool {
 	return true
 }
 
-func (svc *service) ValidateInput(input dtos.InputVacancy, file multipart.File) ([]string, error){
+func (svc *service) ValidateInput(input dtos.InputVacancy, file multipart.File) ([]string, error) {
 	var errorList []string
 	if errMap := svc.validation.ValidateRequest(input); errMap != nil {
 		errorList = append(errorList, errMap...)
@@ -425,7 +433,7 @@ func (svc *service) ValidateInput(input dtos.InputVacancy, file multipart.File) 
 	}
 	if file != nil {
 		buffer := make([]byte, 512)
-		
+
 		if _, err := file.Read(buffer); err != nil {
 			return nil, err
 		}

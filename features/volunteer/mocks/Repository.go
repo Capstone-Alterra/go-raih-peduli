@@ -269,6 +269,20 @@ func (_m *Repository) SelectBookmarkedVacancyID(ownerID int) (map[int]string, er
 	return r0, r1
 }
 
+// SelectByTittle provides a mock function with given fields: title
+func (_m *Repository) SelectByTittle(title string) error {
+	ret := _m.Called(title)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string) error); ok {
+		r0 = rf(title)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // SelectRegistrarByID provides a mock function with given fields: registrarID
 func (_m *Repository) SelectRegistrarByID(registrarID int) *volunteer.VolunteerRelations {
 	ret := _m.Called(registrarID)

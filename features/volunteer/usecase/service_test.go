@@ -87,53 +87,53 @@ import (
 // 	})
 // }
 
-
-func TestCreateVacancy(t *testing.T){
+func TestCreateVacancy(t *testing.T) {
 	repo := mocks.NewRepository(t)
 	validation := helperMocks.NewValidationInterface(t)
-	service := New(repo,validation)
+	service := New(repo, validation)
 
 	var file multipart.File
 
 	var newVacancy = dtos.InputVacancy{
-		Title: "ini bencana alam",
-		Description: "telah terjadi bencana alam disuatu lokasi",
-		SkillsRequired: []string{"skil1", "skill2"},
-		NumberOfVacancies: 20,
+		Title:               "ini bencana alam",
+		Description:         "telah terjadi bencana alam disuatu lokasi",
+		SkillsRequired:      []string{"skil1", "skill2"},
+		NumberOfVacancies:   20,
 		ApplicationDeadline: time.Date(2023, time.April, 19, 15, 30, 0, 0, time.UTC),
-		ContactEmail: "didadejan45@gmail.com",
-		Province: "jawa barat",
-		City: "banten",
-		SubDistrict: "kec banten",
-		DetailLocation: "di suatu pantai daerah banten",
-		Status: "pending",
-		Photo: file,
+		ContactEmail:        "didadejan45@gmail.com",
+		Province:            "jawa barat",
+		City:                "banten",
+		SubDistrict:         "kec banten",
+		DetailLocation:      "di suatu pantai daerah banten",
+		Status:              "pending",
+		Photo:               file,
 	}
 	var invalidData = dtos.InputVacancy{
 		Title: "hahahahah",
 	}
 
 	var vacancyData = volunteer.VolunteerVacancies{
-		ID: 1,
-		UserID: 1,
-		Title: "ini bencana alam",
-		Description: "telah terjadi bencana alam disuatu lokasi",
-		SkillsRequired: "skil1, skill2",
-		NumberOfVacancies: 20,
+		ID:                  1,
+		UserID:              1,
+		Title:               "ini bencana alam",
+		Description:         "telah terjadi bencana alam disuatu lokasi",
+		SkillsRequired:      "skil1, skill2",
+		NumberOfVacancies:   20,
 		ApplicationDeadline: time.Date(2023, time.April, 19, 15, 30, 0, 0, time.UTC),
-		ContactEmail: "didadejan45@gmail.com",
-		Province: "jawa barat",
-		City: "banten",
-		SubDistrict: "kec banten",
-		DetailLocation: "di suatu pantai daerah banten",
-		Status: "pending",
-		Photo: "https://storage.googleapis.com//vacancies/volunteer-vacancy.jpg",
+		ContactEmail:        "didadejan45@gmail.com",
+		Province:            "jawa barat",
+		City:                "banten",
+		SubDistrict:         "kec banten",
+		DetailLocation:      "di suatu pantai daerah banten",
+		Status:              "pending",
+		Photo:               "https://storage.googleapis.com//vacancies/volunteer-vacancy.jpg",
 	}
 
-	t.Run("Succes Create", func(t *testing.T){
+	t.Run("Succes Create", func(t *testing.T) {
+		repo.On("SelectByTittle", newVacancy.Title).Return(errors.New("data not found")).Once()
 		validation.On("ValidateRequest", newVacancy).Return(nil).Once()
 		repo.On("UploadFile", file, "").Return("https://storage.googleapis.com//vacancies/volunteer-vacancy.jpg", nil).Once()
-		
+
 		var vacancy volunteer.VolunteerVacancies
 		vacancy.UserID = 1
 		vacancy.Title = newVacancy.Title
@@ -164,34 +164,34 @@ func TestCreateVacancy(t *testing.T){
 		result, errMap, err := service.CreateVacancy(newVacancy, 1, file)
 
 		assert.Error(t, err)
-    	assert.Nil(t, errMap)
-    	assert.Nil(t, result)
-    	assert.Equal(t, "failed to upload file", err.Error())
+		assert.Nil(t, errMap)
+		assert.Nil(t, result)
+		assert.Equal(t, "failed to upload file", err.Error())
 
-    	repo.AssertExpectations(t)
+		repo.AssertExpectations(t)
 	})
 
-	t.Run("Validation error", func(t *testing.T){
+	t.Run("Validation error", func(t *testing.T) {
 		validation.On("ValidateRequest", invalidData).Return(nil).Once()
 		repo.On("UploadFile", file, "").Return("", errors.New("validation error")).Once()
 
 		result, errMap, err := service.CreateVacancy(invalidData, 1, file)
 
 		assert.Error(t, err)
-    	assert.Nil(t, errMap)
-    	assert.Nil(t, result)
-    	assert.Equal(t, "validation error", err.Error())
+		assert.Nil(t, errMap)
+		assert.Nil(t, result)
+		assert.Equal(t, "validation error", err.Error())
 
-    	repo.AssertExpectations(t)
+		repo.AssertExpectations(t)
 	})
 }
 
-func TestDeleteVacancy(t *testing.T){
+func TestDeleteVacancy(t *testing.T) {
 	repo := mocks.NewRepository(t)
 	validation := helperMocks.NewValidationInterface(t)
-	service := New(repo,validation)
+	service := New(repo, validation)
 
-	t.Run("Succes deleted vacancy",func(t *testing.T) {
+	t.Run("Succes deleted vacancy", func(t *testing.T) {
 		volunteerID := 1
 		oldData := dtos.ResVacancy{
 			Photo: "https://storage.googleapis.com/bucket-name/vacancies/photo.jpg",
@@ -200,7 +200,7 @@ func TestDeleteVacancy(t *testing.T){
 		repo.On("DeleteVacancyByID", volunteerID).Return(nil).Once()
 
 		err := service.RemoveVacancy(volunteerID, oldData)
-		
+
 		assert.NoError(t, err)
 		repo.AssertExpectations(t)
 	})
@@ -236,9 +236,8 @@ func TestDeleteVacancy(t *testing.T){
 	})
 }
 
-func TestFindVacancyByID(t *testing.T) {
-    repo := mocks.NewRepository(t)
-    validation := helperMocks.NewValidationInterface(t)
-    service := New(repo, validation) 
-}
-
+// func TestFindVacancyByID(t *testing.T) {
+// 	repo := mocks.NewRepository(t)
+// 	validation := helperMocks.NewValidationInterface(t)
+// 	service := New(repo, validation)
+// }
