@@ -128,7 +128,7 @@ func (svc *service) ResendOTP(email string) bool {
 }
 
 func (svc *service) RefreshJWT(jwt dtos.RefreshJWT) (*dtos.ResJWT, error) {
-	parsedRefreshToken, err := svc.jwt.ValidateToken(jwt.RefreshToken, os.Getenv("SECRET"))
+	parsedRefreshToken, err := svc.jwt.ValidateToken(jwt.RefreshToken, os.Getenv("REFSECRET"))
 	if err != nil {
 		return nil, errors.New("validate token failed")
 	}
