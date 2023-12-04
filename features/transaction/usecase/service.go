@@ -71,6 +71,10 @@ func (svc *service) FindAll(page, size, roleID, userID int, keyword string) ([]d
 		}
 
 		switch transaction.PaymentType {
+		case "4":
+			data.PaymentType = "Bank Permata"
+		case "5":
+			data.PaymentType = "Bank CIMB"
 		case "6":
 			data.PaymentType = "Bank BCA"
 		case "7":
@@ -79,6 +83,8 @@ func (svc *service) FindAll(page, size, roleID, userID int, keyword string) ([]d
 			data.PaymentType = "Bank BNI"
 		case "10":
 			data.PaymentType = "Gopay"
+		case "11":
+			data.PaymentType = "Qris"
 		default:
 			data.PaymentType = "Other"
 		}
