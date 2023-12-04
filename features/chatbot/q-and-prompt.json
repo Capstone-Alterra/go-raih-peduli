@@ -1,14 +1,58 @@
 [
   {
-    "question": "how to view available fundraising programs?",
-    "prompt": "explain how a fundraising programs can be viewed through an app. The available one is the one that has status accepted, not pending or rejected"
+    "question": "bagaimana cara melihat program penggalangan dana yang tersedia?",
+    "prompt": "jelaskan bagaimana program penggalangan dana dapat dilihat melalui aplikasi. yang tersedia adalah yang memiliki status diterima, bukan tertunda atau ditolak."
   },
   {
-    "question": "i want to know about fundraising programs",
-    "prompt": "explain what is a fundraising programs."
+    "question": "saya ingin tahu tentang program penggalangan dana",
+    "prompt": "jelaskan apa itu program penggalangan dana. program penggalangan adalah program yang bertujuan untuk mengumpulkan sumbangan dana, atau bantuan finansial untuk mendukung sebuah tujuan seseorang maupun kelompok atau inisiatif tertentu."
   },
   {
-    "question": "how to donate to a fundraising program?",
-    "prompt": "explain step by step how to donate to a fundraising program or post. choose one of the fundraising details, click donate button, choose the payment type, and then pay the bill. generate better answers"
+    "question": "cara mendonasikan untuk program penggalangan dana?",
+    "prompt": "jelaskan langkah demi langkah cara mendonasikan untuk program penggalangan dana atau pos. pilih salah satu detail penggalangan dana, klik tombol donasi, pilih jenis pembayaran, dan kemudian bayar tagihannya. hasilkan jawaban yang lebih baik."
+  },
+  {
+    "question": "bagaimana cara melihat lowongan relawan yang tersedia?",
+    "prompt": "jelaskan langkah demi langkah jika pengguna lupa akan password akunnya. klik fitur `relawan` pada home screen atau lihat Semua pada list relawan untuk melihat daftar lowongan relawan."
+  },
+  {
+    "question": "apa syarat-syarat untuk menjadi relawan?",
+    "prompt": "jelaskan syarat-syarat untuk menjadi relawan. syarat - syarat dapat berbeda untuk setiap lowongan relawan. lihat deskripsi lowongan relawan untuk informasi lebih lanjut."
+  },
+  {
+    "question": "apa itu aplikasi raih peduli?",
+    "prompt": "jelaskan apa itu aplikasi raih peduli. raih peduli adalah platform yang memungkinkan pengguna untuk mendukung program penggalangan dana, menjadi relawan, dan melihat informasi tentang berita sosial dan lingkungan."
+  },
+  {
+    "question": "saya ingin tahu tentang fitur relawan",
+    "prompt": "jelaskan apa itu fitur relawan. dengan fitur relawan memungkinkan pengguna berkesempatan untuk berpartisipasi secara langsung dalam kegiatan-kegiatan sosial seperti peduli lingkungan, pendidikan, kesehatan, dan lain lain."
+  },
+  {
+    "question": "saya ingin tahu tentang fitur berita",
+    "prompt": "jelaskan apa itu fitur berita. fitur memungkinkan pengguna untuk melihat berita sekaligus informasi terkini seputar isu sosial dan lingkungan."
+  },
+  {
+    "question": "saya ingin tahu fitur tentang kami",
+    "prompt": "jelaskan apa itu fitur tentang kami”. fitur tentang kami merupakan fitur yang memberikan informasi terkait dengan latar belakang, tujuan, dan visi-misi yang dianut oleh raih peduli."
+  },
+  {
+    "question": "bagaimana cara mendaftar sebagai relawan?",
+    "prompt": "jelaskan langkah demi langkah cara untuk mendaftar sebagai relawan. pengguna diwajibkan untuk login terlebih dahulu, jika belum punya akun pengguna bisa daftar terlebih dahulu. kemudian sebelum pengguna mengisi form apply Relawan, pengguna diwajibkan untuk mengisi NIK pada setting. Setelah itu pengguna dapat melakukan pendaftaran sebagai relawan dengan mengakses fitur Relawan kemudian menekan tombol `ikuti program`. Kemudian pengguna diwajibkan mengisi seluruh form yang tersedia disana, jika sudah mengisi form maka pengguna bisa melihat status pendaftaran pada fitur Riwayat. Pada fitur Riwayat akan tertera status pendaftaran seperti pending (menunggu review admin), ditolak, dan diterima."
+  },
+  {
+    "question": "jelaskan cara untuk mengajukan pembuatan program penggalangan dana ataupun lowongan relawan?",
+    "prompt": "jelaskan langkah demi langkah cara untuk mengajukan pembuatan program penggalangan dana ataupun lowongan relawan. Langkah pertama pengguna diwajibkan login terlebih dahulu, jika belum mempunyai akun silahkan daftar terlebih dahulu. kemudian pengguna bisa pergi ke fitur penggalangan dana atau lowongan relawan. pada kedua fitur itu disediakan tombol “+” atau “Add” untuk pengajuan pembuatan program. dalam tombol itu disediakan pilihan antara pembuatan program penggalangan dana atau lowongan relawan. setelah pengguna memilih ingin mengajukan program penggalangan dana atau lowongan relawan, pengguna diwajibkan untuk mengisi form yang tersedia disana."
+  },
+  {
+    "question": "jelaskan apa itu fitur riwayat?",
+    "prompt": "jelaskan apa itu fitur riwayat. fitur riwayat merupakan fitur yang yang memberikan pengguna akses aktivitas yang pengguna lakukan atau terlibat di dalamnya"
+  },
+  {
+    "question": "bagaimana cara mendaftar akun di raih peduli?",
+    "prompt": "jelaskan langkah demi langkah cara untuk mendaftar akun di raih peduli.  pengguna dapat mendaftar akun dengan mengklik tombol daftar pada halaman login dan mengisi formulir pendaftaran. kemudian akan ada OTP email dari email awal yang telah didaftarkan"
+  },
+  {
+    "question": "bagaimana jika saya lupa kata sandi atau password akun saya?",
+    "prompt": "jelaskan langkah demi langkah jika pengguna lupa akan password akunnya. klik opsi lupa password pada halaman login, kemudian isi email untuk verifikasi OTP. langkah selanjutnya masukan password baru dan jika sudah klik simpan. langkah selanjutnya pengguna sudah dapat login dengan password baru tadi."
   }
 ]
