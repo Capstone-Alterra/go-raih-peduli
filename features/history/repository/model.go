@@ -121,7 +121,7 @@ func (mdl *model) GetTotalVolunteersByVacancyID(vacancyID int) int64 {
 func (mdl *model) HistoryUserTransaction(userID int) ([]history.Transaction, error) {
 	var transaction []history.Transaction
 
-	if err := mdl.db.Where("transactions.user_id = ?", userID).Find(&transaction).Error; err != nil {
+	if err := mdl.db.Preload("User").Table("transactions").Joins("JOIN users ON transactions.user_id = users.id").Where("transactions.user_id = ?", userID).Find(&transaction).Error; err != nil {
 		return nil, err
 	}
 	return transaction, nil

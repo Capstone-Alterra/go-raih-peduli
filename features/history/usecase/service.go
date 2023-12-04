@@ -24,6 +24,9 @@ func (svc *service) FindAllHistoryFundraiseCreatedByUser(userID int) ([]dtos.Res
 	var bookmarkIDs map[int]string
 
 	entities, err := svc.model.HistoryFundraiseCreatedByUser(userID)
+	if err != nil {
+		return nil, err
+	}
 
 	if userID != 0 {
 		bookmarkIDs, err = svc.model.SelectBookmarkedFundraiseID(userID)
@@ -129,7 +132,6 @@ func (svc *service) FindAllHistoryVolunteerVacanciesRegisterByUser(userID int) (
 
 	for _, volunteer := range entities {
 		var data dtos.ResVolunteersVacancyHistory
-
 		if err := smapping.FillStruct(&data, smapping.MapFields(volunteer)); err != nil {
 			logrus.Error(err)
 		}
@@ -156,11 +158,14 @@ func (svc *service) FindAllHistoryUserTransaction(userID int) ([]dtos.ResTransac
 	}
 	for _, donation := range entities {
 		var data dtos.ResTransactionHistory
-
 		if err := smapping.FillStruct(&data, smapping.MapFields(donation)); err != nil {
 			logrus.Error(err)
 		}
-
+		data.Fullname = donation.User.Fullname
+		data.Address = donation.User.Address
+		data.PhoneNumber = donation.User.PhoneNumber
+		data.ProfilePicture = donation.User.ProfilePicture
+		data.Email = donation.User.Email
 		donations = append(donations, data)
 	}
 	return donations, nil

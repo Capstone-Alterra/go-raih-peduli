@@ -29,4 +29,5 @@ type Handler interface {
 	GetHistoryVolunteerVacanciesCreatedByUser() echo.HandlerFunc
 	GetHistoryVolunteerVacanciesRegisterByUser() echo.HandlerFunc
 	GetHistoryUserTransaction() echo.HandlerFunc
+	GetAllHistory() echo.HandlerFunc
 }
