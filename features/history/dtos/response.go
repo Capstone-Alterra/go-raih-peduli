@@ -24,6 +24,7 @@ type ResFundraisesHistory struct {
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"deleted_at"`
+	PostType  string         `json:"post_type"`
 }
 
 type ResVolunteersVacancyHistory struct {
@@ -49,6 +50,7 @@ type ResVolunteersVacancyHistory struct {
 	CreatedAt      time.Time      `json:"created_at"`
 	UpdatedAt      time.Time      `json:"updated_at"`
 	DeletedAt      gorm.DeletedAt `json:"deleted_at"`
+	PostType       string         `json:"post_type"`
 }
 
 type ResTransactionHistory struct {
@@ -66,4 +68,5 @@ type ResTransactionHistory struct {
 	UrlCallback    string `json:"url_callback"`
 	PaidAt         string `json:"paid_at"`
 	Status         string `json:"status"`
+	PostType       string `json:"post_type"`
 }
