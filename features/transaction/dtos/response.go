@@ -3,6 +3,7 @@ package dtos
 type ResTransaction struct {
 	ID             int    `json:"transaction_id"`
 	UserID         int    `json:"user_id"`
+	Email          string `json:"email"`
 	Fullname       string `json:"fullname"`
 	Address        string `json:"address"`
 	PhoneNumber    string `json:"phone_number"`
