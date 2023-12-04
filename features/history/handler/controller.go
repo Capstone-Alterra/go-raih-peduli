@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"raihpeduli/features/history"
 	helper "raihpeduli/helpers"
 
@@ -118,7 +119,7 @@ func (ctl *controller) GetAllHistory() echo.HandlerFunc {
 		if ctx.Get("user_id") != nil {
 			userID = ctx.Get("user_id").(int)
 		}
-		response_data := make(map[string]any)
+		var response_data []any
 		fundraises, err := ctl.service.FindAllHistoryFundraiseCreatedByUser(userID)
 
 		if err != nil {
@@ -126,7 +127,7 @@ func (ctl *controller) GetAllHistory() echo.HandlerFunc {
 		}
 		if len(fundraises) != 0 {
 			// return ctx.JSON(404, helper.Response("history fundraises created by users not found"))
-			response_data["created_fundraises"] = fundraises
+			response_data = append(response_data, fundraises)
 		}
 
 		vacancies, err := ctl.service.FindAllHistoryVolunteerVacanciesCreatedByUser(userID)
@@ -136,7 +137,8 @@ func (ctl *controller) GetAllHistory() echo.HandlerFunc {
 
 		if vacancies != nil || len(vacancies) != 0 {
 			// return ctx.JSON(404, helper.Response("history volunteer vacancies  created by users not found"))
-			response_data["volunteer_vacancies"] = vacancies
+			response_data = append(response_data, vacancies)
+
 		}
 		vacanciesReg, err := ctl.service.FindAllHistoryVolunteerVacanciesRegisterByUser(userID)
 		if err != nil {
@@ -145,7 +147,8 @@ func (ctl *controller) GetAllHistory() echo.HandlerFunc {
 
 		if vacanciesReg != nil || len(vacanciesReg) != 0 {
 			// return ctx.JSON(404, helper.Response("history volunteer vacancies registered by users not found"))
-			response_data["volunteer_vacancies_registered"] = vacanciesReg
+			response_data = append(response_data, vacanciesReg)
+
 		}
 
 		donations, err := ctl.service.FindAllHistoryUserTransaction(userID)
@@ -155,9 +158,10 @@ func (ctl *controller) GetAllHistory() echo.HandlerFunc {
 
 		if donations != nil || len(donations) != 0 {
 			// return ctx.JSON(404, helper.Response("donation not found"))
-			response_data["donations"] = donations
-		}
+			response_data = append(response_data, donations)
 
+		}
+		fmt.Println(len(response_data))
 		if len(response_data) == 1 {
 			return ctx.JSON(404, helper.Response("history not found"))
 		}

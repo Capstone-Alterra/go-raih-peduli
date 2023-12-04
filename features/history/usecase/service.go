@@ -55,6 +55,7 @@ func (svc *service) FindAllHistoryFundraiseCreatedByUser(userID int) ([]dtos.Res
 		if data.FundAcquired, err = svc.model.TotalFundAcquired(data.ID); err != nil {
 			logrus.Error(err)
 		}
+		data.PostType = "created_fundraises"
 		fundraises = append(fundraises, data)
 	}
 	if err != nil {
@@ -108,6 +109,7 @@ func (svc *service) FindAllHistoryVolunteerVacanciesCreatedByUser(userID int) ([
 			}
 		}
 		data.TotalRegistrar = int(svc.model.GetTotalVolunteersByVacancyID(data.ID))
+		data.PostType = "created_volunteer_vacancies"
 		volunteers = append(volunteers, data)
 	}
 
@@ -144,6 +146,7 @@ func (svc *service) FindAllHistoryVolunteerVacanciesRegisterByUser(userID int) (
 			}
 		}
 		data.TotalRegistrar = int(svc.model.GetTotalVolunteersByVacancyID(data.ID))
+		data.PostType = "registered_volunteer_vacancies"
 		volunteers = append(volunteers, data)
 	}
 
@@ -166,6 +169,7 @@ func (svc *service) FindAllHistoryUserTransaction(userID int) ([]dtos.ResTransac
 		data.PhoneNumber = donation.User.PhoneNumber
 		data.ProfilePicture = donation.User.ProfilePicture
 		data.Email = donation.User.Email
+		data.PostType = "donations"
 		donations = append(donations, data)
 	}
 	return donations, nil
