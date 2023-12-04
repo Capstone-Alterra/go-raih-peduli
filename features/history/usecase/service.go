@@ -161,6 +161,11 @@ func (svc *service) FindAllHistoryUserTransaction(userID int) ([]dtos.ResTransac
 		if err := smapping.FillStruct(&data, smapping.MapFields(donation)); err != nil {
 			logrus.Error(err)
 		}
+		data.Fullname = donation.User.Fullname
+		data.Address = donation.User.Address
+		data.PhoneNumber = donation.User.PhoneNumber
+		data.ProfilePicture = donation.User.ProfilePicture
+		data.Email = donation.User.Email
 		donations = append(donations, data)
 	}
 	return donations, nil

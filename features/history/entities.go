@@ -74,5 +74,6 @@ type Transaction struct {
 	UrlCallback    string `gorm:"type:varchar(250)"`
 	CreatedAt      time.Time
 
+	User      auth.User
 	Fundraise Fundraise
 }

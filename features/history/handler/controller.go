@@ -158,11 +158,11 @@ func (ctl *controller) GetAllHistory() echo.HandlerFunc {
 			response_data["donations"] = donations
 		}
 
-		if response_data == nil || len(response_data) == 0 {
+		if len(response_data) == 1 {
 			return ctx.JSON(404, helper.Response("history not found"))
 		}
-		data := make(map[string]any)
-		data["data"] = response_data
-		return ctx.JSON(200, helper.Response("success", data))
+		return ctx.JSON(200, helper.Response("success", map[string]any{
+			"data": response_data,
+		}))
 	}
 }
