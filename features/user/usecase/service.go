@@ -108,17 +108,6 @@ func (svc *service) Create(newData dtos.InputUser) (*dtos.ResUser, []string, err
 		return nil, nil, err
 	}
 
-	userID := strconv.Itoa(userModel.ID)
-	roleID := strconv.Itoa(resUser.RoleID)
-	tokenData := svc.jwt.GenerateJWT(userID, roleID)
-
-	if tokenData == nil {
-		log.Error("Token process failed")
-	}
-
-	resUser.AccessToken = tokenData["access_token"].(string)
-	resUser.RefreshToken = tokenData["refresh_token"].(string)
-
 	return &resUser, nil, nil
 }
 
@@ -274,6 +263,23 @@ func (svc *service) ResetPassword(newData dtos.ResetPassword) error {
 	}
 
 	return nil
+}
+
+func (svc *service) MyProfile(userID int) *dtos.ResMyProfile {
+	res := dtos.ResMyProfile{}
+	user := svc.model.SelectByID(userID)
+
+	if user == nil {
+		return nil
+	}
+
+	err := smapping.FillStruct(&res, smapping.MapFields(user))
+	if err != nil {
+		log.Error(err)
+		return nil
+	}
+
+	return &res
 }
 
 func (svc *service) CheckPassword(checkPassword dtos.CheckPassword, userID int) ([]string, error) {
