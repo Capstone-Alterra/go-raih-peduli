@@ -297,7 +297,7 @@ func (ctl *controller) CheckPassword() echo.HandlerFunc {
 		}
 
 		if err != nil {
-			return ctx.JSON(500, helpers.Response("something went wrong"))
+			return ctx.JSON(500, helpers.Response(err.Error()))
 		}
 
 		return ctx.JSON(200, helpers.Response("success check password"))
@@ -320,7 +320,7 @@ func (ctl *controller) ChangePassword() echo.HandlerFunc {
 		}
 
 		if err != nil {
-			return ctx.JSON(500, helpers.Response("something went wrong"))
+			return ctx.JSON(500, helpers.Response(err.Error()))
 		}
 
 		return ctx.JSON(200, helpers.Response("success change password"))
@@ -337,7 +337,7 @@ func (ctl *controller) AddPersonalization() echo.HandlerFunc {
 
 		err := ctl.service.AddPersonalization(userID, input)
 		if err != nil {
-			return ctx.JSON(500, helpers.Response("something went wrong"))
+			return ctx.JSON(500, helpers.Response(err.Error()))
 		}
 
 		return ctx.JSON(200, helpers.Response("success add personalization"))
