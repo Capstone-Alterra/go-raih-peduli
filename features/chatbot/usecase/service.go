@@ -5,6 +5,7 @@ import (
 	"raihpeduli/features/chatbot"
 	"raihpeduli/features/chatbot/dtos"
 	"raihpeduli/helpers"
+	"time"
 
 	"github.com/labstack/gommon/log"
 	"github.com/mashingan/smapping"
@@ -74,16 +75,29 @@ func (svc *service) SetReplyMessage(input dtos.InputMessage, userID int) (*dtos.
 		return nil, nil, err
 	}
 
+	wibLocation, err := time.LoadLocation("Asia/Jakarta")
+
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var questionTime =  time.Now().In(wibLocation)
+
+	var chatMessage = chatbot.QuestionAndReply{
+		Question: input.Message,
+		QuestionTime: questionTime,
+	}
+
 	reply, err := svc.openAI.GetAppInformation(input.Message, data)
 
 	if err != nil {
 		return nil, nil, err
 	}
 
-	var chatMessage = chatbot.QuestionAndReply{
-		Question: input.Message,
-		Reply: reply,
-	}
+	var replyTime = time.Now().In(wibLocation)
+
+	chatMessage.Reply = reply
+	chatMessage.ReplyTime = replyTime
 	
 	if userID != 0 {
 		if err := svc.model.SaveChat(chatMessage, userID); err != nil {
@@ -94,6 +108,8 @@ func (svc *service) SetReplyMessage(input dtos.InputMessage, userID int) (*dtos.
 	return &dtos.ResChatReply{
 		Question: input.Message,
 		Reply: reply,
+		QuestionTime: questionTime,
+		ReplyTime: replyTime,
 	}, nil, nil
 }
 

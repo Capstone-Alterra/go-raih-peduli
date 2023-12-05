@@ -1,13 +1,17 @@
 package chatbot
 
+import "time"
+
 type ChatHistory struct {
 	UserID           int                `bson:"user_id"`
 	QuestionAndReply []QuestionAndReply `bson:"question_reply"`
 }
 
 type QuestionAndReply struct {
-	Question string `bson:"question"`
-	Reply    string `bson:"reply"`
+	Question     string    `bson:"question"`
+	QuestionTime time.Time `bson:"question_time"`
+	Reply        string    `bson:"reply"`
+	ReplyTime 	 time.Time `bson:"reply_time"`
 }
 
 type User struct {
