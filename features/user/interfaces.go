@@ -33,6 +33,7 @@ type Usecase interface {
 	ForgetPassword(email dtos.ForgetPassword) error
 	VerifyOTP(verificationKey string) string
 	ResetPassword(newData dtos.ResetPassword) error
+	MyProfile(userID int) *dtos.ResMyProfile
 	CheckPassword(checkPassword dtos.CheckPassword, userID int) ([]string, error)
 	ChangePassword(changePassword dtos.ChangePassword, userID int) ([]string, error)
 	AddPersonalization(userID int, data dtos.InputPersonalization) error
