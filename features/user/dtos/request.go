@@ -8,7 +8,7 @@ type InputUser struct {
 	PhoneNumber string `json:"phone_number" form:"phone_number" validate:"required,number,min=10,max=13"`
 	Gender      string `json:"gender" form:"gender" validate:"required"`
 	Email       string `json:"email" form:"email" validate:"required,email"`
-	Password    string `json:"password" form:"password" validate:"required,alphanum,min=8"`
+	Password    string `json:"password" form:"password" validate:"required,min=8"`
 }
 
 type InputUpdate struct {
@@ -52,5 +52,5 @@ type CheckPassword struct {
 }
 
 type ChangePassword struct {
-	NewPassword string `json:"new_password" form:"new_password" validate:"required,alphanum,min=8"`
+	NewPassword string `json:"new_password" form:"new_password" validate:"required,min=8"`
 }
