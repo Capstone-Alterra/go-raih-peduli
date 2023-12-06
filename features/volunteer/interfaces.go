@@ -32,6 +32,7 @@ type Repository interface {
 	SelectVolunteerDetails(vacancyID int, volunteerID int) *Volunteer
 	CheckUser(userID int) bool
 	FindUserInVacancy(vacancyID, userID int) bool
+	SelectAllSkills() ([]dtos.Skill, error)
 }
 
 type Usecase interface {
@@ -47,6 +48,7 @@ type Usecase interface {
 	FindDetailVolunteers(vacancyID, volunteerID int) *dtos.ResRegistrantVacancy
 	CheckUser(userID int) bool
 	FindUserInVacancy(vacancyID, userID int) bool
+	FindAllSkills() ([]dtos.Skill, error)
 }
 
 type Handler interface {
@@ -60,4 +62,5 @@ type Handler interface {
 	UpdateStatusRegistrar() echo.HandlerFunc
 	GetVolunteersByVacancyID() echo.HandlerFunc
 	GetVolunteer() echo.HandlerFunc
+	GetSkills() echo.HandlerFunc
 }

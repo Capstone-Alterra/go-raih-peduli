@@ -416,7 +416,7 @@ func (svc *service) ValidateInput(input dtos.InputVacancy, file multipart.File) 
 		errorList = append(errorList, errMap...)
 	}
 	if len(input.Title) < 20 {
-		errorList = append(errorList, "tittle must be at least 20 characters")
+		errorList = append(errorList, "title must be at least 20 characters")
 	}
 	if len(input.Description) < 50 {
 		errorList = append(errorList, "description must be at least 50 characters")
@@ -472,4 +472,14 @@ func (svc *service) ValidateInput(input dtos.InputVacancy, file multipart.File) 
 		}
 	}
 	return errorList, nil
+}
+
+func (svc *service) FindAllSkills() ([]dtos.Skill, error) {
+	skills, err := svc.model.SelectAllSkills()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return skills, nil
 }

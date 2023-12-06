@@ -35,7 +35,7 @@ func InitDB() *gorm.DB {
 }
 
 func migrate(db *gorm.DB) {
-	db.AutoMigrate(fundraise.Fundraise{}, &auth.User{}, &volunteer.VolunteerVacancies{}, news.News{}, transaction.Transaction{}, &volunteer.VolunteerRelations{}, )
+	db.AutoMigrate(fundraise.Fundraise{}, &auth.User{}, &volunteer.VolunteerVacancies{}, news.News{}, transaction.Transaction{}, &volunteer.VolunteerRelations{}, &volunteer.Skill{})
 }
 
 func ConnectRedis() *redis.Client {

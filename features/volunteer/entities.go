@@ -50,3 +50,8 @@ type VolunteerRelations struct {
 	Status         string `gorm:"type:enum('pending','accepted','rejected'); default: 'pending'"`
 	RejectedReason string `gorm:"type:varchar(255)"`
 }
+
+type Skill struct {
+	ID int `gorm:"type:int(11)"`
+	Name string `gorm:"type:varchar(255)"`
+}

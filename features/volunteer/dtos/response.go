@@ -38,3 +38,8 @@ type ResRegistrantVacancy struct {
 	Photo    string `json:"photo"`
 	Status   string `json:"status"`
 }
+
+type Skill struct {
+	ID	int `json:"id"`
+	Name string `json:"name"`
+}
