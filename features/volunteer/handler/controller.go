@@ -359,3 +359,19 @@ func (ctl *controller) GetVolunteer() echo.HandlerFunc {
 		}))
 	}
 }
+
+func (ctl *controller) GetSkills() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+
+		skills, err := ctl.service.FindAllSkills()
+	
+		if err != nil {
+			return ctx.JSON(500, helpers.Response(err.Error()))
+		}
+
+		return ctx.JSON(200, helpers.Response("success", map[string]any{
+			"data": skills,
+		}))
+	}	
+
+}

@@ -386,3 +386,13 @@ func (mdl *model) FindUserInVacancy(vacancyID, userID int) bool {
 
 	return true
 }
+
+func (mdl *model) SelectAllSkills() ([]dtos.Skill, error) {
+	var skills []dtos.Skill
+
+	if err := mdl.db.Table("skills").Find(&skills).Error; err != nil {
+		return nil, err
+	}
+
+	return skills, nil
+}
