@@ -183,11 +183,14 @@ func (svc *service) Create(userID int, newTransaction dtos.InputTransaction) (*d
 
 	switch transaction.PaymentType {
 	case "4", "5", "6", "7", "8", "9":
-		req, err := svc.mtRequest.CreateTransactionBank(strconv.Itoa(transaction.ID), transaction.PaymentType, int64(transaction.Amount))
+		req, validUntil, err := svc.mtRequest.CreateTransactionBank(strconv.Itoa(transaction.ID), transaction.PaymentType, int64(transaction.Amount))
+
 		if err != nil {
 			log.Error(err.Error())
 			return nil, err, nil
 		}
+		transaction.ValidUntil = validUntil
+
 		transactionID := svc.model.Insert(transaction)
 		if transactionID == -1 {
 			return nil, err, nil
@@ -203,6 +206,7 @@ func (svc *service) Create(userID int, newTransaction dtos.InputTransaction) (*d
 		resTransaction.ID = transaction.ID
 		resTransaction.Amount = int(transaction.Amount)
 		resTransaction.Status = "Created"
+		resTransaction.ValidUntil = validUntil
 		resTransaction.UserID = userID
 		resTransaction.Fullname = user.Fullname
 		resTransaction.Address = user.Address
@@ -210,11 +214,12 @@ func (svc *service) Create(userID int, newTransaction dtos.InputTransaction) (*d
 		resTransaction.ProfilePicture = user.ProfilePicture
 		resTransaction.FundraiseID = transaction.FundraiseID
 	case "10":
-		req, err := svc.mtRequest.CreateTransactionGopay(strconv.Itoa(transaction.ID), transaction.PaymentType, int64(transaction.Amount))
+		req, validUntil, err := svc.mtRequest.CreateTransactionGopay(strconv.Itoa(transaction.ID), transaction.PaymentType, int64(transaction.Amount))
 		if err != nil {
 			log.Error(err.Error())
 			return nil, err, nil
 		}
+		transaction.ValidUntil = validUntil
 		transactionID := svc.model.Insert(transaction)
 		if transactionID == -1 {
 			return nil, err, nil
@@ -225,10 +230,11 @@ func (svc *service) Create(userID int, newTransaction dtos.InputTransaction) (*d
 			return nil, err, nil
 		}
 		resTransaction.PaymentType = "Gopay"
-		resTransaction.VirtualAccount = req
+		resTransaction.UrlCallback = req
 		resTransaction.ID = transaction.ID
 		resTransaction.Amount = int(transaction.Amount)
 		resTransaction.Status = "Created"
+		resTransaction.ValidUntil = validUntil
 		resTransaction.UserID = userID
 		resTransaction.Fullname = user.Fullname
 		resTransaction.Address = user.Address
@@ -236,11 +242,12 @@ func (svc *service) Create(userID int, newTransaction dtos.InputTransaction) (*d
 		resTransaction.ProfilePicture = user.ProfilePicture
 		resTransaction.FundraiseID = transaction.FundraiseID
 	case "11":
-		req, err := svc.mtRequest.CreateTransactionQris(strconv.Itoa(transaction.ID), transaction.PaymentType, int64(transaction.Amount))
+		req, validUntil, err := svc.mtRequest.CreateTransactionQris(strconv.Itoa(transaction.ID), transaction.PaymentType, int64(transaction.Amount))
 		if err != nil {
 			log.Error(err.Error())
 			return nil, err, nil
 		}
+		transaction.ValidUntil = validUntil
 		transactionID := svc.model.Insert(transaction)
 		if transactionID == -1 {
 			return nil, err, nil
@@ -251,10 +258,11 @@ func (svc *service) Create(userID int, newTransaction dtos.InputTransaction) (*d
 			return nil, err, nil
 		}
 		resTransaction.PaymentType = "Qris"
-		resTransaction.VirtualAccount = req
+		resTransaction.UrlCallback = req
 		resTransaction.ID = transaction.ID
 		resTransaction.Amount = int(transaction.Amount)
 		resTransaction.Status = "Created"
+		resTransaction.ValidUntil = validUntil
 		resTransaction.UserID = userID
 		resTransaction.Fullname = user.Fullname
 		resTransaction.Address = user.Address
@@ -262,10 +270,11 @@ func (svc *service) Create(userID int, newTransaction dtos.InputTransaction) (*d
 		resTransaction.ProfilePicture = user.ProfilePicture
 		resTransaction.FundraiseID = transaction.FundraiseID
 	default:
-		req, err := svc.mtRequest.CreateTransactionBank(strconv.Itoa(transaction.ID), transaction.PaymentType, int64(transaction.Amount))
+		req, validUntil, err := svc.mtRequest.CreateTransactionBank(strconv.Itoa(transaction.ID), transaction.PaymentType, int64(transaction.Amount))
 		if err != nil {
 			return nil, err, nil
 		}
+		transaction.ValidUntil = validUntil
 		transactionID := svc.model.Insert(transaction)
 		if transactionID == -1 {
 			return nil, err, nil
@@ -279,6 +288,7 @@ func (svc *service) Create(userID int, newTransaction dtos.InputTransaction) (*d
 		resTransaction.ID = transaction.ID
 		resTransaction.Amount = int(transaction.Amount)
 		resTransaction.Status = "Created"
+		resTransaction.ValidUntil = validUntil
 		resTransaction.UserID = userID
 		resTransaction.Fullname = user.Fullname
 		resTransaction.Address = user.Address
