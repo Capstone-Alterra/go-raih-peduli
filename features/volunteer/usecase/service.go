@@ -415,17 +415,17 @@ func (svc *service) ValidateInput(input dtos.InputVacancy, file multipart.File) 
 	if errMap := svc.validation.ValidateRequest(input); errMap != nil {
 		errorList = append(errorList, errMap...)
 	}
-	if len(input.Title) < 20 {
+	if len(input.Title) <= 20 {
 		errorList = append(errorList, "title must be at least 20 characters")
 	}
-	if len(input.Description) < 50 {
+	if len(input.Description) <= 50 {
 		errorList = append(errorList, "description must be at least 50 characters")
 	}
 
-	if len(input.SkillsRequired) < 1 {
+	if len(input.SkillsRequired) <= 1 {
 		errorList = append(errorList, "skillsRequired must be at least 1 word")
 	}
-	if input.NumberOfVacancies < 1 {
+	if input.NumberOfVacancies <= 1 {
 		errorList = append(errorList, "numberOfVacancies must be greater than 1")
 	}
 	if input.ApplicationDeadline.Before(time.Now()) {
