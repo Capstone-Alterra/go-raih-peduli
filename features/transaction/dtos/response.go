@@ -14,5 +14,6 @@ type ResTransaction struct {
 	VirtualAccount string `json:"virtual_account"`
 	UrlCallback    string `json:"url_callback"`
 	PaidAt         string `json:"paid_at"`
+	ValidUntil     string `json:"valid_until"`
 	Status         string `json:"status"`
 }

@@ -33,9 +33,9 @@ type GeneratorInterface interface {
 }
 
 type MidtransInterface interface {
-	CreateTransactionBank(IDTransaction string, PaymentType string, Amount int64) (string, error)
-	CreateTransactionGopay(IDTransaction string, PaymentType string, Amount int64) (string, error)
-	CreateTransactionQris(IDTransaction string, PaymentType string, Amount int64) (string, error)
+	CreateTransactionBank(IDTransaction string, PaymentType string, Amount int64) (string, string, error)
+	CreateTransactionGopay(IDTransaction string, PaymentType string, Amount int64) (string, string, error)
+	CreateTransactionQris(IDTransaction string, PaymentType string, Amount int64) (string, string, error)
 	TransactionStatus(transactionStatusResp *coreapi.TransactionStatusResponse) transaction.Status
 }
 
