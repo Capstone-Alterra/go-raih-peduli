@@ -16,12 +16,13 @@ type MidtransInterface struct {
 }
 
 // CreateTransactionBank provides a mock function with given fields: IDTransaction, PaymentType, Amount
-func (_m *MidtransInterface) CreateTransactionBank(IDTransaction string, PaymentType string, Amount int64) (string, error) {
+func (_m *MidtransInterface) CreateTransactionBank(IDTransaction string, PaymentType string, Amount int64) (string, string, error) {
 	ret := _m.Called(IDTransaction, PaymentType, Amount)
 
 	var r0 string
-	var r1 error
-	if rf, ok := ret.Get(0).(func(string, string, int64) (string, error)); ok {
+	var r1 string
+	var r2 error
+	if rf, ok := ret.Get(0).(func(string, string, int64) (string, string, error)); ok {
 		return rf(IDTransaction, PaymentType, Amount)
 	}
 	if rf, ok := ret.Get(0).(func(string, string, int64) string); ok {
@@ -30,22 +31,29 @@ func (_m *MidtransInterface) CreateTransactionBank(IDTransaction string, Payment
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(string, string, int64) error); ok {
+	if rf, ok := ret.Get(1).(func(string, string, int64) string); ok {
 		r1 = rf(IDTransaction, PaymentType, Amount)
 	} else {
-		r1 = ret.Error(1)
+		r1 = ret.Get(1).(string)
 	}
 
-	return r0, r1
+	if rf, ok := ret.Get(2).(func(string, string, int64) error); ok {
+		r2 = rf(IDTransaction, PaymentType, Amount)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // CreateTransactionGopay provides a mock function with given fields: IDTransaction, PaymentType, Amount
-func (_m *MidtransInterface) CreateTransactionGopay(IDTransaction string, PaymentType string, Amount int64) (string, error) {
+func (_m *MidtransInterface) CreateTransactionGopay(IDTransaction string, PaymentType string, Amount int64) (string, string, error) {
 	ret := _m.Called(IDTransaction, PaymentType, Amount)
 
 	var r0 string
-	var r1 error
-	if rf, ok := ret.Get(0).(func(string, string, int64) (string, error)); ok {
+	var r1 string
+	var r2 error
+	if rf, ok := ret.Get(0).(func(string, string, int64) (string, string, error)); ok {
 		return rf(IDTransaction, PaymentType, Amount)
 	}
 	if rf, ok := ret.Get(0).(func(string, string, int64) string); ok {
@@ -54,22 +62,29 @@ func (_m *MidtransInterface) CreateTransactionGopay(IDTransaction string, Paymen
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(string, string, int64) error); ok {
+	if rf, ok := ret.Get(1).(func(string, string, int64) string); ok {
 		r1 = rf(IDTransaction, PaymentType, Amount)
 	} else {
-		r1 = ret.Error(1)
+		r1 = ret.Get(1).(string)
 	}
 
-	return r0, r1
+	if rf, ok := ret.Get(2).(func(string, string, int64) error); ok {
+		r2 = rf(IDTransaction, PaymentType, Amount)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // CreateTransactionQris provides a mock function with given fields: IDTransaction, PaymentType, Amount
-func (_m *MidtransInterface) CreateTransactionQris(IDTransaction string, PaymentType string, Amount int64) (string, error) {
+func (_m *MidtransInterface) CreateTransactionQris(IDTransaction string, PaymentType string, Amount int64) (string, string, error) {
 	ret := _m.Called(IDTransaction, PaymentType, Amount)
 
 	var r0 string
-	var r1 error
-	if rf, ok := ret.Get(0).(func(string, string, int64) (string, error)); ok {
+	var r1 string
+	var r2 error
+	if rf, ok := ret.Get(0).(func(string, string, int64) (string, string, error)); ok {
 		return rf(IDTransaction, PaymentType, Amount)
 	}
 	if rf, ok := ret.Get(0).(func(string, string, int64) string); ok {
@@ -78,13 +93,19 @@ func (_m *MidtransInterface) CreateTransactionQris(IDTransaction string, Payment
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(string, string, int64) error); ok {
+	if rf, ok := ret.Get(1).(func(string, string, int64) string); ok {
 		r1 = rf(IDTransaction, PaymentType, Amount)
 	} else {
-		r1 = ret.Error(1)
+		r1 = ret.Get(1).(string)
 	}
 
-	return r0, r1
+	if rf, ok := ret.Get(2).(func(string, string, int64) error); ok {
+		r2 = rf(IDTransaction, PaymentType, Amount)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // TransactionStatus provides a mock function with given fields: transactionStatusResp

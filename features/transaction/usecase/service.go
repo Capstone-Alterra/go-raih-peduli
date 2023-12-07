@@ -157,7 +157,7 @@ func (svc *service) Create(userID int, newTransaction dtos.InputTransaction) (*d
 	resTransaction := dtos.ResTransaction{}
 
 	if newTransaction.Amount < 10000 {
-		return nil, errors.New("Minimum domation ammount is Rp. 10.000"), nil
+		return nil, errors.New("Minimum donation ammount is Rp. 10.000"), nil
 	}
 
 	err := smapping.FillStruct(&transaction, smapping.MapFields(newTransaction))
