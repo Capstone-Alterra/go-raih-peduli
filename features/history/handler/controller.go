@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"raihpeduli/features/history"
 	helper "raihpeduli/helpers"
 
@@ -125,9 +124,9 @@ func (ctl *controller) GetAllHistory() echo.HandlerFunc {
 		if err != nil {
 			return ctx.JSON(500, helper.Response(err.Error()))
 		}
-		if len(fundraises) != 0 {
-			// return ctx.JSON(404, helper.Response("history fundraises created by users not found"))
-			response_data = append(response_data, fundraises)
+
+		for _, data := range fundraises {
+			response_data = append(response_data, data)
 		}
 
 		vacancies, err := ctl.service.FindAllHistoryVolunteerVacanciesCreatedByUser(userID)
@@ -135,33 +134,28 @@ func (ctl *controller) GetAllHistory() echo.HandlerFunc {
 			return ctx.JSON(500, helper.Response(err.Error()))
 		}
 
-		if vacancies != nil || len(vacancies) != 0 {
-			// return ctx.JSON(404, helper.Response("history volunteer vacancies  created by users not found"))
-			response_data = append(response_data, vacancies)
-
+		for _, data := range vacancies {
+			response_data = append(response_data, data)
 		}
+
 		vacanciesReg, err := ctl.service.FindAllHistoryVolunteerVacanciesRegisterByUser(userID)
 		if err != nil {
 			return ctx.JSON(500, helper.Response(err.Error()))
 		}
-
-		if vacanciesReg != nil || len(vacanciesReg) != 0 {
-			// return ctx.JSON(404, helper.Response("history volunteer vacancies registered by users not found"))
-			response_data = append(response_data, vacanciesReg)
-
+		
+		for _, data := range vacanciesReg {
+			response_data = append(response_data, data)
 		}
 
 		donations, err := ctl.service.FindAllHistoryUserTransaction(userID)
 		if err != nil {
 			return ctx.JSON(500, helper.Response(err.Error()))
 		}
-
-		if donations != nil || len(donations) != 0 {
-			// return ctx.JSON(404, helper.Response("donation not found"))
-			response_data = append(response_data, donations)
-
+		
+		for _, data := range donations {
+			response_data = append(response_data, data)
 		}
-		fmt.Println(len(response_data))
+		
 		if len(response_data) == 1 {
 			return ctx.JSON(404, helper.Response("history not found"))
 		}
