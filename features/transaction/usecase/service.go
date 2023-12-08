@@ -56,6 +56,7 @@ func (svc *service) FindAll(page, size, roleID, userID int, keyword string) ([]d
 		data.PhoneNumber = transaction.User.PhoneNumber
 		data.ProfilePicture = transaction.User.ProfilePicture
 		data.Email = transaction.User.Email
+		data.FundraiseName = transaction.Fundraise.Title
 
 		switch transaction.Status {
 		case "2":
@@ -139,6 +140,7 @@ func (svc *service) FindByID(transactionID int) *dtos.ResTransaction {
 	res.PhoneNumber = transaction.User.PhoneNumber
 	res.ProfilePicture = transaction.User.ProfilePicture
 	res.Email = transaction.User.Email
+	res.FundraiseName = transaction.Fundraise.Title
 
 	err := smapping.FillStruct(&res, smapping.MapFields(transaction))
 	if err != nil {
