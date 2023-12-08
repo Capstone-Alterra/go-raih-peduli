@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"raihpeduli/features/chatbot"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -89,4 +90,10 @@ func (mdl *model) ReadQuestionNPrompts() (map[string]string, error) {
 	}
 
 	return data, nil
+}
+
+func (mdl *model) GetTimeNow() time.Time {
+	wibLocation, _ := time.LoadLocation("Asia/Jakarta")
+	
+	return time.Now().In(wibLocation)
 }

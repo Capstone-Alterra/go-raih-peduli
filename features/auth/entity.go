@@ -19,7 +19,7 @@ type User struct {
 	PhoneNumber     string `gorm:"varchar(255)"`
 	Nik             string `gorm:"varchar(255)"`
 	Status          string `gorm:"varchar(255);default:1"`
-	Personalization string `gorm:"type:varchar(255)"`
+	Personalization *string `gorm:"type:varchar(255)"`
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 	DeletedAt       gorm.DeletedAt `gorm:"index"`

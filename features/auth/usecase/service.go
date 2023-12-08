@@ -109,6 +109,10 @@ func (svc *service) Login(data dtos.RequestLogin) (*dtos.LoginResponse, []string
 		log.Error("Token process failed")
 		return nil, nil, errors.New("generate token failed")
 	}
+	
+	if user.Personalization == nil {
+		resUser.PersonalizeUser = true
+	}
 
 	resUser.AccessToken = tokenData["access_token"].(string)
 	resUser.RefreshToken = tokenData["refresh_token"].(string)
