@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/labstack/gommon/log"
-	"github.com/mashingan/smapping"
 	"github.com/sirupsen/logrus"
 )
 
@@ -68,6 +67,7 @@ func (svc *service) FindAllVacancies(page, size int, searchAndFilter dtos.Search
 		data.Province = volunteer.Province
 		data.City = volunteer.City
 		data.SubDistrict = volunteer.SubDistrict
+		data.DetailLocation = volunteer.DetailLocation
 		data.Photo = volunteer.Photo
 		data.Status = volunteer.Status
 		data.RejectedReason = volunteer.RejectedReason
@@ -136,6 +136,7 @@ func (svc *service) FindVacancyByID(vacancyID, ownerID int) *dtos.ResVacancy {
 	res.Province = vacancy.Province
 	res.City = vacancy.City
 	res.SubDistrict = vacancy.SubDistrict
+	res.DetailLocation = vacancy.DetailLocation
 	res.Photo = vacancy.Photo
 	res.Status = vacancy.Status
 	res.RejectedReason = vacancy.RejectedReason
@@ -274,9 +275,9 @@ func (svc *service) CreateVacancy(newVolunteer dtos.InputVacancy, UserID int, fi
 	if errorList, err := svc.ValidateInput(newVolunteer, file); err != nil || len(errorList) > 0 {
 		return nil, errorList, err
 	}
-	if errMap := svc.validation.ValidateRequest(newVolunteer); errMap != nil {
-		return nil, errMap, errors.New("validation error")
-	}
+	// if errMap := svc.validation.ValidateRequest(newVolunteer); errMap != nil {
+	// 	return nil, errMap, errors.New("validation error")
+	// }
 
 	vacancy := volunteer.VolunteerVacancies{}
 
@@ -363,10 +364,18 @@ func (svc *service) FindAllVolunteersByVacancyID(page, size int, vacancyID int, 
 	for _, volunteer := range volunteerEnt {
 		var data dtos.ResRegistrantVacancy
 
-		if err := smapping.FillStruct(&data, smapping.MapFields(volunteer)); err != nil {
-			log.Error(err.Error())
-		}
-
+		data.ID = volunteer.ID
+		data.Email = volunteer.Email
+		data.Fullname = volunteer.Fullname
+		data.Address = volunteer.Address
+		data.PhoneNumber = volunteer.PhoneNumber
+		data.Gender = volunteer.Gender
+		data.Nik = volunteer.Nik
+		data.Skills = strings.Split(volunteer.Skills, ", ")
+		data.Resume = volunteer.Resume
+		data.Reason = volunteer.Reason
+		data.Photo = volunteer.Photo
+		data.Status = volunteer.Status
 		volunteers = append(volunteers, data)
 	}
 
@@ -383,11 +392,24 @@ func (svc *service) FindDetailVolunteers(vacancyID, volunteerID int) *dtos.ResRe
 		return nil
 	}
 
-	err := smapping.FillStruct(&res, smapping.MapFields(volunteer))
-	if err != nil {
-		log.Error("Failed mapping into dtos")
-		return nil
-	}
+	res.ID = volunteer.ID
+	res.Email = volunteer.Email
+	res.Fullname = volunteer.Fullname
+	res.Address = volunteer.Address
+	res.PhoneNumber = volunteer.PhoneNumber
+	res.Gender = volunteer.Gender
+	res.Nik = volunteer.Nik
+	res.Skills = strings.Split(volunteer.Skills, ", ")
+	res.Resume = volunteer.Resume
+	res.Reason = volunteer.Reason
+	res.Photo = volunteer.Photo
+	res.Status = volunteer.Status
+
+	// err := smapping.FillStruct(&res, smapping.MapFields(volunteer))
+	// if err != nil {
+	// 	log.Error("Failed mapping into dtos")
+	// 	return nil
+	// }
 	return &res
 
 }
