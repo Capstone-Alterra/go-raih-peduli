@@ -32,9 +32,10 @@ func (mdl *model) Paginate(page, size int, keyword string) []transaction.Transac
 	offset := (page - 1) * size
 	searching := "%" + keyword + "%"
 
-	result := mdl.db.Preload("User").
+	result := mdl.db.Preload("Fundraise").Preload("User").
 		Table("transactions").
 		Joins("JOIN users ON transactions.user_id = users.id").
+		Joins("JOIN fundraises ON transactions.fundraise_id = fundraises.id").
 		Where("users.fullname LIKE ?", searching).
 		Offset(offset).Limit(size).
 		Find(&transactions)
@@ -124,7 +125,7 @@ func (mdl *model) PaginateUser(page, size, userID int) []transaction.Transaction
 
 	offset := (page - 1) * size
 
-	result := mdl.db.Preload("User").Where("user_id = ?", userID).Offset(offset).Limit(size).Find(&transactions)
+	result := mdl.db.Preload("Fundraise").Preload("User").Where("user_id = ?", userID).Offset(offset).Limit(size).Find(&transactions)
 
 	if result.Error != nil {
 		log.Error(result.Error)
@@ -147,7 +148,7 @@ func (mdl *model) Insert(newTransaction transaction.Transaction) int64 {
 
 func (mdl *model) SelectByID(transactionID int) *transaction.Transaction {
 	var transaction transaction.Transaction
-	result := mdl.db.Preload("User").First(&transaction, transactionID)
+	result := mdl.db.Preload("Fundraise").Preload("User").First(&transaction, transactionID)
 
 	if result.Error != nil {
 		log.Error(result.Error)
