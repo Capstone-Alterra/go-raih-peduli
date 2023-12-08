@@ -134,9 +134,26 @@ func (svc *service) FindAllHistoryVolunteerVacanciesRegisterByUser(userID int) (
 
 	for _, volunteer := range entities {
 		var data dtos.ResVolunteersVacancyHistory
-		if err := smapping.FillStruct(&data, smapping.MapFields(volunteer)); err != nil {
-			logrus.Error(err)
-		}
+		// if err := smapping.FillStruct(&data, smapping.MapFields(volunteer)); err != nil {
+		// 	logrus.Error(err)
+		// }
+		data.ID = volunteer.ID
+		data.UserID = volunteer.UserID
+		data.Title = volunteer.Title
+		data.Description = volunteer.Description
+		data.SkillsRequired = strings.Split(volunteer.SkillsRequired, ",")
+		data.NumberOfVacancies = volunteer.NumberOfVacancies
+		data.ApplicationDeadline = volunteer.ApplicationDeadline
+		data.ContactEmail = volunteer.ContactEmail
+		data.Province = volunteer.Province
+		data.City = volunteer.City
+		data.SubDistrict = volunteer.SubDistrict
+		data.Photo = volunteer.Photo
+		data.Status = volunteer.Status
+		data.RejectedReason = volunteer.RejectedReason
+		data.CreatedAt = volunteer.CreatedAt
+		data.UpdatedAt = volunteer.UpdatedAt
+		data.DeletedAt = volunteer.DeletedAt
 
 		if bookmarkIDs != nil {
 			bookmarkID, ok := bookmarkIDs[data.ID]
