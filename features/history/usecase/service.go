@@ -115,54 +115,31 @@ func (svc *service) FindAllHistoryVolunteerVacanciesCreatedByUser(userID int) ([
 
 	return volunteers, nil
 }
-func (svc *service) FindAllHistoryVolunteerVacanciesRegisterByUser(userID int) ([]dtos.ResVolunteersVacancyHistory, error) {
-	var volunteers []dtos.ResVolunteersVacancyHistory
-	var bookmarkIDs map[int]string
+func (svc *service) FindAllHistoryVolunteerVacanciesRegisterByUser(userID int) ([]dtos.ResRegistrantVacancyHistory, error) {
+	var volunteers []dtos.ResRegistrantVacancyHistory
 	var err error
-	var entities []history.VolunteerVacancies
+	var entities []history.Volunteer
 
 	entities, err = svc.model.HistoryVolunteerVacanciesRegisterByUser(userID)
 	if err != nil {
 		return nil, err
 	}
-	if userID != 0 {
-		bookmarkIDs, err = svc.model.SelectBookmarkedVacancyID(userID)
-		if err != nil {
-			return nil, err
-		}
-	}
 
 	for _, volunteer := range entities {
-		var data dtos.ResVolunteersVacancyHistory
-		// if err := smapping.FillStruct(&data, smapping.MapFields(volunteer)); err != nil {
-		// 	logrus.Error(err)
-		// }
+		var data dtos.ResRegistrantVacancyHistory
 		data.ID = volunteer.ID
-		data.UserID = volunteer.UserID
-		data.Title = volunteer.Title
-		data.Description = volunteer.Description
-		data.SkillsRequired = strings.Split(volunteer.SkillsRequired, ",")
-		data.NumberOfVacancies = volunteer.NumberOfVacancies
-		data.ApplicationDeadline = volunteer.ApplicationDeadline
-		data.ContactEmail = volunteer.ContactEmail
-		data.Province = volunteer.Province
-		data.City = volunteer.City
-		data.SubDistrict = volunteer.SubDistrict
+		data.Email = volunteer.Email
+		data.Fullname = volunteer.Fullname
+		data.Address = volunteer.Address
+		data.PhoneNumber = volunteer.PhoneNumber
+		data.Gender = volunteer.Gender
+		data.Nik = volunteer.Nik
+		data.Skills = strings.Split(volunteer.Skills, ", ")
+		data.Resume = volunteer.Resume
+		data.Reason = volunteer.Reason
 		data.Photo = volunteer.Photo
 		data.Status = volunteer.Status
-		data.RejectedReason = volunteer.RejectedReason
-		data.CreatedAt = volunteer.CreatedAt
-		data.UpdatedAt = volunteer.UpdatedAt
-		data.DeletedAt = volunteer.DeletedAt
 
-		if bookmarkIDs != nil {
-			bookmarkID, ok := bookmarkIDs[data.ID]
-
-			if ok {
-				data.BookmarkID = &bookmarkID
-			}
-		}
-		data.TotalRegistrar = int(svc.model.GetTotalVolunteersByVacancyID(data.ID))
 		data.PostType = "registered_volunteer_vacancies"
 		volunteers = append(volunteers, data)
 	}

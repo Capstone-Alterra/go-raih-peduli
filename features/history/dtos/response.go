@@ -53,6 +53,22 @@ type ResVolunteersVacancyHistory struct {
 	PostType       string         `json:"post_type"`
 }
 
+type ResRegistrantVacancyHistory struct {
+	ID          int      `json:"id"`
+	Email       string   `json:"email"`
+	Fullname    string   `json:"fullname"`
+	Address     string   `json:"address"`
+	PhoneNumber string   `json:"phone_number"`
+	Gender      string   `json:"gender"`
+	Nik         string   `json:"nik"`
+	Skills      []string `json:"skills_required"`
+	Resume      string   `json:"resume"`
+	Reason      string   `json:"reason"`
+	Photo       string   `json:"photo"`
+	Status      string   `json:"status"`
+	PostType    string   `json:"post_type"`
+}
+
 type ResTransactionHistory struct {
 	ID             int    `json:"transaction_id"`
 	UserID         int    `json:"user_id"`
