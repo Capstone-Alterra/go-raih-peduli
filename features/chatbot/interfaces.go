@@ -2,6 +2,7 @@ package chatbot
 
 import (
 	"raihpeduli/features/chatbot/dtos"
+	"time"
 
 	"github.com/labstack/echo/v4"
 )
@@ -12,6 +13,7 @@ type Repository interface {
 	DeleteByUserID(chatbotID int) error
 	SelectUserByID(userID int) (*User, error)
 	ReadQuestionNPrompts() (map[string]string, error)
+	GetTimeNow() time.Time
 }
 
 type Usecase interface {
