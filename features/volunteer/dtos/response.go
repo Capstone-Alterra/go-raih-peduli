@@ -11,7 +11,7 @@ type ResVacancy struct {
 	UserID              int            `json:"user_id"`
 	Title               string         `json:"title"`
 	Description         string         `json:"description"`
-	SkillsRequired      []string       `json:"skills_requred"`
+	SkillsRequired      []string       `json:"skills_required"`
 	NumberOfVacancies   int            `json:"number_of_vacancies"`
 	ApplicationDeadline time.Time      `json:"application_deadline"`
 	ContactEmail        string         `json:"contact_email"`
