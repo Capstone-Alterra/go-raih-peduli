@@ -18,7 +18,7 @@ type InputUpdate struct {
 	PhoneNumber    string `json:"phone_number" form:"phone_number" validate:"required,number,min=10,max=13"`
 	Gender         string `json:"gender" form:"gender"`
 	ProfilePicture string `json:"profile_picture" form:"profile_picture"`
-	Nik            string `json:"nik" form:"nik" validate:"len=16,number"`
+	Nik            string `json:"nik" form:"nik"`
 }
 
 type InputUpdateProfilePicture struct {
