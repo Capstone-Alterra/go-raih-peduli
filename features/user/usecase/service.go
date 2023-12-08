@@ -337,7 +337,7 @@ func (svc *service) AddPersonalization(userID int, data dtos.InputPersonalizatio
 		return errors.New("user not found")
 	}
 
-	user.Personalization = strings.Join(data.Personalization, ", ")
+	*user.Personalization = strings.Join(data.Personalization, ", ")
 	rowsAffected := svc.model.UpdateUser(*user)
 	if rowsAffected == 0 {
 		return errors.New("add personalization failed")
