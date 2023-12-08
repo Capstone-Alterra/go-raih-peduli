@@ -117,6 +117,17 @@ func (svc *service) Modify(userData dtos.InputUpdate, file multipart.File, oldDa
 		return false, errMap
 	}
 
+	if userData.Nik != "" {
+		_, err := strconv.Atoi(userData.Nik)
+		if err != nil {
+			return false, []string{"NIK must be 16 digits of number"}
+		}
+
+		if len(userData.Nik) != 16 {
+			return false, []string{"NIK must be 16 digits of number"}
+		}
+	}
+
 	url, err := svc.model.UploadFile(file, oldData.ProfilePicture)
 	if err != nil {
 		return false, nil
