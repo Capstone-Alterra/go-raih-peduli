@@ -156,7 +156,7 @@ func (ctl *controller) GetAllHistory() echo.HandlerFunc {
 			response_data = append(response_data, data)
 		}
 		
-		if len(response_data) == 1 {
+		if len(response_data) == 0 {
 			return ctx.JSON(404, helper.Response("history not found"))
 		}
 		
