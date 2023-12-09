@@ -125,15 +125,15 @@ func (ctl *controller) UpdateUser() echo.HandlerFunc {
 			file = formFile
 		}
 
-		update, errMap := ctl.service.Modify(input, file, *user)
+		err, errMap := ctl.service.Modify(input, file, *user)
 		if errMap != nil {
 			return ctx.JSON(400, helpers.Response("missing some data", map[string]any{
 				"error": errMap,
 			}))
 		}
 
-		if !update {
-			return ctx.JSON(500, helpers.Response("something went wrong"))
+		if err != nil {
+			return ctx.JSON(500, helpers.Response(err.Error()))
 		}
 
 		return ctx.JSON(200, helpers.Response("success updated user"))
@@ -164,15 +164,15 @@ func (ctl *controller) UpdateProfilePicture() echo.HandlerFunc {
 			input.ProfilePicture = formFile
 		}
 
-		update, errMap := ctl.service.ModifyProfilePicture(input, *user)
+		err, errMap := ctl.service.ModifyProfilePicture(input, *user)
 		if errMap != nil {
 			return ctx.JSON(400, helpers.Response("missing some data", map[string]any{
 				"error": errMap,
 			}))
 		}
 
-		if !update {
-			return ctx.JSON(500, helpers.Response("something went wrong"))
+		if err != nil {
+			return ctx.JSON(500, helpers.Response(err.Error()))
 		}
 
 		return ctx.JSON(200, helpers.Response("success updated user"))
@@ -193,10 +193,9 @@ func (ctl *controller) DeleteUser() echo.HandlerFunc {
 			return ctx.JSON(404, helpers.Response("user not found"))
 		}
 
-		delete := ctl.service.Remove(userID)
-
-		if !delete {
-			return ctx.JSON(500, helpers.Response("something went wrong"))
+		err = ctl.service.Remove(userID)
+		if err != nil {
+			return ctx.JSON(500, helpers.Response(err.Error()))
 		}
 
 		return ctx.JSON(200, helpers.Response("success deleted user", nil))
