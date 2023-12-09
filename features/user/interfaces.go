@@ -26,9 +26,9 @@ type Usecase interface {
 	FindAll(page, size int) ([]dtos.ResUser, int64)
 	FindByID(customerID int) *dtos.ResUser
 	Create(newUser dtos.InputUser) (*dtos.ResUser, []string, error)
-	Modify(customerData dtos.InputUpdate, file multipart.File, oldData dtos.ResUser) (bool, []string)
-	ModifyProfilePicture(file dtos.InputUpdateProfilePicture, oldData dtos.ResUser) (bool, []string)
-	Remove(customerID int) bool
+	Modify(customerData dtos.InputUpdate, file multipart.File, oldData dtos.ResUser) (error, []string)
+	ModifyProfilePicture(file dtos.InputUpdateProfilePicture, oldData dtos.ResUser) (error, []string)
+	Remove(customerID int) error
 	ValidateVerification(verificationKey string) bool
 	ForgetPassword(email dtos.ForgetPassword) error
 	VerifyOTP(verificationKey string) string
