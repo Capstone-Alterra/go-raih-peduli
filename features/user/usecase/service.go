@@ -111,32 +111,32 @@ func (svc *service) Create(newData dtos.InputUser) (*dtos.ResUser, []string, err
 	return &resUser, nil, nil
 }
 
-func (svc *service) Modify(userData dtos.InputUpdate, file multipart.File, oldData dtos.ResUser) (bool, []string) {
+func (svc *service) Modify(userData dtos.InputUpdate, file multipart.File, oldData dtos.ResUser) (error, []string) {
 	errMap := svc.validation.ValidateRequest(userData)
 	if errMap != nil {
-		return false, errMap
+		return nil, errMap
 	}
 
 	if userData.Nik != "" {
 		_, err := strconv.Atoi(userData.Nik)
 		if err != nil {
-			return false, []string{"NIK must be 16 digits of number"}
+			return nil, []string{"NIK must be 16 digits of number"}
 		}
 
 		if len(userData.Nik) != 16 {
-			return false, []string{"NIK must be 16 digits of number"}
+			return nil, []string{"NIK must be 16 digits of number"}
 		}
 	}
 
 	url, err := svc.model.UploadFile(file, oldData.ProfilePicture)
 	if err != nil {
-		return false, nil
+		return errors.New("upload profile picture failed"), nil
 	}
 
 	var newUser user.User
 	err = smapping.FillStruct(&newUser, smapping.MapFields(userData))
 	if err != nil {
-		return false, nil
+		return err, nil
 	}
 
 	newUser.ID = oldData.ID
@@ -145,21 +145,21 @@ func (svc *service) Modify(userData dtos.InputUpdate, file multipart.File, oldDa
 	rowsAffected := svc.model.UpdateUser(newUser)
 	if rowsAffected == 0 {
 		log.Error("There is No Customer Updated!")
-		return false, nil
+		return errors.New("update user failed"), nil
 	}
 
-	return true, nil
+	return nil, nil
 }
 
-func (svc *service) ModifyProfilePicture(file dtos.InputUpdateProfilePicture, oldData dtos.ResUser) (bool, []string) {
+func (svc *service) ModifyProfilePicture(file dtos.InputUpdateProfilePicture, oldData dtos.ResUser) (error, []string) {
 	errMap := svc.validation.ValidateRequest(file)
 	if errMap != nil {
-		return false, errMap
+		return nil, errMap
 	}
 
 	url, err := svc.model.UploadFile(file.ProfilePicture, oldData.ProfilePicture)
 	if err != nil {
-		return false, nil
+		return errors.New("upload profile picture failed"), nil
 	}
 
 	var newUser user.User
@@ -169,10 +169,10 @@ func (svc *service) ModifyProfilePicture(file dtos.InputUpdateProfilePicture, ol
 
 	if rowsAffected == 0 {
 		log.Error("There is No Customer Updated!")
-		return false, nil
+		return errors.New("update user failed"), nil
 	}
 
-	return true, nil
+	return nil, nil
 }
 
 func (svc *service) Remove(userID int) error {
