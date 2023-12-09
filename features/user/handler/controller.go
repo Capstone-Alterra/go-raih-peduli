@@ -193,10 +193,9 @@ func (ctl *controller) DeleteUser() echo.HandlerFunc {
 			return ctx.JSON(404, helpers.Response("user not found"))
 		}
 
-		delete := ctl.service.Remove(userID)
-
-		if !delete {
-			return ctx.JSON(500, helpers.Response("something went wrong"))
+		err = ctl.service.Remove(userID)
+		if err != nil {
+			return ctx.JSON(500, helpers.Response(err.Error()))
 		}
 
 		return ctx.JSON(200, helpers.Response("success deleted user", nil))

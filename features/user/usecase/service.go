@@ -175,24 +175,24 @@ func (svc *service) ModifyProfilePicture(file dtos.InputUpdateProfilePicture, ol
 	return true, nil
 }
 
-func (svc *service) Remove(userID int) bool {
+func (svc *service) Remove(userID int) error {
 	user := svc.model.SelectByID(userID)
 	if user == nil {
-		return false
+		return errors.New("user not found")
 	}
 
 	err := svc.model.DeleteFile(user.ProfilePicture)
 	if err != nil {
-		return false
+		return errors.New("delete profile picture failed")
 	}
 
 	rowsAffected := svc.model.DeleteByID(userID)
 	if rowsAffected <= 0 {
 		log.Error("There is No Customer Deleted!")
-		return false
+		return errors.New("delete user failed")
 	}
 
-	return true
+	return nil
 }
 
 func (svc *service) ValidateVerification(verificationKey string) bool {
