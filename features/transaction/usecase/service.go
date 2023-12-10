@@ -338,83 +338,33 @@ func (svc *service) Notifications(notificationPayload map[string]any) error {
 	if !exist {
 		return errors.New("invalid notification payload")
 	}
+	transactionIDInt, err := strconv.Atoi(transactionID)
+	if err != nil {
+		return errors.New("Failed Parse TRX ID")
+	}
+	transaction := svc.model.SelectByID(transactionIDInt)
 
-	transactionStatusResp, err := svc.coreAPIClient.CheckTransaction(transactionID)
+	paymentConfirm, err := svc.mtRequest.CheckTransactionStatus(transactionID)
 	if err != nil {
 		return err
+	}
+
+	transaction.Status = paymentConfirm
+	paymentName := svc.mtRequest.MappingPaymentName(transaction.PaymentType)
+	if paymentConfirm == "5" {
+		err := svc.model.SendPaymentConfirmation(transaction.User.Email, transaction.Amount, transaction.FundraiseID, paymentName)
+		if err != nil {
+			logrus.Println(err.Error())
+		}
+		transaction.PaidAt = time.Now().Format("2006-01-02 15:04:05")
+		update := svc.model.Update(*transaction)
+		if update == -1 {
+			return nil
+		}
 	} else {
-		if transactionStatusResp != nil {
-			var status = svc.mtRequest.TransactionStatus(transactionStatusResp)
-			transactionIDInt, err := strconv.Atoi(transactionID)
-			if err != nil {
-				return err
-			}
-			transaction := svc.model.SelectByID(transactionIDInt)
-			transaction.Status = status.Order
-
-			if transaction.Status == "5" {
-				go func() {
-					switch transaction.PaymentType {
-					case "4":
-						logrus.Println(transaction.User.Email)
-						err := svc.model.SendPaymentConfirmation(transaction.User.Email, transaction.Amount, transaction.FundraiseID, "Bank Permata")
-						if err != nil {
-							logrus.Println(err.Error())
-						}
-					case "5":
-						logrus.Println(transaction.User.Email)
-						err := svc.model.SendPaymentConfirmation(transaction.User.Email, transaction.Amount, transaction.FundraiseID, "Bank CIMB")
-						if err != nil {
-							logrus.Println(err.Error())
-						}
-					case "6":
-						logrus.Println(transaction.User.Email)
-						err := svc.model.SendPaymentConfirmation(transaction.User.Email, transaction.Amount, transaction.FundraiseID, "Bank BCA")
-						if err != nil {
-							logrus.Println(err.Error())
-						}
-					case "7":
-						logrus.Println(transaction.User.Email)
-						err := svc.model.SendPaymentConfirmation(transaction.User.Email, transaction.Amount, transaction.FundraiseID, "Bank BRI")
-						if err != nil {
-							logrus.Println(err.Error())
-						}
-					case "8":
-						logrus.Println(transaction.User.Email)
-						err := svc.model.SendPaymentConfirmation(transaction.User.Email, transaction.Amount, transaction.FundraiseID, "Bank BNI")
-						if err != nil {
-							logrus.Println(err.Error())
-						}
-					case "10":
-						logrus.Println(transaction.User.Email)
-						err := svc.model.SendPaymentConfirmation(transaction.User.Email, transaction.Amount, transaction.FundraiseID, "Gopay")
-						if err != nil {
-							logrus.Println(err.Error())
-						}
-					case "11":
-						logrus.Println(transaction.User.Email)
-						err := svc.model.SendPaymentConfirmation(transaction.User.Email, transaction.Amount, transaction.FundraiseID, "Qris")
-						if err != nil {
-							logrus.Println(err.Error())
-						}
-					default:
-						transaction.PaymentType = "Other"
-					}
-
-				}()
-
-				transaction.PaidAt = time.Now().Format("2006-01-02 15:04:05")
-				update := svc.model.Update(*transaction)
-				if update == -1 {
-					return nil
-				}
-			} else {
-				update := svc.model.Update(*transaction)
-				if update == -1 {
-					return nil
-				}
-			}
-
+		update := svc.model.Update(*transaction)
+		if update == -1 {
+			return nil
 		}
 	}
 
