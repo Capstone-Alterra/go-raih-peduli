@@ -3,7 +3,9 @@ package transaction
 import (
 	"raihpeduli/features/fundraise"
 	"raihpeduli/features/user"
+	"time"
 
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"gorm.io/gorm"
 )
 
@@ -28,4 +30,11 @@ type Transaction struct {
 type Status struct {
 	Transaction string
 	Order       string
+}
+
+type NotificationToken struct {
+	ID        primitive.ObjectID `bson:"_id" json:"id"`
+	UserId    string             `bson:"userId" json:"userId"`
+	DeviceId  string             `bson:"deviceId" json:"deviceId"`
+	Timestamp time.Time          `bson:"timestamp" json:"timestamp"`
 }
