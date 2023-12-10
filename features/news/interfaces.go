@@ -16,7 +16,7 @@ type Repository interface {
 	UploadFile(file multipart.File) (string, error)
 	DeleteFile(filename string) error
 	SelectBookmarkedNewsID(ownerID int) (map[int]string, error)
-	SelectBoockmarkByNewsAndOwnerID(newsID, ownerID int) (string, error)
+	SelectBookmarkedByNewsAndOwnerID(newsID, ownerID int) (string, error)
 	GetTotalData() int64
 	GetTotalDataBySearchAndFilter(searchAndFilter dtos.SearchAndFilter) int64
 }

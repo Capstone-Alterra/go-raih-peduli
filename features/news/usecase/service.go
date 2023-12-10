@@ -97,7 +97,7 @@ func (svc *service) FindByID(newsID, ownerID int) *dtos.ResNews {
 	}
 	var bookmarkID string
 	if ownerID != 0 {
-		bookmarkID, err = svc.model.SelectBoockmarkByNewsAndOwnerID(newsID, ownerID)
+		bookmarkID, err = svc.model.SelectBookmarkedByNewsAndOwnerID(newsID, ownerID)
 
 		if bookmarkID != "" {
 			res.BookmarkID = &bookmarkID
@@ -134,11 +134,8 @@ func (svc *service) Create(newNews dtos.InputNews, userID int, file multipart.Fi
 	}
 	news.UserID = userID
 	news.Photo = url
-	err := smapping.FillStruct(&news, smapping.MapFields(newNews))
-	if err != nil {
-		log.Error(err)
-		return nil, nil, err
-	}
+	news.Title = newNews.Title
+	news.Description = newNews.Description
 
 	inserted, err := svc.model.Insert(news)
 	if err != nil {
