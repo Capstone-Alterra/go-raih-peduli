@@ -15,6 +15,30 @@ type MidtransInterface struct {
 	mock.Mock
 }
 
+// CheckTransactionStatus provides a mock function with given fields: IDTransaction
+func (_m *MidtransInterface) CheckTransactionStatus(IDTransaction string) (string, error) {
+	ret := _m.Called(IDTransaction)
+
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) (string, error)); ok {
+		return rf(IDTransaction)
+	}
+	if rf, ok := ret.Get(0).(func(string) string); ok {
+		r0 = rf(IDTransaction)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(IDTransaction)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // CreateTransactionBank provides a mock function with given fields: IDTransaction, PaymentType, Amount
 func (_m *MidtransInterface) CreateTransactionBank(IDTransaction string, PaymentType string, Amount int64) (string, string, error) {
 	ret := _m.Called(IDTransaction, PaymentType, Amount)
@@ -106,6 +130,20 @@ func (_m *MidtransInterface) CreateTransactionQris(IDTransaction string, Payment
 	}
 
 	return r0, r1, r2
+}
+
+// MappingPaymentName provides a mock function with given fields: paymentType
+func (_m *MidtransInterface) MappingPaymentName(paymentType string) string {
+	ret := _m.Called(paymentType)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string) string); ok {
+		r0 = rf(paymentType)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
 }
 
 // TransactionStatus provides a mock function with given fields: transactionStatusResp
