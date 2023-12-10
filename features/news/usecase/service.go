@@ -1,7 +1,6 @@
 package usecase
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -53,11 +52,6 @@ func (svc *service) FindAll(pagination dtos.Pagination, searchAndFilter dtos.Sea
 			return nil, 0
 		}
 		fmt.Println(bookmarkIDs)
-	}
-
-	if err != nil {
-		logrus.Error(err)
-		return nil, 0
 	}
 
 	for _, news := range entities {
@@ -154,7 +148,7 @@ func (svc *service) Create(newNews dtos.InputNews, userID int, file multipart.Fi
 
 func (svc *service) Modify(newsData dtos.InputNews, file multipart.File, oldData dtos.ResNews) ([]string, error) {
 	if errorList, err := svc.validateInput(newsData, file); err != nil || len(errorList) > 0 {
-		return errorList, errors.New("error")
+		return errorList, err
 	}
 	var newNews news.News
 	var url string = ""
@@ -169,7 +163,7 @@ func (svc *service) Modify(newsData dtos.InputNews, file multipart.File, oldData
 
 		if oldFilename != "default" {
 			if err := svc.model.DeleteFile(oldFilename); err != nil {
-				return nil, err
+				logrus.Error(err)
 			}
 		}
 
@@ -183,17 +177,13 @@ func (svc *service) Modify(newsData dtos.InputNews, file multipart.File, oldData
 		url = imageURL
 	}
 
-	if err := smapping.FillStruct(&newNews, smapping.MapFields(newsData)); err != nil {
-		logrus.Error(err)
-		return nil, err
-	}
-
-	newNews.Photo = url
 	newNews.ID = oldData.ID
+	newNews.Title = newsData.Title
+	newNews.Description = newsData.Description
+	newNews.Photo = url
 	newNews.UserID = oldData.UserID
-	err := svc.model.Update(newNews)
 
-	if err != nil {
+	if err := svc.model.Update(newNews); err != nil {
 		logrus.Error(err)
 		return nil, err
 	}
