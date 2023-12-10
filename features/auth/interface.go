@@ -12,6 +12,7 @@ type Repository interface {
 	SelectByEmail(email string) (*User, error)
 	SendOTPByEmail(email string, otp string) error
 	InsertVerification(email string, verificationKey string) error
+	InsertToken(userID int, fcmToken string) error
 }
 
 type Usecase interface {
