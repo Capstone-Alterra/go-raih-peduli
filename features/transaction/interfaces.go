@@ -28,6 +28,7 @@ type Usecase interface {
 	Modify(transactionData dtos.InputTransaction, transactionID int) bool
 	Remove(transactionID int) bool
 	Notifications(notificationPayload map[string]any) error
+	SendPaymentConfirmation() error
 }
 
 type Handler interface {
@@ -37,4 +38,5 @@ type Handler interface {
 	UpdateTransaction() echo.HandlerFunc
 	DeleteTransaction() echo.HandlerFunc
 	Notifications() echo.HandlerFunc
+	SendNotifications() echo.HandlerFunc
 }

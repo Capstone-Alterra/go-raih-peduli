@@ -169,15 +169,19 @@ func NewsHandler() news.Handler {
 }
 
 func TransactionHandler() transaction.Handler {
+	mongoDB := utils.ConnectMongo()
+	collection := mongoDB.Collection("notificationTokens")
 	smtpConfig := config.LoadSMTPConfig()
 	db := utils.InitDB()
-	repo := tr.New(db, smtpConfig)
+	repo := tr.New(db, smtpConfig, collection)
 	coreAPIClient := utils.MidtransCoreAPIClient()
 	validation := helpers.NewValidationRequest()
+	nfService := helpers.NewNotificationService()
 
 	generator := helpers.NewGenerator()
 	midtrans := helpers.NewMidtransRequest()
-	tc := tu.New(repo, generator, midtrans, coreAPIClient, validation)
+
+	tc := tu.New(repo, generator, midtrans, coreAPIClient, validation, nfService)
 	return th.New(tc)
 }
 

@@ -41,6 +41,10 @@ type MidtransInterface interface {
 	MappingPaymentName(paymentType string) string
 }
 
+type NotificationInterface interface {
+	SendNotifications(tokens string, userID string, message string) error
+}
+
 type CloudStorageInterface interface {
 	UploadFile(file multipart.File, object string) error
 	DeleteFile(object string) error

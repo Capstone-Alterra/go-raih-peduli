@@ -20,15 +20,22 @@ type service struct {
 	mtRequest     helpers.MidtransInterface
 	coreAPIClient coreapi.Client
 	validation    helpers.ValidationInterface
+	nsRequest     helpers.NotificationInterface
 }
 
-func New(model transaction.Repository, generator helpers.GeneratorInterface, mtRequest helpers.MidtransInterface, coreAPIClient coreapi.Client, validation helpers.ValidationInterface) transaction.Usecase {
+func New(model transaction.Repository,
+	generator helpers.GeneratorInterface,
+	mtRequest helpers.MidtransInterface,
+	coreAPIClient coreapi.Client,
+	validation helpers.ValidationInterface,
+	nsResquest helpers.NotificationInterface) transaction.Usecase {
 	return &service{
 		model:         model,
 		generator:     generator,
 		mtRequest:     mtRequest,
 		coreAPIClient: coreAPIClient,
 		validation:    validation,
+		nsRequest:     nsResquest,
 	}
 }
 
@@ -352,6 +359,8 @@ func (svc *service) Notifications(notificationPayload map[string]any) error {
 	transaction.Status = paymentConfirm
 	paymentName := svc.mtRequest.MappingPaymentName(transaction.PaymentType)
 	if paymentConfirm == "5" {
+		err = svc.nsRequest.SendNotifications("fCUrkvUdQBmS5CeRC12vAv:APA91bHhr0eM66GPn4XKVMmeHC-hwhNuCFbKj2j8U1izAa--OupCQAeYZYllByNm89GCczDjbMXZ_ot0ETc8h_gdTTV6FXQ9nKLnbWGs-lnFbkKHbALJBQlgJ9-QUIhBqYgVgjLk81y9", "1", "payment success")
+
 		err := svc.model.SendPaymentConfirmation(transaction.User.Email, transaction.Amount, transaction.FundraiseID, paymentName)
 		if err != nil {
 			logrus.Println(err.Error())
@@ -366,6 +375,16 @@ func (svc *service) Notifications(notificationPayload map[string]any) error {
 		if update == -1 {
 			return nil
 		}
+	}
+
+	return nil
+}
+
+func (svc *service) SendPaymentConfirmation() error {
+	err := svc.nsRequest.SendNotifications("fCUrkvUdQBmS5CeRC12vAv:APA91bHhr0eM66GPn4XKVMmeHC-hwhNuCFbKj2j8U1izAa--OupCQAeYZYllByNm89GCczDjbMXZ_ot0ETc8h_gdTTV6FXQ9nKLnbWGs-lnFbkKHbALJBQlgJ9-QUIhBqYgVgjLk81y9", "1", "payment success")
+	if err != nil {
+		logrus.Print("Notif Send Status Error: ", err)
+		return err
 	}
 
 	return nil

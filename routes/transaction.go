@@ -15,6 +15,7 @@ func Transactions(e *echo.Echo, handler transaction.Handler, jwt helpers.JWTInte
 	transactions.GET("", handler.GetTransactions(), m.AuthorizeJWT(jwt, 0, config.SECRET))
 	transactions.POST("", handler.CreateTransaction(), m.AuthorizeJWT(jwt, 0, config.SECRET))
 	transactions.POST("/notifications", handler.Notifications())
+	transactions.POST("/notifications/send", handler.SendNotifications())
 
 	transactions.GET("/:id", handler.TransactionDetails())
 	transactions.PUT("/:id", handler.UpdateTransaction())
