@@ -78,7 +78,7 @@ type ResTransactionHistory struct {
 	PhoneNumber    string `json:"phone_number"`
 	ProfilePicture string `json:"profile_picture"`
 	FundraiseID    int    `json:"fundraise_id"`
-	FudraiseTitle  string `json:"fundraise_title"`
+	FundraiseTitle  string `json:"fundraise_title"`
 	FundraisePhoto string `json:"fundraise_photo"`
 	Amount         int    `json:"amount"`
 	PaymentType    string `json:"payment_type"`
