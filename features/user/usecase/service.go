@@ -70,7 +70,7 @@ func (svc *service) FindByID(userID int) *dtos.ResUser {
 
 func (svc *service) Create(newData dtos.InputUser) (*dtos.ResUser, []string, error) {
 	if errMap := svc.validation.ValidateRequest(newData); errMap != nil {
-		return nil, errMap, nil
+		return nil, errMap, errors.New("missing some data")
 	}
 
 	newUser := user.User{}
