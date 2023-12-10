@@ -6,7 +6,6 @@ import (
 	"raihpeduli/config"
 	"raihpeduli/features/user"
 	"strconv"
-	"time"
 
 	"raihpeduli/features/fundraise"
 	"raihpeduli/features/transaction"
@@ -14,7 +13,6 @@ import (
 	"github.com/labstack/gommon/log"
 	"github.com/wneessen/go-mail"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"gorm.io/gorm"
 )
@@ -253,20 +251,13 @@ func (mdl *model) SendPaymentConfirmation(email string, amount int, idFundraise 
 	return nil
 }
 
-func (mdl *model) InsertToken(token transaction.NotificationToken) error {
-	filter := bson.D{{Key: "deviceId", Value: token.DeviceId}}
-	res := mdl.collection.FindOne(context.Background(), filter)
 
-	if res.Err() != nil {
-		if res.Err() == mongo.ErrNoDocuments {
-			// If token does not exist insert it
-			token.ID = primitive.NewObjectID()
-			_, err := mdl.collection.InsertOne(context.Background(), token)
-			return err
-		}
-		return res.Err()
+func (mdl *model) GetDeviceToken(userID int) string {
+	var result transaction.NotificationToken
+
+	if err := mdl.collection.FindOne(context.Background(), bson.M{"user_id": userID}).Decode(&result); err != nil {
+		return ""
 	}
 
-	_, err := mdl.collection.UpdateOne(context.Background(), filter, bson.M{"$set": bson.M{"timestamp": time.Now().UTC()}})
-	return err
+	return result.DeviceToken
 }

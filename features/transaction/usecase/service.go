@@ -359,22 +359,23 @@ func (svc *service) Notifications(notificationPayload map[string]any) error {
 	transaction.Status = paymentConfirm
 	paymentName := svc.mtRequest.MappingPaymentName(transaction.PaymentType)
 	if paymentConfirm == "5" {
-		err = svc.nsRequest.SendNotifications("fCUrkvUdQBmS5CeRC12vAv:APA91bHhr0eM66GPn4XKVMmeHC-hwhNuCFbKj2j8U1izAa--OupCQAeYZYllByNm89GCczDjbMXZ_ot0ETc8h_gdTTV6FXQ9nKLnbWGs-lnFbkKHbALJBQlgJ9-QUIhBqYgVgjLk81y9", "1", "payment success")
+		deviceToken := svc.model.GetDeviceToken(transaction.UserID)
 
-		err := svc.model.SendPaymentConfirmation(transaction.User.Email, transaction.Amount, transaction.FundraiseID, paymentName)
-		if err != nil {
+		if deviceToken != "" {
+			svc.nsRequest.SendNotifications(deviceToken, "1", "payment success")
+		}
+		
+		if err := svc.model.SendPaymentConfirmation(transaction.User.Email, transaction.Amount, transaction.FundraiseID, paymentName); err != nil {
 			logrus.Println(err.Error())
 		}
+
 		transaction.PaidAt = time.Now().Format("2006-01-02 15:04:05")
-		update := svc.model.Update(*transaction)
-		if update == -1 {
+		
+		if update := svc.model.Update(*transaction); update == -1 {
 			return nil
 		}
-	} else {
-		update := svc.model.Update(*transaction)
-		if update == -1 {
-			return nil
-		}
+	} else if update := svc.model.Update(*transaction); update == -1 {
+		return nil
 	}
 
 	return nil

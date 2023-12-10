@@ -19,6 +19,7 @@ type Repository interface {
 	GetTotalData(keyword string) int64
 	GetTotalDataByUser(userID int, keyword string) int64
 	SendPaymentConfirmation(email string, amount int, idFundraise int, paymentType string) error
+	GetDeviceToken(userID int) string
 }
 
 type Usecase interface {
