@@ -81,6 +81,8 @@ type Transaction struct {
 
 	ID             int    `gorm:"type:int(11)"`
 	FundraiseID    int    `gorm:"type:int(11)"`
+	FundraiseTitle string
+	FundraisePhoto string
 	UserID         int    `gorm:"type:int(11)"`
 	PaymentType    string `gorm:"type:varchar(50)"`
 	Amount         int    `gorm:"type:int(11)"`
