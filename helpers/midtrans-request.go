@@ -192,3 +192,41 @@ func (mr *midtransRequest) TransactionStatus(transactionStatusResp *coreapi.Tran
 
 	return status
 }
+
+func (mr *midtransRequest) CheckTransactionStatus(IDTransaction string) (string, error) {
+	transactionStatusResp, err := coreapi.CheckTransaction(IDTransaction)
+	if err != nil {
+		return "", err
+	}
+
+	if transactionStatusResp != nil {
+		status := mr.TransactionStatus(transactionStatusResp)
+		if err != nil {
+			return "", err
+		}
+		return status.Order, nil
+	} else {
+		return "", nil
+	}
+}
+
+func (mr *midtransRequest) MappingPaymentName(paymentType string) string {
+	switch paymentType {
+	case "4":
+		return "Bank Permata"
+	case "5":
+		return "Bank CIMB"
+	case "6":
+		return "Bank BCA"
+	case "7":
+		return "Bank BRI"
+	case "8":
+		return "Bank BNI"
+	case "10":
+		return "Gopay"
+	case "11":
+		return "Qris"
+	default:
+		return "Other"
+	}
+}

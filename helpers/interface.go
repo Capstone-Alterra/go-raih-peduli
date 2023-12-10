@@ -37,6 +37,8 @@ type MidtransInterface interface {
 	CreateTransactionGopay(IDTransaction string, PaymentType string, Amount int64) (string, string, error)
 	CreateTransactionQris(IDTransaction string, PaymentType string, Amount int64) (string, string, error)
 	TransactionStatus(transactionStatusResp *coreapi.TransactionStatusResponse) transaction.Status
+	CheckTransactionStatus(IDTransaction string) (string, error)
+	MappingPaymentName(paymentType string) string
 }
 
 type CloudStorageInterface interface {
