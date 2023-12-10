@@ -133,8 +133,10 @@ func AuthHandler() auth.Handler {
 	generator := helpers.NewGenerator()
 	validation := helpers.NewValidationRequest()
 	redis := utils.ConnectRedis()
+	mongoDB := utils.ConnectMongo()
+	collection := mongoDB.Collection("devices")
 
-	repo := ar.New(db, redis, smtpConfig)
+	repo := ar.New(db, redis, smtpConfig, collection)
 	uc := au.New(repo, jwt, hash, generator, validation)
 	return ah.New(uc)
 }
