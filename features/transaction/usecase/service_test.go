@@ -953,14 +953,11 @@ func TestNotifications(t *testing.T) {
 	var validation = helperMocks.NewValidationInterface(t)
 	var service = New(model, generator, mtRequest, coreAPIClient, validation)
 
-	var emptyNotificationsPayload = map[string]any{}
+	
 
-	// var notificationsPayload = map[string]any{
-	// 	"order_id": "876565",
-	// }
 
 	t.Run("Order ID not found", func(t *testing.T) {
-		err := service.Notifications(emptyNotificationsPayload)
+		err := service.Notifications(map[string]any{})
 		assert.Error(t, err)
 		assert.EqualError(t, err, "invalid notification payload")
 	})
