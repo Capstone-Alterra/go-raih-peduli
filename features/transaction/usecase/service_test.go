@@ -8,6 +8,7 @@ import (
 	helperMocks "raihpeduli/helpers/mocks"
 	"strconv"
 	"testing"
+	"time"
 
 	"errors"
 
@@ -953,15 +954,106 @@ func TestNotifications(t *testing.T) {
 	var validation = helperMocks.NewValidationInterface(t)
 	var service = New(model, generator, mtRequest, coreAPIClient, validation)
 
+	var notificationsPayload = map[string]any{
+		"order_id": "876565",
+	}
+
 	var emptyNotificationsPayload = map[string]any{}
 
-	// var notificationsPayload = map[string]any{
-	// 	"order_id": "876565",
-	// }
+	var trx = transaction.Transaction{
+		ID:          876565,
+		FundraiseID: 1,
+		UserID:      1,
+		PaymentType: "4",
+		Amount:      100000,
+		Status:      "5",
+		User: user.User{
+			Email: "seseorang@gmail.com",
+		},
+	}
 
-	t.Run("Order ID not found", func(t *testing.T) {
+	var trx1 = transaction.Transaction{
+		ID:          876565,
+		FundraiseID: 1,
+		UserID:      1,
+		PaymentType: "4",
+		Amount:      100000,
+		Status:      "2",
+		User: user.User{
+			Email: "seseorang@gmail.com",
+		},
+	}
+
+	var paymentName = "Bank Permata"
+
+	t.Run("Success", func(t *testing.T) {
+		model.On("SelectByID", trx.ID).Return(&trx).Once()
+		mtRequest.On("CheckTransactionStatus", notificationsPayload["order_id"].(string)).Return("5", nil).Once()
+		mtRequest.On("MappingPaymentName", trx.PaymentType).Return(paymentName).Once()
+		model.On("SendPaymentConfirmation", trx.User.Email, trx.Amount, trx.FundraiseID, paymentName).Return(nil).Once()
+		trx.PaidAt = time.Now().Format("2006-01-02 15:04:05")
+		model.On("Update", trx).Return(int64(1)).Once()
+
+		err := service.Notifications(notificationsPayload)
+		assert.Nil(t, err)
+		model.AssertExpectations(t)
+		mtRequest.AssertExpectations(t)
+	})
+
+	t.Run("Invalid notification payload", func(t *testing.T) {
 		err := service.Notifications(emptyNotificationsPayload)
+
 		assert.Error(t, err)
 		assert.EqualError(t, err, "invalid notification payload")
+	})
+
+	t.Run("Check Transaction Error", func(t *testing.T) {
+		model.On("SelectByID", trx.ID).Return(&trx).Once()
+		mtRequest.On("CheckTransactionStatus", notificationsPayload["order_id"].(string)).Return("", errors.New("transaction not found")).Once()
+
+		err := service.Notifications(notificationsPayload)
+		assert.Error(t, err)
+		assert.EqualError(t, err, "transaction not found")
+		mtRequest.AssertExpectations(t)
+	})
+
+	t.Run("Send Payment Confirmation Error", func(t *testing.T) {
+		model.On("SelectByID", trx.ID).Return(&trx).Once()
+		mtRequest.On("CheckTransactionStatus", notificationsPayload["order_id"].(string)).Return("5", nil).Once()
+		mtRequest.On("MappingPaymentName", trx.PaymentType).Return(paymentName).Once()
+		model.On("SendPaymentConfirmation", trx.User.Email, trx.Amount, trx.FundraiseID, paymentName).Return(errors.New("send payment confirmation failed")).Once()
+		trx.PaidAt = time.Now().Format("2006-01-02 15:04:05")
+		model.On("Update", trx).Return(int64(1)).Once()
+
+		err := service.Notifications(notificationsPayload)
+		assert.Nil(t, err)
+		model.AssertExpectations(t)
+		mtRequest.AssertExpectations(t)
+	})
+
+	t.Run("Update Error", func(t *testing.T) {
+		model.On("SelectByID", trx.ID).Return(&trx).Once()
+		mtRequest.On("CheckTransactionStatus", notificationsPayload["order_id"].(string)).Return("5", nil).Once()
+		mtRequest.On("MappingPaymentName", trx.PaymentType).Return(paymentName).Once()
+		model.On("SendPaymentConfirmation", trx.User.Email, trx.Amount, trx.FundraiseID, paymentName).Return(nil).Once()
+		trx.PaidAt = time.Now().Format("2006-01-02 15:04:05")
+		model.On("Update", trx).Return(int64(-1)).Once()
+
+		err := service.Notifications(notificationsPayload)
+		assert.Nil(t, err)
+		model.AssertExpectations(t)
+		mtRequest.AssertExpectations(t)
+	})
+
+	t.Run("Update Error(1)", func(t *testing.T) {
+		model.On("SelectByID", trx1.ID).Return(&trx1).Once()
+		mtRequest.On("CheckTransactionStatus", notificationsPayload["order_id"].(string)).Return("2", nil).Once()
+		mtRequest.On("MappingPaymentName", trx1.PaymentType).Return(paymentName).Once()
+		model.On("Update", trx1).Return(int64(-1)).Once()
+
+		err := service.Notifications(notificationsPayload)
+		assert.Nil(t, err)
+		model.AssertExpectations(t)
+		mtRequest.AssertExpectations(t)
 	})
 }
