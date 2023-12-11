@@ -64,6 +64,32 @@ func (_m *Usecase) CreateVacancy(newVacancy dtos.InputVacancy, UserID int, file 
 	return r0, r1, r2
 }
 
+// FindAllSkills provides a mock function with given fields:
+func (_m *Usecase) FindAllSkills() ([]dtos.Skill, error) {
+	ret := _m.Called()
+
+	var r0 []dtos.Skill
+	var r1 error
+	if rf, ok := ret.Get(0).(func() ([]dtos.Skill, error)); ok {
+		return rf()
+	}
+	if rf, ok := ret.Get(0).(func() []dtos.Skill); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]dtos.Skill)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // FindAllVacancies provides a mock function with given fields: page, size, searchAndFilter, ownerID, status
 func (_m *Usecase) FindAllVacancies(page int, size int, searchAndFilter dtos.SearchAndFilter, ownerID int, status string) ([]dtos.ResVacancy, int64) {
 	ret := _m.Called(page, size, searchAndFilter, ownerID, status)

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Your token</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f0f0f0;
+        padding: 0;
+        margin: 0;
+        text-align: center;
+      }
+
+      table {
+        width: 100%;
+        background-color: #fff;
+      }
+
+      .container {
+        max-width: 650px;
+        margin: auto;
+        background-color: #f0f0f0;
+        padding: 30px;
+        border-radius: 4px;
+      }
+
+      .logo {
+        padding: 20px;
+        background-color: #fff;
+      }
+
+      h1 {
+        font-family: "Nunito Sans", Arial, Verdana, Helvetica, sans-serif;
+        font-size: 28px;
+        font-weight: 300;
+        color: #666;
+        margin: 0;
+        padding-bottom: 1em;
+        text-align: left;
+      }
+
+      p {
+        font-family: "Nunito Sans", Arial, Verdana, Helvetica, sans-serif;
+        font-size: 18px;
+        color: #666;
+        margin: 0;
+        line-height: 24px;
+        text-align: left;
+        padding-bottom: 3%;
+      }
+
+      .footer {
+        background-color: #f0f0f0;
+        padding: 20px 40px;
+        text-align: center;
+      }
+
+      .footer p {
+        font-family: "Nunito Sans", Arial, Verdana, Helvetica, sans-serif;
+        font-size: 12px;
+        color: #777;
+        margin: 0;
+        line-height: 24px;
+      }
+
+      .footer a {
+        color: #777;
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <table
+      align="center"
+      cellpadding="0"
+      cellspacing="0"
+      border="0"
+      width="100%"
+      bgcolor="#f0f0f0"
+    >
+      <tr>
+        <td style="padding: 30px 30px 20px 30px">
+          <table
+            cellpadding="0"
+            cellspacing="0"
+            border="0"
+            width="100%"
+            bgcolor="#ffffff"
+            style="max-width: 650px; margin: auto"
+          >
+            <tr>
+              <td colspan="2" align="center" class="logo">
+                <a href="" target="_blank"
+                  ><img
+                    src="https://storage.googleapis.com/raih-peduli/Enter%20OTP-pana.png"
+                    border="0"
+                    style="width: 300px"
+                /></a>
+              </td>
+            </tr>
+            <tr>
+              <td style="text-align: left; padding: 0px 50px" valign="top">
+                <div>
+                  <div>
+                    <h1
+                      style="
+                        font-weight: bold;
+                        padding: 5px;
+                        text-align: center;
+                        color: black;
+                      "
+                    >
+                      Selamat Datang di Raih Peduli
+                    </h1>
+                    <div style="text-align: center">
+                      <p style="text-align: center">
+                        Halo
+                        <span style="font-weight: 600">{{.Fullname}},</span>
+                        Terimakasih sudah mendaftarkan dirimu di Raih Peduli.
+                        Berikut adalah kode verifikasi kamu
+                      </p>
+                      <h1
+                        style="
+                          text-align: center;
+                          font-weight: 700;
+                          color: black;
+                        "
+                      >
+                        Kode Verifikasi
+                      </h1>
+                      <div
+                        style="
+                          display: flex;
+                          justify-content: center;
+                          justify-items: center;
+                        "
+                      >
+                        <h1
+                          style="
+                            width: fit-content;
+                            text-align: center;
+                            font-weight: 700;
+                            padding: 5px;
+                            margin-bottom: 30px;
+                            color: black;
+                            background-color: #e5e9f4;
+                            border: black;
+                            border-radius: 15px;
+                          "
+                        >
+                          {{.Otp}}
+                        </h1>
+                      </div>
+                      <p style="text-align: center">
+                        Kode tersebut bersifat rahasia! Jangan
+                      </p>
+                      <p style="text-align: center">
+                        berikan kode OTP kepada siapapun
+                      </p>
+                      <p style="text-align: center">
+                        termasuk pihak Raih Peduli.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

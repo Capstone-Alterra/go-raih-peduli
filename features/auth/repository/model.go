@@ -4,13 +4,12 @@ import (
 	"context"
 	"raihpeduli/config"
 	"raihpeduli/features/auth"
-	"strconv"
+	"raihpeduli/helpers"
 	"time"
 
 	"github.com/go-redis/redis"
 	"github.com/labstack/gommon/log"
 	"github.com/sirupsen/logrus"
-	"github.com/wneessen/go-mail"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -86,39 +85,11 @@ func (mdl *model) InsertVerification(email string, verificationKey string) error
 	return nil
 }
 
-func (mdl *model) SendOTPByEmail(email string, otp string) error {
-	user := mdl.config.SMTP_USER
-	password := mdl.config.SMTP_PASS
-	port := mdl.config.SMTP_PORT
-
-	convPort, err := strconv.Atoi(port)
+func (mdl *model) SendOTPByEmail(fullname, email, otp, status string) error {
+	err := helpers.EmailService(fullname, email, otp, status)
 	if err != nil {
 		return err
 	}
-
-	m := mail.NewMsg()
-	if err := m.From(user); err != nil {
-		return err
-	}
-	if err := m.To(email); err != nil {
-		return err
-	}
-	m.Subject("Verifikasi Email - Raih Peduli")
-	m.SetBodyString(mail.TypeTextPlain, "Kode OTP anda adalah : "+otp)
-
-	c, err := mail.NewClient("smtp.gmail.com", mail.WithPort(convPort), mail.WithSMTPAuth(mail.SMTPAuthPlain), mail.WithUsername(user), mail.WithPassword(password))
-	if err != nil {
-		return err
-	}
-	if err := c.DialAndSend(m); err != nil {
-		return err
-	}
-
-	query := mdl.InsertVerification(email, otp)
-	if query != nil {
-		return query
-	}
-
 	return nil
 }
 
