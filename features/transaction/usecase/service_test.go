@@ -22,7 +22,8 @@ func TestFindAll(t *testing.T) {
 	var mtRequest = helperMocks.NewMidtransInterface(t)
 	var coreAPIClient = coreapi.Client{}
 	var validation = helperMocks.NewValidationInterface(t)
-	var service = New(model, generator, mtRequest, coreAPIClient, validation)
+	var nsRequest = helperMocks.NewNotificationInterface(t)
+	var service = New(model, generator, mtRequest, coreAPIClient, validation, nsRequest)
 
 	var transactionData = []transaction.Transaction{
 		{
@@ -167,7 +168,8 @@ func TestFindByID(t *testing.T) {
 	var mtRequest = helperMocks.NewMidtransInterface(t)
 	var coreAPIClient = coreapi.Client{}
 	var validation = helperMocks.NewValidationInterface(t)
-	var service = New(model, generator, mtRequest, coreAPIClient, validation)
+	var nsRequest = helperMocks.NewNotificationInterface(t)
+	var service = New(model, generator, mtRequest, coreAPIClient, validation, nsRequest)
 
 	var tests = []transaction.Transaction{
 		{
@@ -278,7 +280,8 @@ func TestCreate(t *testing.T) {
 	var mtRequest = helperMocks.NewMidtransInterface(t)
 	var coreAPIClient = coreapi.Client{}
 	var validation = helperMocks.NewValidationInterface(t)
-	var service = New(model, generator, mtRequest, coreAPIClient, validation)
+	var nsRequest = helperMocks.NewNotificationInterface(t)
+	var service = New(model, generator, mtRequest, coreAPIClient, validation, nsRequest)
 
 	var user = user.User{
 		ID:       1,
@@ -889,7 +892,8 @@ func TestModify(t *testing.T) {
 	var mtRequest = helperMocks.NewMidtransInterface(t)
 	var coreAPIClient = coreapi.Client{}
 	var validation = helperMocks.NewValidationInterface(t)
-	var service = New(model, generator, mtRequest, coreAPIClient, validation)
+	var nsRequest = helperMocks.NewNotificationInterface(t)
+	var service = New(model, generator, mtRequest, coreAPIClient, validation, nsRequest)
 
 	var transactionData = dtos.InputTransaction{
 		FundraiseID: 1,
@@ -927,7 +931,8 @@ func TestRemove(t *testing.T) {
 	var mtRequest = helperMocks.NewMidtransInterface(t)
 	var coreAPIClient = coreapi.Client{}
 	var validation = helperMocks.NewValidationInterface(t)
-	var service = New(model, generator, mtRequest, coreAPIClient, validation)
+	var nsRequest = helperMocks.NewNotificationInterface(t)
+	var service = New(model, generator, mtRequest, coreAPIClient, validation, nsRequest)
 
 	t.Run("Success", func(t *testing.T) {
 		model.On("DeleteByID", 876565).Return(int64(1)).Once()
@@ -952,7 +957,8 @@ func TestNotifications(t *testing.T) {
 	var mtRequest = helperMocks.NewMidtransInterface(t)
 	var coreAPIClient = coreapi.Client{}
 	var validation = helperMocks.NewValidationInterface(t)
-	var service = New(model, generator, mtRequest, coreAPIClient, validation)
+	var nsRequest = helperMocks.NewNotificationInterface(t)
+	var service = New(model, generator, mtRequest, coreAPIClient, validation, nsRequest)
 
 	var notificationsPayload = map[string]any{
 		"order_id": "876565",

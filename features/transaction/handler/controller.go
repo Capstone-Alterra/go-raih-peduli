@@ -196,3 +196,15 @@ func (ctl *controller) Notifications() echo.HandlerFunc {
 		return c.JSON(200, echo.Map{"status": "ok"})
 	}
 }
+
+func (ctl *controller) SendNotifications() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		err := ctl.service.SendPaymentConfirmation()
+
+		if err != nil {
+			return ctx.JSON(505, helper.Response(err.Error()))
+		}
+
+		return ctx.JSON(200, helper.Response("Transaction Success Deleted!", nil))
+	}
+}

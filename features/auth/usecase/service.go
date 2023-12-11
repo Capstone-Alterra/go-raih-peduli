@@ -86,6 +86,7 @@ func (svc *service) Login(data dtos.RequestLogin) (*dtos.LoginResponse, []string
 
 	user, err := svc.model.Login(data.Email)
 	if err != nil {
+		logrus.Error(err)
 		return nil, nil, err
 	}
 
@@ -108,6 +109,10 @@ func (svc *service) Login(data dtos.RequestLogin) (*dtos.LoginResponse, []string
 	if tokenData == nil {
 		log.Error("Token process failed")
 		return nil, nil, errors.New("generate token failed")
+	}
+
+	if err := svc.model.InsertToken(user.ID, data.FCMTokens); err != nil {
+		return nil, nil, err
 	}
 	
 	if user.Personalization == nil {

@@ -133,8 +133,10 @@ func AuthHandler() auth.Handler {
 	generator := helpers.NewGenerator()
 	validation := helpers.NewValidationRequest()
 	redis := utils.ConnectRedis()
+	mongoDB := utils.ConnectMongo()
+	collection := mongoDB.Collection("devices")
 
-	repo := ar.New(db, redis, smtpConfig)
+	repo := ar.New(db, redis, smtpConfig, collection)
 	uc := au.New(repo, jwt, hash, generator, validation)
 	return ah.New(uc)
 }
@@ -169,15 +171,19 @@ func NewsHandler() news.Handler {
 }
 
 func TransactionHandler() transaction.Handler {
+	mongoDB := utils.ConnectMongo()
+	collection := mongoDB.Collection("devices")
 	smtpConfig := config.LoadSMTPConfig()
 	db := utils.InitDB()
-	repo := tr.New(db, smtpConfig)
+	repo := tr.New(db, smtpConfig, collection)
 	coreAPIClient := utils.MidtransCoreAPIClient()
 	validation := helpers.NewValidationRequest()
+	nfService := helpers.NewNotificationService()
 
 	generator := helpers.NewGenerator()
 	midtrans := helpers.NewMidtransRequest()
-	tc := tu.New(repo, generator, midtrans, coreAPIClient, validation)
+
+	tc := tu.New(repo, generator, midtrans, coreAPIClient, validation, nfService)
 	return th.New(tc)
 }
 

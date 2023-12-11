@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"raihpeduli/config"
 	"raihpeduli/features/auth"
 	"strconv"
@@ -10,6 +11,9 @@ import (
 	"github.com/labstack/gommon/log"
 	"github.com/sirupsen/logrus"
 	"github.com/wneessen/go-mail"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"gorm.io/gorm"
 )
 
@@ -17,13 +21,15 @@ type model struct {
 	db         *gorm.DB
 	connection *redis.Client
 	config     *config.SMTPConfig
+	collection *mongo.Collection
 }
 
-func New(db *gorm.DB, rdClient *redis.Client, config *config.SMTPConfig) auth.Repository {
+func New(db *gorm.DB, rdClient *redis.Client, config *config.SMTPConfig, collection *mongo.Collection) auth.Repository {
 	return &model{
 		db:         db,
 		connection: rdClient,
 		config:     config,
+		collection: collection,
 	}
 }
 
@@ -111,6 +117,18 @@ func (mdl *model) SendOTPByEmail(email string, otp string) error {
 	query := mdl.InsertVerification(email, otp)
 	if query != nil {
 		return query
+	}
+
+	return nil
+}
+
+func (mdl *model) InsertToken(userID int, fcmToken string) error {
+	filter := bson.M{"user_id": userID}
+	opts := options.FindOneAndUpdate().SetUpsert(true)
+	set := bson.M{"$set": bson.M{"user_id": userID, "device_token": fcmToken, "timestamp": time.Now().UTC()}}
+
+	if result := mdl.collection.FindOneAndUpdate(context.Background(), filter, set, opts); result.Err() != nil {
+		logrus.Error(result.Err())
 	}
 
 	return nil
