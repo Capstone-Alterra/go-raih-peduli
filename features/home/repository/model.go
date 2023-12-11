@@ -5,6 +5,7 @@ import (
 	"raihpeduli/features/fundraise"
 	"raihpeduli/features/home"
 	"raihpeduli/features/news"
+	"raihpeduli/features/user"
 	"raihpeduli/features/volunteer"
 
 	"github.com/labstack/gommon/log"
@@ -21,12 +22,27 @@ func New(db *gorm.DB) home.Repository {
 	}
 }
 
-func (mdl *model) PaginateFundraise(page, size int) []fundraise.Fundraise {
+func (mdl *model) PaginateFundraise(page, size int, likeQuery, notLikeQuery string) []fundraise.Fundraise {
 	var fundraises []fundraise.Fundraise
-
+	var additionalFundraises []fundraise.Fundraise
 	offset := (page - 1) * size
+	var result *gorm.DB
+	if likeQuery == "webVersion" || likeQuery == "" {
+		result = mdl.db.Offset(offset).Limit(size).Find(&fundraises)
+	} else {
+		result = mdl.db.Offset(offset).Where(likeQuery).Limit(size).Find(&fundraises)
+		if len(fundraises) < size {
+			additionalSize := size - len(fundraises)
+			additionalResult := mdl.db.Offset(offset).Where(notLikeQuery).Limit(additionalSize).Find(&additionalFundraises)
 
-	result := mdl.db.Offset(offset).Limit(size).Find(&fundraises)
+			if additionalResult.Error != nil {
+				log.Error(additionalResult.Error)
+				return nil
+			}
+			// Gabungkan hasil tambahan dengan hasil sebelumnya
+			fundraises = append(fundraises, additionalFundraises...)
+		}
+	}
 
 	if result.Error != nil {
 		log.Error(result.Error)
@@ -35,32 +51,61 @@ func (mdl *model) PaginateFundraise(page, size int) []fundraise.Fundraise {
 
 	return fundraises
 }
-func (mdl *model) PaginateVolunteer(page, size int) []volunteer.VolunteerVacancies {
+func (mdl *model) PaginateVolunteer(page, size int, likeQuery, notLikeQuery string) []volunteer.VolunteerVacancies {
 	var volunteers []volunteer.VolunteerVacancies
-
+	var additionalVolunteers []volunteer.VolunteerVacancies
 	offset := (page - 1) * size
+	var result *gorm.DB
+	if likeQuery == "webVersion" || likeQuery == "" {
+		result = mdl.db.Offset(offset).Limit(size).Find(&volunteers)
+	} else {
+		result = mdl.db.Offset(offset).Where(likeQuery).Limit(size).Find(&volunteers)
+		if len(volunteers) < size {
+			additionalSize := size - len(volunteers)
+			additionalResult := mdl.db.Offset(offset).Where(notLikeQuery).Limit(additionalSize).Find(&additionalVolunteers)
 
-	result := mdl.db.Offset(offset).Limit(size).Find(&volunteers)
+			if additionalResult.Error != nil {
+				log.Error(additionalResult.Error)
+				return nil
+			}
+			// Gabungkan hasil tambahan dengan hasil sebelumnya
+			volunteers = append(volunteers, additionalVolunteers...)
+		}
+	}
 
 	if result.Error != nil {
 		log.Error(result.Error)
 		return nil
 	}
-
 	return volunteers
 }
-func (mdl *model) PaginateNews(page, size int) []news.News {
+
+func (mdl *model) PaginateNews(page, size int, likeQuery, notLikeQuery string) []news.News {
 	var newses []news.News
-
+	var additionalNews []news.News
 	offset := (page - 1) * size
+	var result *gorm.DB
+	if likeQuery == "webVersion" || likeQuery == "" {
+		result = mdl.db.Offset(offset).Limit(size).Find(&newses)
+	} else {
+		result = mdl.db.Offset(offset).Where(likeQuery).Limit(size).Find(&newses)
+		if len(newses) < size {
+			additionalSize := size - len(newses)
+			additionalResult := mdl.db.Offset(offset).Where(notLikeQuery).Limit(additionalSize).Find(&additionalNews)
 
-	result := mdl.db.Offset(offset).Limit(size).Find(&newses)
+			if additionalResult.Error != nil {
+				log.Error(additionalResult.Error)
+				return nil
+			}
+			// Gabungkan hasil tambahan dengan hasil sebelumnya
+			newses = append(newses, additionalNews...)
+		}
+	}
 
 	if result.Error != nil {
 		log.Error(result.Error)
 		return nil
 	}
-
 	return newses
 }
 func (mdl *model) CountUser() int {
@@ -106,6 +151,18 @@ func (mdl *model) CountNews() int {
 	}
 
 	return int(totalNews)
+}
+
+func (mdl *model) SelectUserByID(userID int) *user.User {
+	var userById user.User
+	result := mdl.db.First(&userById, userID)
+
+	if result.Error != nil {
+		log.Error(result.Error)
+		return nil
+	}
+
+	return &userById
 }
 
 func (mdl *model) Insert(newHome home.Home) int64 {
