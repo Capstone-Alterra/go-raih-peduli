@@ -1,8 +1,9 @@
 package dtos
 
 type RequestLogin struct {
-	Email    string `json:"email" form:"email" validate:"required,email"`
-	Password string `json:"password" form:"password" validate:"required,alphanum,min=8"`
+	Email     string `json:"email" form:"email" validate:"required,email"`
+	Password  string `json:"password" form:"password" validate:"required,min=8"`
+	FCMTokens string `json:"fcm_token" form:"fcm_token"`
 }
 
 type InputUser struct {
@@ -11,7 +12,7 @@ type InputUser struct {
 	PhoneNumber string `json:"phone_number" form:"phone_number" validate:"required,number,min=10,max=13"`
 	Gender      string `json:"gender" form:"gender" validate:"required"`
 	Email       string `json:"email" form:"email" validate:"required,email"`
-	Password    string `json:"password" form:"password" validate:"required,alphanum,min=8"`
+	Password    string `json:"password" form:"password" validate:"required,min=8"`
 }
 
 type ResendOTP struct {

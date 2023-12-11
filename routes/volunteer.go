@@ -28,4 +28,6 @@ func Volunteers(e *echo.Echo, handler volunteer.Handler, jwt helpers.JWTInterfac
 	volunteers.GET("/:vacancy_id/registrants", handler.GetVolunteersByVacancyID(), m.AuthorizeJWT(jwt, 2, cfg.SECRET))
 	volunteers.GET("/:vacancy_id/registrants/:volunteer_id", handler.GetVolunteer(), m.AuthorizeJWT(jwt, 2, cfg.SECRET))
 	volunteers.PATCH("/:vacancy_id/registrants/:volunteer_id", handler.UpdateStatusRegistrar(), m.AuthorizeJWT(jwt, 2, cfg.SECRET))
+
+	e.GET("/skills", handler.GetSkills(), m.AuthorizeJWT(jwt, 0, cfg.SECRET))
 }

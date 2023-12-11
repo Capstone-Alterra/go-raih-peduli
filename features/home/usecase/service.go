@@ -1,9 +1,12 @@
 package usecase
 
 import (
+	"raihpeduli/features/fundraise"
 	"raihpeduli/features/home"
 	"raihpeduli/features/home/dtos"
-	"raihpeduli/helpers"
+	"raihpeduli/features/news"
+	"raihpeduli/features/volunteer"
+	"strings"
 
 	"github.com/labstack/gommon/log"
 	"github.com/mashingan/smapping"
@@ -11,52 +14,51 @@ import (
 
 type service struct {
 	model      home.Repository
-	validation helpers.ValidationInterface
 }
 
-func New(model home.Repository, validation helpers.ValidationInterface) home.Usecase {
+func New(model home.Repository) home.Usecase {
 	return &service{
 		model:      model,
-		validation: validation,
 	}
 }
 
-func (svc *service) FindAll(page, size int) dtos.ResGetHome {
+func (svc *service) FindAll(page, size int, personalization []string) dtos.ResGetHome {
 	var resGetHome dtos.ResGetHome
 	var fundraises []dtos.ResFundraise
 	var volunteers []dtos.ResVolunteer
 	var newses []dtos.ResNews
+	var fundraiseEnt []fundraise.Fundraise
+	var volunteerEnt []volunteer.VolunteerVacancies
+	var newsEnt []news.News
+	
+	fundraiseEnt = svc.model.PaginateFundraise(page, size, personalization)
+	volunteerEnt = svc.model.PaginateVolunteer(page, size, personalization)
+	newsEnt = svc.model.PaginateNews(page, size, personalization)
 
-	fundraiseEnt := svc.model.PaginateFundraise(page, size)
-
-	for _, fundraise := range fundraiseEnt {
+	for _, fundraiseItem := range fundraiseEnt {
 		var data dtos.ResFundraise
 
-		if err := smapping.FillStruct(&data, smapping.MapFields(fundraise)); err != nil {
+		if err := smapping.FillStruct(&data, smapping.MapFields(fundraiseItem)); err != nil {
 			log.Error(err.Error())
 		}
 
 		fundraises = append(fundraises, data)
 	}
 
-	volunteerEnt := svc.model.PaginateVolunteer(page, size)
-
-	for _, volunteer := range volunteerEnt {
+	for _, volunteerItem := range volunteerEnt {
 		var data dtos.ResVolunteer
 
-		if err := smapping.FillStruct(&data, smapping.MapFields(volunteer)); err != nil {
+		if err := smapping.FillStruct(&data, smapping.MapFields(volunteerItem)); err != nil {
 			log.Error(err.Error())
 		}
 
 		volunteers = append(volunteers, data)
 	}
 
-	newsEnt := svc.model.PaginateVolunteer(page, size)
-
-	for _, news := range newsEnt {
+	for _, newsItem := range newsEnt {
 		var data dtos.ResNews
 
-		if err := smapping.FillStruct(&data, smapping.MapFields(news)); err != nil {
+		if err := smapping.FillStruct(&data, smapping.MapFields(newsItem)); err != nil {
 			log.Error(err.Error())
 		}
 
@@ -73,24 +75,24 @@ func (svc *service) FindAllWeb(page, size int) dtos.ResWebGetHome {
 	var fundraises []dtos.ResFundraise
 	var volunteers []dtos.ResVolunteer
 
-	fundraiseEnt := svc.model.PaginateFundraise(page, size)
+	fundraiseEnt := svc.model.PaginateFundraise(page, size, nil)
 
-	for _, fundraise := range fundraiseEnt {
+	for _, fundraiseItem := range fundraiseEnt {
 		var data dtos.ResFundraise
 
-		if err := smapping.FillStruct(&data, smapping.MapFields(fundraise)); err != nil {
+		if err := smapping.FillStruct(&data, smapping.MapFields(fundraiseItem)); err != nil {
 			log.Error(err.Error())
 		}
 
 		fundraises = append(fundraises, data)
 	}
 
-	volunteerEnt := svc.model.PaginateVolunteer(page, size)
+	volunteerEnt := svc.model.PaginateVolunteer(page, size, nil)
 
-	for _, volunteer := range volunteerEnt {
+	for _, volunteerItem := range volunteerEnt {
 		var data dtos.ResVolunteer
 
-		if err := smapping.FillStruct(&data, smapping.MapFields(volunteer)); err != nil {
+		if err := smapping.FillStruct(&data, smapping.MapFields(volunteerItem)); err != nil {
 			log.Error(err.Error())
 		}
 
@@ -111,75 +113,14 @@ func (svc *service) FindAllWeb(page, size int) dtos.ResWebGetHome {
 	return resWebGetHome
 }
 
-func (svc *service) FindByID(homeID int) *dtos.ResHome {
-	res := dtos.ResHome{}
-	home := svc.model.SelectByID(homeID)
+func (svc *service) GetPersonalization(userID int) []string {
+	userById := svc.model.SelectUserByID(userID)
 
-	if home == nil {
+	if userById == nil {
 		return nil
 	}
-
-	err := smapping.FillStruct(&res, smapping.MapFields(home))
-	if err != nil {
-		log.Error(err)
-		return nil
-	}
-
-	return &res
+	var personalization []string
+	personalization = strings.Split(*userById.Personalization, ",")
+	return personalization
 }
 
-func (svc *service) Create(newHome dtos.InputHome) *dtos.ResHome {
-	home := home.Home{}
-
-	err := smapping.FillStruct(&home, smapping.MapFields(newHome))
-	if err != nil {
-		log.Error(err)
-		return nil
-	}
-
-	homeID := svc.model.Insert(home)
-
-	if homeID == -1 {
-		return nil
-	}
-
-	resHome := dtos.ResHome{}
-	errRes := smapping.FillStruct(&resHome, smapping.MapFields(newHome))
-	if errRes != nil {
-		log.Error(errRes)
-		return nil
-	}
-
-	return &resHome
-}
-
-func (svc *service) Modify(homeData dtos.InputHome, homeID int) bool {
-	newHome := home.Home{}
-
-	err := smapping.FillStruct(&newHome, smapping.MapFields(homeData))
-	if err != nil {
-		log.Error(err)
-		return false
-	}
-
-	newHome.ID = homeID
-	rowsAffected := svc.model.Update(newHome)
-
-	if rowsAffected <= 0 {
-		log.Error("There is No Home Updated!")
-		return false
-	}
-
-	return true
-}
-
-func (svc *service) Remove(homeID int) bool {
-	rowsAffected := svc.model.DeleteByID(homeID)
-
-	if rowsAffected <= 0 {
-		log.Error("There is No Home Deleted!")
-		return false
-	}
-
-	return true
-}

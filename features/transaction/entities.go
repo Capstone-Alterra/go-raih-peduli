@@ -3,7 +3,6 @@ package transaction
 import (
 	"raihpeduli/features/fundraise"
 	"raihpeduli/features/user"
-	"time"
 
 	"gorm.io/gorm"
 )
@@ -20,13 +19,17 @@ type Transaction struct {
 	PaidAt         string `gorm:"type:varchar(100)"`
 	VirtualAccount string `gorm:"type:varchar(100)"`
 	UrlCallback    string `gorm:"type:varchar(250)"`
-	CreatedAt      time.Time
+	ValidUntil     string `gorm:"type:varchar(250)"`
 
-	User user.User
+	User      user.User
 	Fundraise fundraise.Fundraise
 }
 
 type Status struct {
 	Transaction string
 	Order       string
+}
+
+type NotificationToken struct {
+	DeviceToken  string          `bson:"device_token" json:"device_token"`
 }

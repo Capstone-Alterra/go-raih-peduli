@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"fmt"
 	"raihpeduli/config"
 	"raihpeduli/features/user"
@@ -10,19 +11,24 @@ import (
 	"raihpeduli/features/transaction"
 
 	"github.com/labstack/gommon/log"
+	"github.com/sirupsen/logrus"
 	"github.com/wneessen/go-mail"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"gorm.io/gorm"
 )
 
 type model struct {
-	db     *gorm.DB
-	config *config.SMTPConfig
+	db         *gorm.DB
+	config     *config.SMTPConfig
+	collection *mongo.Collection
 }
 
-func New(db *gorm.DB, config *config.SMTPConfig) transaction.Repository {
+func New(db *gorm.DB, config *config.SMTPConfig, collection *mongo.Collection) transaction.Repository {
 	return &model{
-		db:     db,
-		config: config,
+		db:         db,
+		config:     config,
+		collection: collection,
 	}
 }
 
@@ -32,9 +38,10 @@ func (mdl *model) Paginate(page, size int, keyword string) []transaction.Transac
 	offset := (page - 1) * size
 	searching := "%" + keyword + "%"
 
-	result := mdl.db.Preload("User").
+	result := mdl.db.Preload("Fundraise").Preload("User").
 		Table("transactions").
 		Joins("JOIN users ON transactions.user_id = users.id").
+		Joins("JOIN fundraises ON transactions.fundraise_id = fundraises.id").
 		Where("users.fullname LIKE ?", searching).
 		Offset(offset).Limit(size).
 		Find(&transactions)
@@ -124,7 +131,7 @@ func (mdl *model) PaginateUser(page, size, userID int) []transaction.Transaction
 
 	offset := (page - 1) * size
 
-	result := mdl.db.Preload("User").Where("user_id = ?", userID).Offset(offset).Limit(size).Find(&transactions)
+	result := mdl.db.Preload("Fundraise").Preload("User").Where("user_id = ?", userID).Offset(offset).Limit(size).Find(&transactions)
 
 	if result.Error != nil {
 		log.Error(result.Error)
@@ -147,7 +154,7 @@ func (mdl *model) Insert(newTransaction transaction.Transaction) int64 {
 
 func (mdl *model) SelectByID(transactionID int) *transaction.Transaction {
 	var transaction transaction.Transaction
-	result := mdl.db.Preload("User").First(&transaction, transactionID)
+	result := mdl.db.Preload("Fundraise").Preload("User").First(&transaction, transactionID)
 
 	if result.Error != nil {
 		log.Error(result.Error)
@@ -243,4 +250,16 @@ func (mdl *model) SendPaymentConfirmation(email string, amount int, idFundraise 
 	}
 
 	return nil
+}
+
+
+func (mdl *model) GetDeviceToken(userID int) string {
+	var result transaction.NotificationToken
+
+	if err := mdl.collection.FindOne(context.Background(), bson.M{"user_id": userID}).Decode(&result); err != nil {
+		logrus.Error(err)
+		return ""
+	}
+
+	return result.DeviceToken
 }

@@ -24,6 +24,7 @@ type ResFundraisesHistory struct {
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"deleted_at"`
+	PostType  string         `json:"post_type"`
 }
 
 type ResVolunteersVacancyHistory struct {
@@ -31,7 +32,7 @@ type ResVolunteersVacancyHistory struct {
 	UserID              int       `json:"user_id"`
 	Title               string    `json:"title"`
 	Description         string    `json:"description"`
-	SkillsRequired      []string  `json:"skills_requred"`
+	SkillsRequired      []string  `json:"skills_required"`
 	NumberOfVacancies   int       `json:"number_of_vacancies"`
 	ApplicationDeadline time.Time `json:"application_deadline"`
 	ContactEmail        string    `json:"contact_email"`
@@ -49,6 +50,23 @@ type ResVolunteersVacancyHistory struct {
 	CreatedAt      time.Time      `json:"created_at"`
 	UpdatedAt      time.Time      `json:"updated_at"`
 	DeletedAt      gorm.DeletedAt `json:"deleted_at"`
+	PostType       string         `json:"post_type"`
+}
+
+type ResRegistrantVacancyHistory struct {
+	ID          int      `json:"id"`
+	Email       string   `json:"email"`
+	Fullname    string   `json:"fullname"`
+	Address     string   `json:"address"`
+	PhoneNumber string   `json:"phone_number"`
+	Gender      string   `json:"gender"`
+	Nik         string   `json:"nik"`
+	Skills      []string `json:"skills_required"`
+	Resume      string   `json:"resume"`
+	Reason      string   `json:"reason"`
+	Photo       string   `json:"photo"`
+	Status      string   `json:"status"`
+	PostType    string   `json:"post_type"`
 }
 
 type ResTransactionHistory struct {
@@ -60,10 +78,13 @@ type ResTransactionHistory struct {
 	PhoneNumber    string `json:"phone_number"`
 	ProfilePicture string `json:"profile_picture"`
 	FundraiseID    int    `json:"fundraise_id"`
+	FundraiseName  string `json:"fundraise_name"`
 	Amount         int    `json:"amount"`
 	PaymentType    string `json:"payment_type"`
 	VirtualAccount string `json:"virtual_account"`
 	UrlCallback    string `json:"url_callback"`
 	PaidAt         string `json:"paid_at"`
+	ValidUntil     string `json:"valid_until"`
 	Status         string `json:"status"`
+	PostType       string `json:"post_type"`
 }

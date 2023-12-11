@@ -55,6 +55,7 @@ func (svc *service) FindAllHistoryFundraiseCreatedByUser(userID int) ([]dtos.Res
 		if data.FundAcquired, err = svc.model.TotalFundAcquired(data.ID); err != nil {
 			logrus.Error(err)
 		}
+		data.PostType = "created_fundraises"
 		fundraises = append(fundraises, data)
 	}
 	if err != nil {
@@ -108,42 +109,38 @@ func (svc *service) FindAllHistoryVolunteerVacanciesCreatedByUser(userID int) ([
 			}
 		}
 		data.TotalRegistrar = int(svc.model.GetTotalVolunteersByVacancyID(data.ID))
+		data.PostType = "created_volunteer_vacancies"
 		volunteers = append(volunteers, data)
 	}
 
 	return volunteers, nil
 }
-func (svc *service) FindAllHistoryVolunteerVacanciesRegisterByUser(userID int) ([]dtos.ResVolunteersVacancyHistory, error) {
-	var volunteers []dtos.ResVolunteersVacancyHistory
-	var bookmarkIDs map[int]string
+func (svc *service) FindAllHistoryVolunteerVacanciesRegisterByUser(userID int) ([]dtos.ResRegistrantVacancyHistory, error) {
+	var volunteers []dtos.ResRegistrantVacancyHistory
 	var err error
-	var entities []history.VolunteerVacancies
+	var entities []history.Volunteer
 
 	entities, err = svc.model.HistoryVolunteerVacanciesRegisterByUser(userID)
 	if err != nil {
 		return nil, err
 	}
-	if userID != 0 {
-		bookmarkIDs, err = svc.model.SelectBookmarkedVacancyID(userID)
-		if err != nil {
-			return nil, err
-		}
-	}
 
 	for _, volunteer := range entities {
-		var data dtos.ResVolunteersVacancyHistory
-		if err := smapping.FillStruct(&data, smapping.MapFields(volunteer)); err != nil {
-			logrus.Error(err)
-		}
+		var data dtos.ResRegistrantVacancyHistory
+		data.ID = volunteer.ID
+		data.Email = volunteer.Email
+		data.Fullname = volunteer.Fullname
+		data.Address = volunteer.Address
+		data.PhoneNumber = volunteer.PhoneNumber
+		data.Gender = volunteer.Gender
+		data.Nik = volunteer.Nik
+		data.Skills = strings.Split(volunteer.Skills, ", ")
+		data.Resume = volunteer.Resume
+		data.Reason = volunteer.Reason
+		data.Photo = volunteer.Photo
+		data.Status = volunteer.Status
 
-		if bookmarkIDs != nil {
-			bookmarkID, ok := bookmarkIDs[data.ID]
-
-			if ok {
-				data.BookmarkID = &bookmarkID
-			}
-		}
-		data.TotalRegistrar = int(svc.model.GetTotalVolunteersByVacancyID(data.ID))
+		data.PostType = "registered_volunteer_vacancies"
 		volunteers = append(volunteers, data)
 	}
 
@@ -156,8 +153,10 @@ func (svc *service) FindAllHistoryUserTransaction(userID int) ([]dtos.ResTransac
 	if err != nil {
 		return nil, err
 	}
+
 	for _, donation := range entities {
 		var data dtos.ResTransactionHistory
+
 		if err := smapping.FillStruct(&data, smapping.MapFields(donation)); err != nil {
 			logrus.Error(err)
 		}
@@ -166,8 +165,41 @@ func (svc *service) FindAllHistoryUserTransaction(userID int) ([]dtos.ResTransac
 		data.PhoneNumber = donation.User.PhoneNumber
 		data.ProfilePicture = donation.User.ProfilePicture
 		data.Email = donation.User.Email
+		data.FundraiseName = donation.Fundraise.Title
+		data.PostType = "donations"
+		switch donation.Status {
+		case "2":
+			data.Status = "Waiting For Payment"
+		case "3":
+			data.Status = "Failed / Cancelled"
+		case "4":
+			data.Status = "Transaction Success"
+		case "5":
+			data.Status = "Paid"
+		default:
+			data.Status = "Created"
+		}
+		switch donation.PaymentType {
+		case "4":
+			data.PaymentType = "Bank Permata"
+		case "5":
+			data.PaymentType = "Bank CIMB"
+		case "6":
+			data.PaymentType = "Bank BCA"
+		case "7":
+			data.PaymentType = "Bank BRI"
+		case "8":
+			data.PaymentType = "Bank BNI"
+		case "10":
+			data.PaymentType = "Gopay"
+		case "11":
+			data.PaymentType = "Qris"
+		default:
+			data.PaymentType = "Other"
+		}
 		donations = append(donations, data)
 	}
+
 	return donations, nil
 
 }

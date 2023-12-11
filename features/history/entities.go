@@ -60,6 +60,22 @@ type VolunteerRelations struct {
 	Status         string `gorm:"type:enum('pending','accepted','rejected'); default: 'pending'"`
 	RejectedReason string `gorm:"type:varchar(255)"`
 }
+
+type Volunteer struct {
+	ID          int    `gorm:"type:int(11)"`
+	Email       string `gorm:"type:varchar(255)"`
+	Fullname    string `gorm:"type:varchar(255)"`
+	Address     string `gorm:"type:varchar(255)"`
+	PhoneNumber string `gorm:"type:varchar(255)"`
+	Gender      string `gorm:"type:varchar(255)"`
+	Skills      string `gorm:"type:varchar(255)"`
+	Nik         string `gorm:"type:varchar(255)"`
+	Resume      string `gorm:"type:varchar(255)"`
+	Reason      string
+	Photo       string `gorm:"type:varchar(255)"`
+	Status      string `gorm:"type:enum('pending','accepted','rejected')"`
+}
+
 type Transaction struct {
 	gorm.Model
 
@@ -72,7 +88,7 @@ type Transaction struct {
 	PaidAt         string `gorm:"type:varchar(100)"`
 	VirtualAccount string `gorm:"type:varchar(100)"`
 	UrlCallback    string `gorm:"type:varchar(250)"`
-	CreatedAt      time.Time
+	ValidUntil     string `gorm:"type:varchar(250)"`
 
 	User      auth.User
 	Fundraise Fundraise

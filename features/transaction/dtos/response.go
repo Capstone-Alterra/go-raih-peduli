@@ -9,10 +9,12 @@ type ResTransaction struct {
 	PhoneNumber    string `json:"phone_number"`
 	ProfilePicture string `json:"profile_picture"`
 	FundraiseID    int    `json:"fundraise_id"`
+	FundraiseName  string `json:"fundraise_name"`
 	Amount         int    `json:"amount"`
 	PaymentType    string `json:"payment_type"`
 	VirtualAccount string `json:"virtual_account"`
 	UrlCallback    string `json:"url_callback"`
 	PaidAt         string `json:"paid_at"`
+	ValidUntil     string `json:"valid_until"`
 	Status         string `json:"status"`
 }

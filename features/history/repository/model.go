@@ -75,13 +75,18 @@ func (mdl *model) HistoryVolunteerVacanciesCreatedByUser(userID int) ([]history.
 	return volunteer_vacancies, nil
 }
 
-func (mdl *model) HistoryVolunteerVacanciesRegisterByUser(userID int) ([]history.VolunteerVacancies, error) {
-	var volunteerVacancies []history.VolunteerVacancies
+func (mdl *model) HistoryVolunteerVacanciesRegisterByUser(userID int) ([]history.Volunteer, error) {
+	var volunteers []history.Volunteer
 
-	if err := mdl.db.Joins("JOIN volunteer_relations ON volunteer_relations.volunteer_id = volunteer_vacancies.id").Where("volunteer_relations.user_id = ?", userID).Find(&volunteerVacancies).Error; err != nil {
+	if err := mdl.db.Table("volunteer_relations AS vr").
+		Select("vr.id", "users.email", "users.fullname", "users.address", "users.phone_number", "users.gender", "users.nik", "vr.skills", "vr.reason", "vr.resume", "vr.status", "vr.photo").Joins("JOIN users ON users.id = vr.user_id").Where("vr.user_id = ? ", userID).Find(&volunteers).Error; err != nil {
 		return nil, err
 	}
-	return volunteerVacancies, nil
+
+	// if err := mdl.db.Joins("JOIN volunteer_relations ON volunteer_relations.volunteer_id = volunteer_vacancies.id").Where("volunteer_relations.user_id = ?", userID).Find(&VolunteerRelations).Error; err != nil {
+	// 	return nil, err
+	// }
+	return volunteers, nil
 }
 
 func (mdl *model) SelectBookmarkedVacancyID(ownerID int) (map[int]string, error) {
@@ -121,7 +126,7 @@ func (mdl *model) GetTotalVolunteersByVacancyID(vacancyID int) int64 {
 func (mdl *model) HistoryUserTransaction(userID int) ([]history.Transaction, error) {
 	var transaction []history.Transaction
 
-	if err := mdl.db.Preload("User").Table("transactions").Joins("JOIN users ON transactions.user_id = users.id").Where("transactions.user_id = ?", userID).Find(&transaction).Error; err != nil {
+	if err := mdl.db.Preload("Fundraise").Preload("User").Where("user_id = ?", userID).Find(&transaction).Error; err != nil {
 		return nil, err
 	}
 	return transaction, nil

@@ -33,10 +33,16 @@ type GeneratorInterface interface {
 }
 
 type MidtransInterface interface {
-	CreateTransactionBank(IDTransaction string, PaymentType string, Amount int64) (string, error)
-	CreateTransactionGopay(IDTransaction string, PaymentType string, Amount int64) (string, error)
-	CreateTransactionQris(IDTransaction string, PaymentType string, Amount int64) (string, error)
+	CreateTransactionBank(IDTransaction string, PaymentType string, Amount int64) (string, string, error)
+	CreateTransactionGopay(IDTransaction string, PaymentType string, Amount int64) (string, string, error)
+	CreateTransactionQris(IDTransaction string, PaymentType string, Amount int64) (string, string, error)
 	TransactionStatus(transactionStatusResp *coreapi.TransactionStatusResponse) transaction.Status
+	CheckTransactionStatus(IDTransaction string) (string, error)
+	MappingPaymentName(paymentType string) string
+}
+
+type NotificationInterface interface {
+	SendNotifications(tokens string, userID string, message string) error
 }
 
 type CloudStorageInterface interface {
@@ -51,4 +57,8 @@ type ConverterInterface interface {
 type OpenAIInterface interface {
 	GetAppInformation(question string, qnaList map[string]string) (string, error)
 	GetNewsContent(prompt string) (string, error)
+}
+
+type EmailTemplateInterface interface {
+	EmailService(username, email, token, status string) error
 }

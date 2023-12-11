@@ -118,15 +118,15 @@ func (ctl *controller) GetAllHistory() echo.HandlerFunc {
 		if ctx.Get("user_id") != nil {
 			userID = ctx.Get("user_id").(int)
 		}
-		response_data := make(map[string]any)
+		var response_data []any
 		fundraises, err := ctl.service.FindAllHistoryFundraiseCreatedByUser(userID)
 
 		if err != nil {
 			return ctx.JSON(500, helper.Response(err.Error()))
 		}
-		if len(fundraises) != 0 {
-			// return ctx.JSON(404, helper.Response("history fundraises created by users not found"))
-			response_data["created_fundraises"] = fundraises
+
+		for _, data := range fundraises {
+			response_data = append(response_data, data)
 		}
 
 		vacancies, err := ctl.service.FindAllHistoryVolunteerVacanciesCreatedByUser(userID)
@@ -134,33 +134,32 @@ func (ctl *controller) GetAllHistory() echo.HandlerFunc {
 			return ctx.JSON(500, helper.Response(err.Error()))
 		}
 
-		if vacancies != nil || len(vacancies) != 0 {
-			// return ctx.JSON(404, helper.Response("history volunteer vacancies  created by users not found"))
-			response_data["volunteer_vacancies"] = vacancies
+		for _, data := range vacancies {
+			response_data = append(response_data, data)
 		}
+
 		vacanciesReg, err := ctl.service.FindAllHistoryVolunteerVacanciesRegisterByUser(userID)
 		if err != nil {
 			return ctx.JSON(500, helper.Response(err.Error()))
 		}
-
-		if vacanciesReg != nil || len(vacanciesReg) != 0 {
-			// return ctx.JSON(404, helper.Response("history volunteer vacancies registered by users not found"))
-			response_data["volunteer_vacancies_registered"] = vacanciesReg
+		
+		for _, data := range vacanciesReg {
+			response_data = append(response_data, data)
 		}
 
 		donations, err := ctl.service.FindAllHistoryUserTransaction(userID)
 		if err != nil {
 			return ctx.JSON(500, helper.Response(err.Error()))
 		}
-
-		if donations != nil || len(donations) != 0 {
-			// return ctx.JSON(404, helper.Response("donation not found"))
-			response_data["donations"] = donations
+		
+		for _, data := range donations {
+			response_data = append(response_data, data)
 		}
-
-		if len(response_data) == 1 {
+		
+		if len(response_data) == 0 {
 			return ctx.JSON(404, helper.Response("history not found"))
 		}
+		
 		return ctx.JSON(200, helper.Response("success", map[string]any{
 			"data": response_data,
 		}))

@@ -108,9 +108,8 @@ func (svc *service) FindAll(pagination dtos.Pagination, searchAndFilter dtos.Sea
 	return fundraises, totalData
 }
 
-func (svc *service) FindByID(fundraiseID, ownerID int) *dtos.ResFundraise {
-	var res dtos.ResFundraise
-	fundraise, err := svc.model.SelectByID(fundraiseID)
+func (svc *service) FindByID(fundraiseID, ownerID int) *dtos.FundraiseDetails {
+	res, err := svc.model.SelectByID(fundraiseID)
 
 	if err != nil {
 		logrus.Error(err)
@@ -127,17 +126,12 @@ func (svc *service) FindByID(fundraiseID, ownerID int) *dtos.ResFundraise {
 		}
 	}
 
-	if err := smapping.FillStruct(&res, smapping.MapFields(fundraise)); err != nil {
-		logrus.Error(err)
-		return nil
-	}
-
 	if res.FundAcquired, err = svc.model.TotalFundAcquired(fundraiseID); err != nil {
 		logrus.Error(err)
 		return nil
 	}
 
-	return &res
+	return res
 }
 
 func (svc *service) Create(newFundraise dtos.InputFundraise, userID int, file multipart.File) (*dtos.ResFundraise, []string, error) {
@@ -189,7 +183,7 @@ func (svc *service) Create(newFundraise dtos.InputFundraise, userID int, file mu
 	return &res, nil, nil
 }
 
-func (svc *service) Modify(fundraiseData dtos.InputFundraise, file multipart.File, oldData dtos.ResFundraise) ([]string, error) {
+func (svc *service) Modify(fundraiseData dtos.InputFundraise, file multipart.File, oldData dtos.FundraiseDetails) ([]string, error) {
 	if errorList, err := svc.validateInput(fundraiseData, file); len(errorList) > 0 || err != nil {
 		return errorList, errors.New("error")
 	}
@@ -237,7 +231,7 @@ func (svc *service) Modify(fundraiseData dtos.InputFundraise, file multipart.Fil
 	return nil, nil
 }
 
-func (svc *service) ModifyStatus(input dtos.InputFundraiseStatus, oldData dtos.ResFundraise) ([]string, error) {
+func (svc *service) ModifyStatus(input dtos.InputFundraiseStatus, oldData dtos.FundraiseDetails) ([]string, error) {
 	if errMap := svc.validation.ValidateRequest(input); errMap != nil {
 		return errMap, errors.New("error")
 	}
@@ -275,7 +269,7 @@ func (svc *service) ModifyStatus(input dtos.InputFundraiseStatus, oldData dtos.R
 	return nil, nil
 }
 
-func (svc *service) Remove(fundraiseID int, oldData dtos.ResFundraise) error {
+func (svc *service) Remove(fundraiseID int, oldData dtos.FundraiseDetails) error {
 	var config = config.LoadCloudStorageConfig()
 	var oldFilename string = oldData.Photo
 	var urlLength int = len("https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/fundraises/")

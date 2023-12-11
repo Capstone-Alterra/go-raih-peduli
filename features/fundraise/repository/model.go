@@ -74,11 +74,12 @@ func (mdl *model) Insert(newFundraise fundraise.Fundraise) (*fundraise.Fundraise
 	return &newFundraise, nil
 }
 
-func (mdl *model) SelectByID(fundraiseID int) (*fundraise.Fundraise, error) {
-	var fundraise fundraise.Fundraise
+func (mdl *model) SelectByID(fundraiseID int) (*dtos.FundraiseDetails, error) {
+	var fundraise dtos.FundraiseDetails
 
-	if err := mdl.db.First(&fundraise, fundraiseID).Error; err != nil {
-		return nil, err
+	if err := mdl.db.Table("fundraises").Select("fundraises.*, users.fullname as user_fullname, users.profile_picture as user_photo").Joins("LEFT JOIN users ON users.id = fundraises.user_id").
+		First(&fundraise, fundraiseID).Error; err != nil {
+			return nil, err
 	}
 
 	return &fundraise, nil

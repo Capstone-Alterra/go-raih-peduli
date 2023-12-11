@@ -34,7 +34,7 @@ func (ctl *controller) Login() echo.HandlerFunc {
 		}
 
 		if err != nil {
-			return ctx.JSON(401, helpers.Response("invalid credentials"))
+			return ctx.JSON(401, helpers.Response(err.Error()))
 		}
 
 		return ctx.JSON(200, helpers.Response("success", map[string]any{

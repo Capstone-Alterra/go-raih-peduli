@@ -11,10 +11,13 @@ import (
 
 	"fmt"
 
+	firebase "firebase.google.com/go/v4"
+	"firebase.google.com/go/v4/messaging"
 	"github.com/go-redis/redis"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"google.golang.org/api/option"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -35,7 +38,7 @@ func InitDB() *gorm.DB {
 }
 
 func migrate(db *gorm.DB) {
-	db.AutoMigrate(fundraise.Fundraise{}, &auth.User{}, &volunteer.VolunteerVacancies{}, news.News{}, transaction.Transaction{}, &volunteer.VolunteerRelations{}, )
+	db.AutoMigrate(fundraise.Fundraise{}, &auth.User{}, &volunteer.VolunteerVacancies{}, news.News{}, transaction.Transaction{}, &volunteer.VolunteerRelations{}, &volunteer.Skill{})
 }
 
 func ConnectRedis() *redis.Client {
@@ -61,11 +64,34 @@ func ConnectMongo() *mongo.Database {
 	config := config.LoadMongoConfig()
 
 	clientOptions := options.Client()
-    clientOptions.ApplyURI(config.MONGO_URI)
-    client, err := mongo.Connect(context.Background(), clientOptions)
-    if err != nil {
-        return nil
-    }
+	clientOptions.ApplyURI(config.MONGO_URI)
+	client, err := mongo.Connect(context.Background(), clientOptions)
+	if err != nil {
+		return nil
+	}
 
-    return client.Database(config.MONGO_DB_NAME)
+	return client.Database(config.MONGO_DB_NAME)
+}
+
+func FirebaseInit() *messaging.Client {
+	// config := config.LoadFirebaseConfig()
+
+	// Use the path to your service account credential json file
+	opt := option.WithCredentialsFile("firebase_key.json")
+
+	// Create a new firebase app
+	app, err := firebase.NewApp(context.Background(), nil, opt)
+	if err != nil {
+		logrus.Print("Failed Connect Firebase", err)
+		return nil
+	}
+
+	// Get the FCM object
+	fcmClient, err := app.Messaging(context.Background())
+	if err != nil {
+		logrus.Print("Failed Connect Firebase", err)
+		return nil
+	}
+
+	return fcmClient
 }

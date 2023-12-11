@@ -1,7 +1,6 @@
 package usecase
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -55,11 +54,6 @@ func (svc *service) FindAll(pagination dtos.Pagination, searchAndFilter dtos.Sea
 		fmt.Println(bookmarkIDs)
 	}
 
-	if err != nil {
-		logrus.Error(err)
-		return nil, 0
-	}
-
 	for _, news := range entities {
 		var data dtos.ResNews
 
@@ -97,7 +91,7 @@ func (svc *service) FindByID(newsID, ownerID int) *dtos.ResNews {
 	}
 	var bookmarkID string
 	if ownerID != 0 {
-		bookmarkID, err = svc.model.SelectBoockmarkByNewsAndOwnerID(newsID, ownerID)
+		bookmarkID, err = svc.model.SelectBookmarkedByNewsAndOwnerID(newsID, ownerID)
 
 		if bookmarkID != "" {
 			res.BookmarkID = &bookmarkID
@@ -134,11 +128,8 @@ func (svc *service) Create(newNews dtos.InputNews, userID int, file multipart.Fi
 	}
 	news.UserID = userID
 	news.Photo = url
-	err := smapping.FillStruct(&news, smapping.MapFields(newNews))
-	if err != nil {
-		log.Error(err)
-		return nil, nil, err
-	}
+	news.Title = newNews.Title
+	news.Description = newNews.Description
 
 	inserted, err := svc.model.Insert(news)
 	if err != nil {
@@ -157,7 +148,7 @@ func (svc *service) Create(newNews dtos.InputNews, userID int, file multipart.Fi
 
 func (svc *service) Modify(newsData dtos.InputNews, file multipart.File, oldData dtos.ResNews) ([]string, error) {
 	if errorList, err := svc.validateInput(newsData, file); err != nil || len(errorList) > 0 {
-		return errorList, errors.New("error")
+		return errorList, err
 	}
 	var newNews news.News
 	var url string = ""
@@ -172,7 +163,7 @@ func (svc *service) Modify(newsData dtos.InputNews, file multipart.File, oldData
 
 		if oldFilename != "default" {
 			if err := svc.model.DeleteFile(oldFilename); err != nil {
-				return nil, err
+				logrus.Error(err)
 			}
 		}
 
@@ -186,17 +177,13 @@ func (svc *service) Modify(newsData dtos.InputNews, file multipart.File, oldData
 		url = imageURL
 	}
 
-	if err := smapping.FillStruct(&newNews, smapping.MapFields(newsData)); err != nil {
-		logrus.Error(err)
-		return nil, err
-	}
-
-	newNews.Photo = url
 	newNews.ID = oldData.ID
+	newNews.Title = newsData.Title
+	newNews.Description = newsData.Description
+	newNews.Photo = url
 	newNews.UserID = oldData.UserID
-	err := svc.model.Update(newNews)
 
-	if err != nil {
+	if err := svc.model.Update(newNews); err != nil {
 		logrus.Error(err)
 		return nil, err
 	}

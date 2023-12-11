@@ -11,7 +11,7 @@ type Repository interface {
 	Paginate(pagination dtos.Pagination, searchAndFilter dtos.SearchAndFilter) ([]Fundraise, error)
 	PaginateMobile(pagination dtos.Pagination, searchAndFilter dtos.SearchAndFilter) ([]Fundraise, error)
 	Insert(newFundraise Fundraise) (*Fundraise, error)
-	SelectByID(fundraiseID int) (*Fundraise, error)
+	SelectByID(fundraiseID int) (*dtos.FundraiseDetails, error)
 	TotalFundAcquired(fundraiseID int) (int32, error)
 	Update(fundraise Fundraise) error
 	DeleteByID(fundraiseID int) error
@@ -28,11 +28,11 @@ type Repository interface {
 
 type Usecase interface {
 	FindAll(pagination dtos.Pagination, searchAndFilter dtos.SearchAndFilter, ownerID int, suffix string) ([]dtos.ResFundraise, int64)
-	FindByID(fundraiseID, ownerID int) *dtos.ResFundraise
+	FindByID(fundraiseID, ownerID int) *dtos.FundraiseDetails
 	Create(newFundraise dtos.InputFundraise, userID int, file multipart.File) (*dtos.ResFundraise, []string, error)
-	Modify(fundraiseData dtos.InputFundraise, file multipart.File, oldData dtos.ResFundraise) ([]string, error)
-	ModifyStatus(fundraiseData dtos.InputFundraiseStatus, oldData dtos.ResFundraise) ([]string, error)
-	Remove(fundraiseID int, oldData dtos.ResFundraise) error
+	Modify(fundraiseData dtos.InputFundraise, file multipart.File, oldData dtos.FundraiseDetails) ([]string, error)
+	ModifyStatus(fundraiseData dtos.InputFundraiseStatus, oldData dtos.FundraiseDetails) ([]string, error)
+	Remove(fundraiseID int, oldData dtos.FundraiseDetails) error
 }
 
 type Handler interface {

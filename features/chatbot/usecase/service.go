@@ -74,16 +74,19 @@ func (svc *service) SetReplyMessage(input dtos.InputMessage, userID int) (*dtos.
 		return nil, nil, err
 	}
 
+	var chatMessage = chatbot.QuestionAndReply{
+		Question: input.Message,
+		QuestionTime: svc.model.GetTimeNow(),
+	}
+
 	reply, err := svc.openAI.GetAppInformation(input.Message, data)
 
 	if err != nil {
 		return nil, nil, err
 	}
 
-	var chatMessage = chatbot.QuestionAndReply{
-		Question: input.Message,
-		Reply: reply,
-	}
+	chatMessage.Reply = reply
+	chatMessage.ReplyTime = svc.model.GetTimeNow()
 	
 	if userID != 0 {
 		if err := svc.model.SaveChat(chatMessage, userID); err != nil {
@@ -94,6 +97,8 @@ func (svc *service) SetReplyMessage(input dtos.InputMessage, userID int) (*dtos.
 	return &dtos.ResChatReply{
 		Question: input.Message,
 		Reply: reply,
+		QuestionTime: chatMessage.QuestionTime,
+		ReplyTime: chatMessage.ReplyTime,
 	}, nil, nil
 }
 

@@ -3,12 +3,12 @@ package dtos
 import "mime/multipart"
 
 type InputUser struct {
-	Fullname    string `json:"fullname" form:"fullname" validate:"required,fullname"`
+	Fullname    string `json:"fullname" form:"fullname" validate:"required,alphabetic"`
 	Address     string `json:"address" form:"address" validate:"required"`
 	PhoneNumber string `json:"phone_number" form:"phone_number" validate:"required,number,min=10,max=13"`
 	Gender      string `json:"gender" form:"gender" validate:"required"`
 	Email       string `json:"email" form:"email" validate:"required,email"`
-	Password    string `json:"password" form:"password" validate:"required,alphanum,min=8"`
+	Password    string `json:"password" form:"password" validate:"required,min=8"`
 }
 
 type InputUpdate struct {
@@ -18,7 +18,7 @@ type InputUpdate struct {
 	PhoneNumber    string `json:"phone_number" form:"phone_number" validate:"required,number,min=10,max=13"`
 	Gender         string `json:"gender" form:"gender"`
 	ProfilePicture string `json:"profile_picture" form:"profile_picture"`
-	Nik            string `json:"nik" form:"nik" validate:"len=16,number"`
+	Nik            string `json:"nik" form:"nik"`
 }
 
 type InputUpdateProfilePicture struct {
@@ -52,5 +52,5 @@ type CheckPassword struct {
 }
 
 type ChangePassword struct {
-	NewPassword string `json:"new_password" form:"new_password" validate:"required,alphanum,min=8"`
+	NewPassword string `json:"new_password" form:"new_password" validate:"required,min=8"`
 }

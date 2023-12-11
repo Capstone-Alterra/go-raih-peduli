@@ -106,19 +106,19 @@ func (_m *Repository) HistoryVolunteerVacanciesCreatedByUser(userID int) ([]hist
 }
 
 // HistoryVolunteerVacanciesRegisterByUser provides a mock function with given fields: userID
-func (_m *Repository) HistoryVolunteerVacanciesRegisterByUser(userID int) ([]history.VolunteerVacancies, error) {
+func (_m *Repository) HistoryVolunteerVacanciesRegisterByUser(userID int) ([]history.Volunteer, error) {
 	ret := _m.Called(userID)
 
-	var r0 []history.VolunteerVacancies
+	var r0 []history.Volunteer
 	var r1 error
-	if rf, ok := ret.Get(0).(func(int) ([]history.VolunteerVacancies, error)); ok {
+	if rf, ok := ret.Get(0).(func(int) ([]history.Volunteer, error)); ok {
 		return rf(userID)
 	}
-	if rf, ok := ret.Get(0).(func(int) []history.VolunteerVacancies); ok {
+	if rf, ok := ret.Get(0).(func(int) []history.Volunteer); ok {
 		r0 = rf(userID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]history.VolunteerVacancies)
+			r0 = ret.Get(0).([]history.Volunteer)
 		}
 	}
 

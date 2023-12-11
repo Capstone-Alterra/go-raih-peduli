@@ -11,7 +11,7 @@ type Repository interface {
 	TotalFundAcquired(fundraiseID int) (int32, error)
 	SelectBookmarkedFundraiseID(ownerID int) (map[int]string, error)
 	HistoryVolunteerVacanciesCreatedByUser(userID int) ([]VolunteerVacancies, error)
-	HistoryVolunteerVacanciesRegisterByUser(userID int) ([]VolunteerVacancies, error)
+	HistoryVolunteerVacanciesRegisterByUser(userID int) ([]Volunteer, error)
 	SelectBookmarkedVacancyID(ownerID int) (map[int]string, error)
 	GetTotalVolunteersByVacancyID(vacancyID int) int64
 	HistoryUserTransaction(userID int) ([]Transaction, error)
@@ -20,7 +20,7 @@ type Repository interface {
 type Usecase interface {
 	FindAllHistoryFundraiseCreatedByUser(userID int) ([]dtos.ResFundraisesHistory, error)
 	FindAllHistoryVolunteerVacanciesCreatedByUser(userID int) ([]dtos.ResVolunteersVacancyHistory, error)
-	FindAllHistoryVolunteerVacanciesRegisterByUser(userID int) ([]dtos.ResVolunteersVacancyHistory, error)
+	FindAllHistoryVolunteerVacanciesRegisterByUser(userID int) ([]dtos.ResRegistrantVacancyHistory, error)
 	FindAllHistoryUserTransaction(userID int) ([]dtos.ResTransactionHistory, error)
 }
 
