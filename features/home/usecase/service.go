@@ -6,7 +6,6 @@ import (
 	"raihpeduli/features/home/dtos"
 	"raihpeduli/features/news"
 	"raihpeduli/features/volunteer"
-	"raihpeduli/helpers"
 	"strings"
 
 	"github.com/labstack/gommon/log"
@@ -15,13 +14,11 @@ import (
 
 type service struct {
 	model      home.Repository
-	validation helpers.ValidationInterface
 }
 
-func New(model home.Repository, validation helpers.ValidationInterface) home.Usecase {
+func New(model home.Repository) home.Usecase {
 	return &service{
 		model:      model,
-		validation: validation,
 	}
 }
 
@@ -33,15 +30,10 @@ func (svc *service) FindAll(page, size int, personalization []string) dtos.ResGe
 	var fundraiseEnt []fundraise.Fundraise
 	var volunteerEnt []volunteer.VolunteerVacancies
 	var newsEnt []news.News
-	if len(personalization) == 0 {
-		fundraiseEnt = svc.model.PaginateFundraise(page, size, "", "")
-		volunteerEnt = svc.model.PaginateVolunteer(page, size, "", "")
-		newsEnt = svc.model.PaginateNews(page, size, "", "")
-	} else {
-		fundraiseEnt = svc.model.PaginateFundraise(page, size, helpers.BuildLikeQuery("title", personalization), helpers.BuildNotLikeQuery("title", personalization))
-		volunteerEnt = svc.model.PaginateVolunteer(page, size, helpers.BuildLikeQuery("title", personalization), helpers.BuildNotLikeQuery("title", personalization))
-		newsEnt = svc.model.PaginateNews(page, size, helpers.BuildLikeQuery("title", personalization), helpers.BuildNotLikeQuery("title", personalization))
-	}
+	
+	fundraiseEnt = svc.model.PaginateFundraise(page, size, personalization)
+	volunteerEnt = svc.model.PaginateVolunteer(page, size, personalization)
+	newsEnt = svc.model.PaginateNews(page, size, personalization)
 
 	for _, fundraiseItem := range fundraiseEnt {
 		var data dtos.ResFundraise
@@ -83,7 +75,7 @@ func (svc *service) FindAllWeb(page, size int) dtos.ResWebGetHome {
 	var fundraises []dtos.ResFundraise
 	var volunteers []dtos.ResVolunteer
 
-	fundraiseEnt := svc.model.PaginateFundraise(page, size, "", "")
+	fundraiseEnt := svc.model.PaginateFundraise(page, size, nil)
 
 	for _, fundraiseItem := range fundraiseEnt {
 		var data dtos.ResFundraise
@@ -95,7 +87,7 @@ func (svc *service) FindAllWeb(page, size int) dtos.ResWebGetHome {
 		fundraises = append(fundraises, data)
 	}
 
-	volunteerEnt := svc.model.PaginateVolunteer(page, size, "", "")
+	volunteerEnt := svc.model.PaginateVolunteer(page, size, nil)
 
 	for _, volunteerItem := range volunteerEnt {
 		var data dtos.ResVolunteer
@@ -132,75 +124,3 @@ func (svc *service) GetPersonalization(userID int) []string {
 	return personalization
 }
 
-func (svc *service) FindByID(homeID int) *dtos.ResHome {
-	res := dtos.ResHome{}
-	homeService := svc.model.SelectByID(homeID)
-
-	if homeService == nil {
-		return nil
-	}
-
-	err := smapping.FillStruct(&res, smapping.MapFields(homeService))
-	if err != nil {
-		log.Error(err)
-		return nil
-	}
-
-	return &res
-}
-
-func (svc *service) Create(newHome dtos.InputHome) *dtos.ResHome {
-	homeStruct := home.Home{}
-
-	err := smapping.FillStruct(&homeStruct, smapping.MapFields(newHome))
-	if err != nil {
-		log.Error(err)
-		return nil
-	}
-
-	homeID := svc.model.Insert(homeStruct)
-
-	if homeID == -1 {
-		return nil
-	}
-
-	resHome := dtos.ResHome{}
-	errRes := smapping.FillStruct(&resHome, smapping.MapFields(newHome))
-	if errRes != nil {
-		log.Error(errRes)
-		return nil
-	}
-
-	return &resHome
-}
-
-func (svc *service) Modify(homeData dtos.InputHome, homeID int) bool {
-	newHome := home.Home{}
-
-	err := smapping.FillStruct(&newHome, smapping.MapFields(homeData))
-	if err != nil {
-		log.Error(err)
-		return false
-	}
-
-	newHome.ID = homeID
-	rowsAffected := svc.model.Update(newHome)
-
-	if rowsAffected <= 0 {
-		log.Error("There is No Home Updated!")
-		return false
-	}
-
-	return true
-}
-
-func (svc *service) Remove(homeID int) bool {
-	rowsAffected := svc.model.DeleteByID(homeID)
-
-	if rowsAffected <= 0 {
-		log.Error("There is No Home Deleted!")
-		return false
-	}
-
-	return true
-}
