@@ -58,3 +58,7 @@ type OpenAIInterface interface {
 	GetAppInformation(question string, qnaList map[string]string) (string, error)
 	GetNewsContent(prompt string) (string, error)
 }
+
+type EmailTemplateInterface interface {
+	EmailService(username, email, token, status string) error
+}

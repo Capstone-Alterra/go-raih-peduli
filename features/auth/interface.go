@@ -10,7 +10,7 @@ type Repository interface {
 	Login(email string) (*User, error)
 	Register(newUser *User) (*User, error)
 	SelectByEmail(email string) (*User, error)
-	SendOTPByEmail(email string, otp string) error
+	SendOTPByEmail(fullname string, email string, otp string, status string) error
 	InsertVerification(email string, verificationKey string) error
 	InsertToken(userID int, fcmToken string) error
 }
