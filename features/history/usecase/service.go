@@ -153,8 +153,10 @@ func (svc *service) FindAllHistoryUserTransaction(userID int) ([]dtos.ResTransac
 	if err != nil {
 		return nil, err
 	}
+
 	for _, donation := range entities {
 		var data dtos.ResTransactionHistory
+
 		if err := smapping.FillStruct(&data, smapping.MapFields(donation)); err != nil {
 			logrus.Error(err)
 		}
@@ -163,9 +165,41 @@ func (svc *service) FindAllHistoryUserTransaction(userID int) ([]dtos.ResTransac
 		data.PhoneNumber = donation.User.PhoneNumber
 		data.ProfilePicture = donation.User.ProfilePicture
 		data.Email = donation.User.Email
+		data.FundraiseName = donation.Fundraise.Title
 		data.PostType = "donations"
+		switch donation.Status {
+		case "2":
+			data.Status = "Waiting For Payment"
+		case "3":
+			data.Status = "Failed / Cancelled"
+		case "4":
+			data.Status = "Transaction Success"
+		case "5":
+			data.Status = "Paid"
+		default:
+			data.Status = "Created"
+		}
+		switch donation.PaymentType {
+		case "4":
+			data.PaymentType = "Bank Permata"
+		case "5":
+			data.PaymentType = "Bank CIMB"
+		case "6":
+			data.PaymentType = "Bank BCA"
+		case "7":
+			data.PaymentType = "Bank BRI"
+		case "8":
+			data.PaymentType = "Bank BNI"
+		case "10":
+			data.PaymentType = "Gopay"
+		case "11":
+			data.PaymentType = "Qris"
+		default:
+			data.PaymentType = "Other"
+		}
 		donations = append(donations, data)
 	}
+
 	return donations, nil
 
 }

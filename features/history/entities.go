@@ -81,8 +81,6 @@ type Transaction struct {
 
 	ID             int    `gorm:"type:int(11)"`
 	FundraiseID    int    `gorm:"type:int(11)"`
-	FundraiseTitle string
-	FundraisePhoto string
 	UserID         int    `gorm:"type:int(11)"`
 	PaymentType    string `gorm:"type:varchar(50)"`
 	Amount         int    `gorm:"type:int(11)"`
@@ -90,7 +88,7 @@ type Transaction struct {
 	PaidAt         string `gorm:"type:varchar(100)"`
 	VirtualAccount string `gorm:"type:varchar(100)"`
 	UrlCallback    string `gorm:"type:varchar(250)"`
-	CreatedAt      time.Time
+	ValidUntil     string `gorm:"type:varchar(250)"`
 
 	User      auth.User
 	Fundraise Fundraise
