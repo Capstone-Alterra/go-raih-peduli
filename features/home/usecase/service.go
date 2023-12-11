@@ -121,23 +121,6 @@ func (svc *service) FindAllWeb(page, size int) dtos.ResWebGetHome {
 	return resWebGetHome
 }
 
-/*
-func (svc *service) AddPersonalization(userID int, data dtos.InputPersonalization) error {
-	user := svc.model.SelectByID(userID)
-	if user == nil {
-		return errors.New("user not found")
-	}
-
-	user.Personalization = strings.Join(data.Personalization, ", ")
-	rowsAffected := svc.model.UpdateUser(*user)
-	if rowsAffected == 0 {
-		return errors.New("add personalization failed")
-	}
-
-	return nil
-}
-*/
-
 func (svc *service) GetPersonalization(userID int) []string {
 	userById := svc.model.SelectUserByID(userID)
 
