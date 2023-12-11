@@ -359,11 +359,14 @@ func (svc *service) Notifications(notificationPayload map[string]any) error {
 	transaction.Status = paymentConfirm
 	paymentName := svc.mtRequest.MappingPaymentName(transaction.PaymentType)
 	if paymentConfirm == "5" {
+		logrus.Info(transaction.UserID)
 		deviceToken := svc.model.GetDeviceToken(transaction.UserID)
 
 		if deviceToken != "" {
 			svc.nsRequest.SendNotifications(deviceToken, "1", "payment success")
 		}
+
+		logrus.Info(deviceToken)
 		
 		if err := svc.model.SendPaymentConfirmation(transaction.User.Email, transaction.Amount, transaction.FundraiseID, paymentName); err != nil {
 			logrus.Println(err.Error())

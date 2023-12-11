@@ -3,7 +3,7 @@ package dtos
 type RequestLogin struct {
 	Email     string `json:"email" form:"email" validate:"required,email"`
 	Password  string `json:"password" form:"password" validate:"required,min=8"`
-	FCMTokens string `json:"fcm_token" form:"fcm_token" validate:"required"`
+	FCMTokens string `json:"fcm_token" form:"fcm_token"`
 }
 
 type InputUser struct {

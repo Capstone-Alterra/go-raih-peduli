@@ -172,7 +172,7 @@ func NewsHandler() news.Handler {
 
 func TransactionHandler() transaction.Handler {
 	mongoDB := utils.ConnectMongo()
-	collection := mongoDB.Collection("notificationTokens")
+	collection := mongoDB.Collection("devices")
 	smtpConfig := config.LoadSMTPConfig()
 	db := utils.InitDB()
 	repo := tr.New(db, smtpConfig, collection)

@@ -5,6 +5,7 @@ import (
 	"raihpeduli/utils"
 
 	"firebase.google.com/go/v4/messaging"
+	"github.com/sirupsen/logrus"
 )
 
 type notificationService struct{}
@@ -22,7 +23,9 @@ func (ns *notificationService) SendNotifications(tokens string, userID string, m
 			message: message,
 		},
 	})
+	logrus.Info(tokens)
 	if err != nil {
+		logrus.Error(err)
 		return err
 	}
 

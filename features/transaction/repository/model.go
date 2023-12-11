@@ -11,6 +11,7 @@ import (
 	"raihpeduli/features/transaction"
 
 	"github.com/labstack/gommon/log"
+	"github.com/sirupsen/logrus"
 	"github.com/wneessen/go-mail"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -256,6 +257,7 @@ func (mdl *model) GetDeviceToken(userID int) string {
 	var result transaction.NotificationToken
 
 	if err := mdl.collection.FindOne(context.Background(), bson.M{"user_id": userID}).Decode(&result); err != nil {
+		logrus.Error(err)
 		return ""
 	}
 
