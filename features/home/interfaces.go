@@ -11,9 +11,9 @@ import (
 )
 
 type Repository interface {
-	PaginateFundraise(page, size int, likeQuery, notLikeQuery string) []fundraise.Fundraise
-	PaginateVolunteer(page, size int, likeQuery, notLikeQuery string) []volunteer.VolunteerVacancies
-	PaginateNews(page, size int, likeQuery, notLikeQuery string) []news.News
+	PaginateFundraise(page, size int, personalization []string) []fundraise.Fundraise
+	PaginateVolunteer(page, size int, personalization []string) []volunteer.VolunteerVacancies
+	PaginateNews(page, size int, personalization []string) []news.News
 	CountUser() int
 	CountFundraise() int
 	CountVolunteer() int

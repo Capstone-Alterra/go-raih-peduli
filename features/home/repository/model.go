@@ -7,6 +7,7 @@ import (
 	"raihpeduli/features/news"
 	"raihpeduli/features/user"
 	"raihpeduli/features/volunteer"
+	"raihpeduli/helpers"
 
 	"github.com/labstack/gommon/log"
 	"gorm.io/gorm"
@@ -22,7 +23,15 @@ func New(db *gorm.DB) home.Repository {
 	}
 }
 
-func (mdl *model) PaginateFundraise(page, size int, likeQuery, notLikeQuery string) []fundraise.Fundraise {
+func (mdl *model) PaginateFundraise(page, size int, personalization []string) []fundraise.Fundraise {
+	var likeQuery string = ""
+	var notLikeQuery string = ""
+	
+	if personalization != nil || len(personalization) != 0 {
+		likeQuery = helpers.BuildLikeQuery("title", personalization)
+		notLikeQuery = helpers.BuildNotLikeQuery("title", personalization)
+	}
+
 	var fundraises []fundraise.Fundraise
 	var additionalFundraises []fundraise.Fundraise
 	offset := (page - 1) * size
@@ -51,7 +60,15 @@ func (mdl *model) PaginateFundraise(page, size int, likeQuery, notLikeQuery stri
 
 	return fundraises
 }
-func (mdl *model) PaginateVolunteer(page, size int, likeQuery, notLikeQuery string) []volunteer.VolunteerVacancies {
+func (mdl *model) PaginateVolunteer(page, size int, personalization []string) []volunteer.VolunteerVacancies {
+	var likeQuery string = ""
+	var notLikeQuery string = ""
+	
+	if personalization != nil || len(personalization) != 0 {
+		likeQuery = helpers.BuildLikeQuery("title", personalization)
+		notLikeQuery = helpers.BuildNotLikeQuery("title", personalization)
+	}
+
 	var volunteers []volunteer.VolunteerVacancies
 	var additionalVolunteers []volunteer.VolunteerVacancies
 	offset := (page - 1) * size
@@ -80,8 +97,17 @@ func (mdl *model) PaginateVolunteer(page, size int, likeQuery, notLikeQuery stri
 	return volunteers
 }
 
-func (mdl *model) PaginateNews(page, size int, likeQuery, notLikeQuery string) []news.News {
+func (mdl *model) PaginateNews(page, size int, personalization []string) []news.News {
+	var likeQuery string = ""
+	var notLikeQuery string = ""
+	
+	if personalization != nil || len(personalization) != 0 {
+		likeQuery = helpers.BuildLikeQuery("title", personalization)
+		notLikeQuery = helpers.BuildNotLikeQuery("title", personalization)
+	}
+
 	var newses []news.News
+
 	var additionalNews []news.News
 	offset := (page - 1) * size
 	var result *gorm.DB

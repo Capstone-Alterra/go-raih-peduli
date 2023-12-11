@@ -6,7 +6,6 @@ import (
 	"raihpeduli/features/home/dtos"
 	"raihpeduli/features/news"
 	"raihpeduli/features/volunteer"
-	"raihpeduli/helpers"
 	"strings"
 
 	"github.com/labstack/gommon/log"
@@ -31,15 +30,10 @@ func (svc *service) FindAll(page, size int, personalization []string) dtos.ResGe
 	var fundraiseEnt []fundraise.Fundraise
 	var volunteerEnt []volunteer.VolunteerVacancies
 	var newsEnt []news.News
-	if len(personalization) == 0 {
-		fundraiseEnt = svc.model.PaginateFundraise(page, size, "", "")
-		volunteerEnt = svc.model.PaginateVolunteer(page, size, "", "")
-		newsEnt = svc.model.PaginateNews(page, size, "", "")
-	} else {
-		fundraiseEnt = svc.model.PaginateFundraise(page, size, helpers.BuildLikeQuery("title", personalization), helpers.BuildNotLikeQuery("title", personalization))
-		volunteerEnt = svc.model.PaginateVolunteer(page, size, helpers.BuildLikeQuery("title", personalization), helpers.BuildNotLikeQuery("title", personalization))
-		newsEnt = svc.model.PaginateNews(page, size, helpers.BuildLikeQuery("title", personalization), helpers.BuildNotLikeQuery("title", personalization))
-	}
+	
+	fundraiseEnt = svc.model.PaginateFundraise(page, size, personalization)
+	volunteerEnt = svc.model.PaginateVolunteer(page, size, personalization)
+	newsEnt = svc.model.PaginateNews(page, size, personalization)
 
 	for _, fundraiseItem := range fundraiseEnt {
 		var data dtos.ResFundraise
@@ -81,7 +75,7 @@ func (svc *service) FindAllWeb(page, size int) dtos.ResWebGetHome {
 	var fundraises []dtos.ResFundraise
 	var volunteers []dtos.ResVolunteer
 
-	fundraiseEnt := svc.model.PaginateFundraise(page, size, "", "")
+	fundraiseEnt := svc.model.PaginateFundraise(page, size, nil)
 
 	for _, fundraiseItem := range fundraiseEnt {
 		var data dtos.ResFundraise
@@ -93,7 +87,7 @@ func (svc *service) FindAllWeb(page, size int) dtos.ResWebGetHome {
 		fundraises = append(fundraises, data)
 	}
 
-	volunteerEnt := svc.model.PaginateVolunteer(page, size, "", "")
+	volunteerEnt := svc.model.PaginateVolunteer(page, size, nil)
 
 	for _, volunteerItem := range volunteerEnt {
 		var data dtos.ResVolunteer
