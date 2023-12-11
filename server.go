@@ -171,6 +171,7 @@ func NewsHandler() news.Handler {
 }
 
 func TransactionHandler() transaction.Handler {
+	config.LoadFirebaseConfig()
 	mongoDB := utils.ConnectMongo()
 	collection := mongoDB.Collection("devices")
 	smtpConfig := config.LoadSMTPConfig()
