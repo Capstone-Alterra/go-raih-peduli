@@ -75,13 +75,13 @@ func (_m *Repository) CountVolunteer() int {
 	return r0
 }
 
-// PaginateFundraise provides a mock function with given fields: page, size, likeQuery, notLikeQuery
-func (_m *Repository) PaginateFundraise(page int, size int, likeQuery string, notLikeQuery string) []fundraise.Fundraise {
-	ret := _m.Called(page, size, likeQuery, notLikeQuery)
+// PaginateFundraise provides a mock function with given fields: page, size, personalization
+func (_m *Repository) PaginateFundraise(page int, size int, personalization []string) []fundraise.Fundraise {
+	ret := _m.Called(page, size, personalization)
 
 	var r0 []fundraise.Fundraise
-	if rf, ok := ret.Get(0).(func(int, int, string, string) []fundraise.Fundraise); ok {
-		r0 = rf(page, size, likeQuery, notLikeQuery)
+	if rf, ok := ret.Get(0).(func(int, int, []string) []fundraise.Fundraise); ok {
+		r0 = rf(page, size, personalization)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]fundraise.Fundraise)
@@ -91,13 +91,13 @@ func (_m *Repository) PaginateFundraise(page int, size int, likeQuery string, no
 	return r0
 }
 
-// PaginateNews provides a mock function with given fields: page, size, likeQuery, notLikeQuery
-func (_m *Repository) PaginateNews(page int, size int, likeQuery string, notLikeQuery string) []news.News {
-	ret := _m.Called(page, size, likeQuery, notLikeQuery)
+// PaginateNews provides a mock function with given fields: page, size, personalization
+func (_m *Repository) PaginateNews(page int, size int, personalization []string) []news.News {
+	ret := _m.Called(page, size, personalization)
 
 	var r0 []news.News
-	if rf, ok := ret.Get(0).(func(int, int, string, string) []news.News); ok {
-		r0 = rf(page, size, likeQuery, notLikeQuery)
+	if rf, ok := ret.Get(0).(func(int, int, []string) []news.News); ok {
+		r0 = rf(page, size, personalization)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]news.News)
@@ -107,13 +107,13 @@ func (_m *Repository) PaginateNews(page int, size int, likeQuery string, notLike
 	return r0
 }
 
-// PaginateVolunteer provides a mock function with given fields: page, size, likeQuery, notLikeQuery
-func (_m *Repository) PaginateVolunteer(page int, size int, likeQuery string, notLikeQuery string) []volunteer.VolunteerVacancies {
-	ret := _m.Called(page, size, likeQuery, notLikeQuery)
+// PaginateVolunteer provides a mock function with given fields: page, size, personalization
+func (_m *Repository) PaginateVolunteer(page int, size int, personalization []string) []volunteer.VolunteerVacancies {
+	ret := _m.Called(page, size, personalization)
 
 	var r0 []volunteer.VolunteerVacancies
-	if rf, ok := ret.Get(0).(func(int, int, string, string) []volunteer.VolunteerVacancies); ok {
-		r0 = rf(page, size, likeQuery, notLikeQuery)
+	if rf, ok := ret.Get(0).(func(int, int, []string) []volunteer.VolunteerVacancies); ok {
+		r0 = rf(page, size, personalization)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]volunteer.VolunteerVacancies)
