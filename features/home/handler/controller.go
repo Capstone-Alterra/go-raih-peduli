@@ -25,13 +25,21 @@ func (ctl *controller) GetMobileLanding() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		pagination := dtos.Pagination{}
 		ctx.Bind(&pagination)
+		var userIDInt int
+		userID := ctx.Get("user_id")
+		if userID != nil {
+			userIDInt = ctx.Get("user_id").(int)
+		} else {
+			userIDInt = 0
+		}
 
 		page := 1
 		size := 5
 
-		homes := ctl.service.FindAll(page, size)
+		personalization := ctl.service.GetPersonalization(userIDInt)
+		homes := ctl.service.FindAll(page, size, personalization)
 
-		return ctx.JSON(200, helper.Response("Success!", map[string]any{
+		return ctx.JSON(200, helper.Response("Success", map[string]any{
 			"data": homes,
 		}))
 	}
@@ -47,7 +55,7 @@ func (ctl *controller) GetWebLanding() echo.HandlerFunc {
 
 		homes := ctl.service.FindAllWeb(page, size)
 
-		return ctx.JSON(200, helper.Response("Success!", map[string]any{
+		return ctx.JSON(200, helper.Response("Success", map[string]any{
 			"data": homes,
 		}))
 	}
