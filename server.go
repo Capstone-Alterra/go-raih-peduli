@@ -97,12 +97,10 @@ func FundraiseHandler() fundraise.Handler {
 }
 
 func HomeHandler() home.Handler {
-	validation := helpers.NewValidationRequest()
-
 	db := utils.InitDB()
 
 	repo := hor.New(db)
-	uc := hou.New(repo, validation)
+	uc := hou.New(repo)
 	return hoh.New(uc)
 }
 

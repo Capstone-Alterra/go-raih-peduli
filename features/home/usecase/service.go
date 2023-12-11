@@ -15,13 +15,11 @@ import (
 
 type service struct {
 	model      home.Repository
-	validation helpers.ValidationInterface
 }
 
-func New(model home.Repository, validation helpers.ValidationInterface) home.Usecase {
+func New(model home.Repository) home.Usecase {
 	return &service{
 		model:      model,
-		validation: validation,
 	}
 }
 
@@ -132,75 +130,3 @@ func (svc *service) GetPersonalization(userID int) []string {
 	return personalization
 }
 
-func (svc *service) FindByID(homeID int) *dtos.ResHome {
-	res := dtos.ResHome{}
-	homeService := svc.model.SelectByID(homeID)
-
-	if homeService == nil {
-		return nil
-	}
-
-	err := smapping.FillStruct(&res, smapping.MapFields(homeService))
-	if err != nil {
-		log.Error(err)
-		return nil
-	}
-
-	return &res
-}
-
-func (svc *service) Create(newHome dtos.InputHome) *dtos.ResHome {
-	homeStruct := home.Home{}
-
-	err := smapping.FillStruct(&homeStruct, smapping.MapFields(newHome))
-	if err != nil {
-		log.Error(err)
-		return nil
-	}
-
-	homeID := svc.model.Insert(homeStruct)
-
-	if homeID == -1 {
-		return nil
-	}
-
-	resHome := dtos.ResHome{}
-	errRes := smapping.FillStruct(&resHome, smapping.MapFields(newHome))
-	if errRes != nil {
-		log.Error(errRes)
-		return nil
-	}
-
-	return &resHome
-}
-
-func (svc *service) Modify(homeData dtos.InputHome, homeID int) bool {
-	newHome := home.Home{}
-
-	err := smapping.FillStruct(&newHome, smapping.MapFields(homeData))
-	if err != nil {
-		log.Error(err)
-		return false
-	}
-
-	newHome.ID = homeID
-	rowsAffected := svc.model.Update(newHome)
-
-	if rowsAffected <= 0 {
-		log.Error("There is No Home Updated!")
-		return false
-	}
-
-	return true
-}
-
-func (svc *service) Remove(homeID int) bool {
-	rowsAffected := svc.model.DeleteByID(homeID)
-
-	if rowsAffected <= 0 {
-		log.Error("There is No Home Deleted!")
-		return false
-	}
-
-	return true
-}

@@ -19,20 +19,12 @@ type Repository interface {
 	CountVolunteer() int
 	CountNews() int
 	SelectUserByID(userID int) *user.User
-	Insert(newHome Home) int64
-	SelectByID(homeID int) *Home
-	Update(home Home) int64
-	DeleteByID(homeID int) int64
 }
 
 type Usecase interface {
 	FindAll(page, size int, personalization []string) dtos.ResGetHome
 	FindAllWeb(page, size int) dtos.ResWebGetHome
 	GetPersonalization(userID int) []string
-	FindByID(homeID int) *dtos.ResHome
-	Create(newHome dtos.InputHome) *dtos.ResHome
-	Modify(homeData dtos.InputHome, homeID int) bool
-	Remove(homeID int) bool
 }
 
 type Handler interface {
