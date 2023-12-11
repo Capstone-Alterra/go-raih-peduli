@@ -14,13 +14,14 @@ func NewNotificationService() NotificationInterface {
 	return &notificationService{}
 }
 
-func (ns *notificationService) SendNotifications(tokens string, userID string, message string) error {
+func (ns *notificationService) SendNotifications(tokens string, title string, message string) error {
 	fcmClient := utils.FirebaseInit()
 
 	_, err := fcmClient.Send(context.Background(), &messaging.Message{
 		Token: tokens,
 		Data: map[string]string{
-			message: message,
+			"Title":   title,
+			"Message": message,
 		},
 	})
 	logrus.Info(tokens)

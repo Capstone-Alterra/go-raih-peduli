@@ -82,14 +82,14 @@ func FirebaseInit() *messaging.Client {
 	// Create a new firebase app
 	app, err := firebase.NewApp(context.Background(), nil, opt)
 	if err != nil {
-		logrus.Print("Failed Connect Firbase", err)
+		logrus.Print("Failed Connect Firebase", err)
 		return nil
 	}
 
 	// Get the FCM object
 	fcmClient, err := app.Messaging(context.Background())
 	if err != nil {
-		logrus.Print("Failed Connect Firbase", err)
+		logrus.Print("Failed Connect Firebase", err)
 		return nil
 	}
 

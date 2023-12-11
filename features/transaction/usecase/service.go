@@ -363,17 +363,19 @@ func (svc *service) Notifications(notificationPayload map[string]any) error {
 		deviceToken := svc.model.GetDeviceToken(transaction.UserID)
 
 		if deviceToken != "" {
-			svc.nsRequest.SendNotifications(deviceToken, "1", "payment success")
+			strAmount := strconv.Itoa(transaction.Amount)
+			message := "Terimakasih orang baik, donasi sebesar " + strAmount + "akan sangat membantu " + transaction.Fundraise.Title
+			svc.nsRequest.SendNotifications(deviceToken, "Pembayaran Berhasil", message)
 		}
 
 		logrus.Info(deviceToken)
-		
+
 		if err := svc.model.SendPaymentConfirmation(transaction.User.Email, transaction.Amount, transaction.FundraiseID, paymentName); err != nil {
 			logrus.Println(err.Error())
 		}
 
 		transaction.PaidAt = time.Now().Format("2006-01-02 15:04:05")
-		
+
 		if update := svc.model.Update(*transaction); update == -1 {
 			return nil
 		}
@@ -385,7 +387,8 @@ func (svc *service) Notifications(notificationPayload map[string]any) error {
 }
 
 func (svc *service) SendPaymentConfirmation() error {
-	err := svc.nsRequest.SendNotifications("fCUrkvUdQBmS5CeRC12vAv:APA91bHhr0eM66GPn4XKVMmeHC-hwhNuCFbKj2j8U1izAa--OupCQAeYZYllByNm89GCczDjbMXZ_ot0ETc8h_gdTTV6FXQ9nKLnbWGs-lnFbkKHbALJBQlgJ9-QUIhBqYgVgjLk81y9", "1", "payment success")
+	message := "Terimakasih orang baik, donasimu membantu palestina"
+	err := svc.nsRequest.SendNotifications("", "Donasi sebesar Rp. 10.000 Berhasil", message)
 	if err != nil {
 		logrus.Print("Notif Send Status Error: ", err)
 		return err
