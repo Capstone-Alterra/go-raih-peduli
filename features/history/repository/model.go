@@ -79,7 +79,7 @@ func (mdl *model) HistoryVolunteerVacanciesRegisterByUser(userID int) ([]history
 	var volunteers []history.VolunteerRegistered
 
 	if err := mdl.db.Table("volunteer_relations").
-		Select("volunteer_relations.id, users.email, users.fullname, users.address, users.phone_number, users.gender, users.nik, volunteer_relations.skills, volunteer_relations.resume, volunteer_relations.reason, users.profile_picture, volunteer_relations.status, volunteer_vacancies.title, volunteer_vacancies.photo").
+		Select("volunteer_relations.id, users.email, users.fullname, users.address, users.phone_number, users.gender, users.nik, volunteer_relations.skills, volunteer_relations.resume, volunteer_relations.reason, users.profile_picture, volunteer_relations.volunteer_id, volunteer_relations.status, volunteer_vacancies.title, volunteer_vacancies.photo").
 		Joins("JOIN volunteer_vacancies ON volunteer_relations.volunteer_id = volunteer_vacancies.id").
 		Joins("JOIN users ON volunteer_relations.user_id = users.id").
 		Where("volunteer_relations.user_id = ?", userID).
@@ -91,15 +91,6 @@ func (mdl *model) HistoryVolunteerVacanciesRegisterByUser(userID int) ([]history
 	// 	return nil, err
 	// }
 	return volunteers, nil
-}
-
-func (mdl *model) GetVacanciesByID(vacanciesID int) (*history.VolunteerVacancies, error) {
-	var vacancy history.VolunteerVacancies
-
-	if err := mdl.db.First(&vacancy, vacanciesID).Error; err != nil {
-		return nil, err
-	}
-	return &vacancy, nil
 }
 
 func (mdl *model) SelectBookmarkedVacancyID(ownerID int) (map[int]string, error) {

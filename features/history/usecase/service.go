@@ -127,10 +127,6 @@ func (svc *service) FindAllHistoryVolunteerVacanciesRegisterByUser(userID int) (
 
 	for _, volunteer := range entities {
 		var data dtos.ResRegistrantVacancyHistory
-		vacancy, err := svc.model.GetVacanciesByID(volunteer.VolunteerID)
-		if err != nil {
-			return nil, err
-		}
 		data.ID = volunteer.ID
 		data.Email = volunteer.Email
 		data.Fullname = volunteer.Fullname
@@ -141,11 +137,10 @@ func (svc *service) FindAllHistoryVolunteerVacanciesRegisterByUser(userID int) (
 		data.Skills = strings.Split(volunteer.Skills, ", ")
 		data.Resume = volunteer.Resume
 		data.Reason = volunteer.Reason
-		data.Photo = volunteer.Photo
 		data.Status = volunteer.Status
-		data.VacancyID = vacancy.ID
-		data.VacancyName = vacancy.Title
-		data.VacancyPhoto = vacancy.Photo
+		data.VacancyID = volunteer.VolunteerID
+		data.VacancyName = volunteer.VolunteerName
+		data.VacancyPhoto = volunteer.VolunteerPhoto
 		data.PostType = "registered_volunteer_vacancies"
 		volunteers = append(volunteers, data)
 	}
