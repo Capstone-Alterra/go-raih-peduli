@@ -119,38 +119,25 @@ func (ctl *controller) GetAllHistory() echo.HandlerFunc {
 			userID = ctx.Get("user_id").(int)
 		}
 		var response_data []any
-		fundraises, err := ctl.service.FindAllHistoryFundraiseCreatedByUser(userID)
-
-		if err != nil {
-			return ctx.JSON(500, helper.Response(err.Error()))
-		}
+		fundraises, _ := ctl.service.FindAllHistoryFundraiseCreatedByUser(userID)
 
 		for _, data := range fundraises {
 			response_data = append(response_data, data)
 		}
 
-		vacancies, err := ctl.service.FindAllHistoryVolunteerVacanciesCreatedByUser(userID)
-		if err != nil {
-			return ctx.JSON(500, helper.Response(err.Error()))
-		}
+		vacancies, _ := ctl.service.FindAllHistoryVolunteerVacanciesCreatedByUser(userID)
 
 		for _, data := range vacancies {
 			response_data = append(response_data, data)
 		}
 
-		vacanciesReg, err := ctl.service.FindAllHistoryVolunteerVacanciesRegisterByUser(userID)
-		if err != nil {
-			return ctx.JSON(500, helper.Response(err.Error()))
-		}
+		vacanciesReg, _ := ctl.service.FindAllHistoryVolunteerVacanciesRegisterByUser(userID)
 		
 		for _, data := range vacanciesReg {
 			response_data = append(response_data, data)
 		}
 
-		donations, err := ctl.service.FindAllHistoryUserTransaction(userID)
-		if err != nil {
-			return ctx.JSON(500, helper.Response(err.Error()))
-		}
+		donations, _ := ctl.service.FindAllHistoryUserTransaction(userID)
 		
 		for _, data := range donations {
 			response_data = append(response_data, data)
