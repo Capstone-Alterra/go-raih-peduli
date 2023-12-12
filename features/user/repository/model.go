@@ -2,18 +2,15 @@ package repository
 
 import (
 	"mime/multipart"
-	"os"
 	"raihpeduli/config"
 	"raihpeduli/features/user"
 	"raihpeduli/helpers"
-	"strconv"
 	"time"
 
 	"github.com/go-redis/redis"
 	"github.com/google/uuid"
 	"github.com/labstack/gommon/log"
 	"github.com/sirupsen/logrus"
-	"github.com/wneessen/go-mail"
 	"gorm.io/gorm"
 )
 
@@ -133,37 +130,10 @@ func (mdl *model) DeleteByID(userID int) int64 {
 	return result.RowsAffected
 }
 
-func (mdl *model) SendOTPByEmail(email string, otp string) error {
-	secret_user := os.Getenv("SMTP_USER")
-	secret_pass := os.Getenv("SMTP_PASS")
-	secret_port := os.Getenv("SMTP_PORT")
-
-	convPort, err := strconv.Atoi(secret_port)
+func (mdl *model) SendOTPByEmail(fullname string, email string, otp string, status string) error {
+	err := helpers.EmailService(fullname, email, otp, status)
 	if err != nil {
 		return err
-	}
-
-	m := mail.NewMsg()
-	if err := m.From(secret_user); err != nil {
-		return err
-	}
-	if err := m.To(email); err != nil {
-		return err
-	}
-	m.Subject("Verifikasi Email - Raih Peduli")
-	m.SetBodyString(mail.TypeTextPlain, "Kode OTP anda adalah : "+otp)
-
-	c, err := mail.NewClient("smtp.gmail.com", mail.WithPort(convPort), mail.WithSMTPAuth(mail.SMTPAuthPlain), mail.WithUsername(secret_user), mail.WithPassword(secret_pass))
-	if err != nil {
-		return err
-	}
-	if err := c.DialAndSend(m); err != nil {
-		return err
-	}
-
-	query := mdl.InsertVerification(email, otp)
-	if query != nil {
-		return query
 	}
 
 	return nil

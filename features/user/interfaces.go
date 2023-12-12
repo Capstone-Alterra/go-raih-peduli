@@ -14,7 +14,7 @@ type Repository interface {
 	SelectByEmail(email string) (*User, error)
 	UpdateUser(user User) int64
 	DeleteByID(customerID int) int64
-	SendOTPByEmail(email string, otp string) error
+	SendOTPByEmail(fullname string, email string, otp string, status string) error
 	InsertVerification(email string, verificationKey string) error
 	ValidateVerification(verificationKey string) string
 	GetTotalData() int64
