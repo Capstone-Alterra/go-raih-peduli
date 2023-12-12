@@ -61,7 +61,7 @@ func (svc *service) FindAll(page, size, roleID, userID int, keyword string) ([]d
 		data.Fullname = transaction.User.Fullname
 		data.Address = transaction.User.Address
 		data.PhoneNumber = transaction.User.PhoneNumber
-		data.ProfilePicture = transaction.User.ProfilePicture
+		data.Photo = transaction.Fundraise.Photo
 		data.Email = transaction.User.Email
 		data.FundraiseName = transaction.Fundraise.Title
 
@@ -145,7 +145,7 @@ func (svc *service) FindByID(transactionID int) *dtos.ResTransaction {
 	res.Fullname = transaction.User.Fullname
 	res.Address = transaction.User.Address
 	res.PhoneNumber = transaction.User.PhoneNumber
-	res.ProfilePicture = transaction.User.ProfilePicture
+	res.Photo = transaction.Fundraise.Photo
 	res.Email = transaction.User.Email
 	res.FundraiseName = transaction.Fundraise.Title
 
@@ -220,7 +220,7 @@ func (svc *service) Create(userID int, newTransaction dtos.InputTransaction) (*d
 		resTransaction.Fullname = user.Fullname
 		resTransaction.Address = user.Address
 		resTransaction.PhoneNumber = user.PhoneNumber
-		resTransaction.ProfilePicture = user.ProfilePicture
+		resTransaction.Photo = transaction.Fundraise.Photo
 		resTransaction.FundraiseID = transaction.FundraiseID
 	case "10":
 		req, validUntil, err := svc.mtRequest.CreateTransactionGopay(strconv.Itoa(transaction.ID), transaction.PaymentType, int64(transaction.Amount))
@@ -248,7 +248,7 @@ func (svc *service) Create(userID int, newTransaction dtos.InputTransaction) (*d
 		resTransaction.Fullname = user.Fullname
 		resTransaction.Address = user.Address
 		resTransaction.PhoneNumber = user.PhoneNumber
-		resTransaction.ProfilePicture = user.ProfilePicture
+		resTransaction.Photo = transaction.Fundraise.Photo
 		resTransaction.FundraiseID = transaction.FundraiseID
 	case "11":
 		req, validUntil, err := svc.mtRequest.CreateTransactionQris(strconv.Itoa(transaction.ID), transaction.PaymentType, int64(transaction.Amount))
@@ -276,7 +276,7 @@ func (svc *service) Create(userID int, newTransaction dtos.InputTransaction) (*d
 		resTransaction.Fullname = user.Fullname
 		resTransaction.Address = user.Address
 		resTransaction.PhoneNumber = user.PhoneNumber
-		resTransaction.ProfilePicture = user.ProfilePicture
+		resTransaction.Photo = transaction.Fundraise.Photo
 		resTransaction.FundraiseID = transaction.FundraiseID
 	default:
 		req, validUntil, err := svc.mtRequest.CreateTransactionBank(strconv.Itoa(transaction.ID), transaction.PaymentType, int64(transaction.Amount))
@@ -302,7 +302,7 @@ func (svc *service) Create(userID int, newTransaction dtos.InputTransaction) (*d
 		resTransaction.Fullname = user.Fullname
 		resTransaction.Address = user.Address
 		resTransaction.PhoneNumber = user.PhoneNumber
-		resTransaction.ProfilePicture = user.ProfilePicture
+		resTransaction.Photo = transaction.Fundraise.Photo
 		resTransaction.FundraiseID = transaction.FundraiseID
 	}
 
@@ -364,7 +364,7 @@ func (svc *service) Notifications(notificationPayload map[string]any) error {
 
 		if deviceToken != "" {
 			strAmount := strconv.Itoa(transaction.Amount)
-			message := "Terimakasih orang baik, donasi sebesar " + strAmount + "akan sangat membantu " + transaction.Fundraise.Title
+			message := "Terimakasih orang baik, donasi sebesar Rp. " + strAmount + "akan sangat membantu " + transaction.Fundraise.Title
 			svc.nsRequest.SendNotifications(deviceToken, "Pembayaran Berhasil", message)
 		}
 
