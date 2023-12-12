@@ -23,23 +23,21 @@ func New(service user.Usecase) user.Handler {
 
 func (ctl *controller) GetUsers() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		pagination := dtos.Pagination{}
-		ctx.Bind(&pagination)
+		searchAndFilter := dtos.SearchAndFilter{}
+		ctx.Bind(&searchAndFilter)
 
-		if pagination.Page < 1 || pagination.PageSize < 1 {
-			pagination.Page = 1
-			pagination.PageSize = 20
+		if searchAndFilter.Page < 1 || searchAndFilter.PageSize < 1 {
+			searchAndFilter.Page = 1
+			searchAndFilter.PageSize = 20
 		}
 
-		page := pagination.Page
-		size := pagination.PageSize
-		users, totalData := ctl.service.FindAll(page, size)
+		users, totalData := ctl.service.FindAll(searchAndFilter)
 
 		if users == nil {
 			return ctx.JSON(404, helpers.Response("there is no users"))
 		}
 
-		paginationResponse := helpers.PaginationResponse(page, size, int(totalData))
+		paginationResponse := helpers.PaginationResponse(searchAndFilter.Page, searchAndFilter.PageSize, int(totalData))
 
 		return ctx.JSON(200, helpers.Response("success", map[string]any{
 			"data":       users,
