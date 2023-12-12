@@ -7,7 +7,7 @@ type ResTransaction struct {
 	Fullname       string `json:"fullname"`
 	Address        string `json:"address"`
 	PhoneNumber    string `json:"phone_number"`
-	ProfilePicture string `json:"profile_picture"`
+	Photo          string `json:"photo"`
 	FundraiseID    int    `json:"fundraise_id"`
 	FundraiseName  string `json:"fundraise_name"`
 	Amount         int    `json:"amount"`
