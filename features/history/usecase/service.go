@@ -118,7 +118,7 @@ func (svc *service) FindAllHistoryVolunteerVacanciesCreatedByUser(userID int) ([
 func (svc *service) FindAllHistoryVolunteerVacanciesRegisterByUser(userID int) ([]dtos.ResRegistrantVacancyHistory, error) {
 	var volunteers []dtos.ResRegistrantVacancyHistory
 	var err error
-	var entities []history.Volunteer
+	var entities []history.VolunteerRegistered
 
 	entities, err = svc.model.HistoryVolunteerVacanciesRegisterByUser(userID)
 	if err != nil {
@@ -127,6 +127,10 @@ func (svc *service) FindAllHistoryVolunteerVacanciesRegisterByUser(userID int) (
 
 	for _, volunteer := range entities {
 		var data dtos.ResRegistrantVacancyHistory
+		vacancy, err := svc.model.GetVacanciesByID(volunteer.VolunteerID)
+		if err != nil {
+			return nil, err
+		}
 		data.ID = volunteer.ID
 		data.Email = volunteer.Email
 		data.Fullname = volunteer.Fullname
@@ -139,7 +143,9 @@ func (svc *service) FindAllHistoryVolunteerVacanciesRegisterByUser(userID int) (
 		data.Reason = volunteer.Reason
 		data.Photo = volunteer.Photo
 		data.Status = volunteer.Status
-
+		data.VacancyID = vacancy.ID
+		data.VacancyName = vacancy.Title
+		data.VacancyPhoto = vacancy.Photo
 		data.PostType = "registered_volunteer_vacancies"
 		volunteers = append(volunteers, data)
 	}
@@ -163,9 +169,9 @@ func (svc *service) FindAllHistoryUserTransaction(userID int) ([]dtos.ResTransac
 		data.Fullname = donation.User.Fullname
 		data.Address = donation.User.Address
 		data.PhoneNumber = donation.User.PhoneNumber
-		data.ProfilePicture = donation.User.ProfilePicture
 		data.Email = donation.User.Email
 		data.FundraiseName = donation.Fundraise.Title
+		data.FundraisePhoto = donation.Fundraise.Photo
 		data.PostType = "donations"
 		switch donation.Status {
 		case "2":

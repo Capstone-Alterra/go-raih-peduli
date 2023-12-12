@@ -11,7 +11,8 @@ type Repository interface {
 	TotalFundAcquired(fundraiseID int) (int32, error)
 	SelectBookmarkedFundraiseID(ownerID int) (map[int]string, error)
 	HistoryVolunteerVacanciesCreatedByUser(userID int) ([]VolunteerVacancies, error)
-	HistoryVolunteerVacanciesRegisterByUser(userID int) ([]Volunteer, error)
+	HistoryVolunteerVacanciesRegisterByUser(userID int) ([]VolunteerRegistered, error)
+	GetVacanciesByID(vacanciesID int) (*VolunteerVacancies, error)
 	SelectBookmarkedVacancyID(ownerID int) (map[int]string, error)
 	GetTotalVolunteersByVacancyID(vacancyID int) int64
 	HistoryUserTransaction(userID int) ([]Transaction, error)
