@@ -4,6 +4,7 @@ import (
 	"mime/multipart"
 	"raihpeduli/config"
 	"raihpeduli/features/user"
+	"raihpeduli/features/user/dtos"
 	"raihpeduli/helpers"
 	"time"
 
@@ -28,12 +29,17 @@ func New(db *gorm.DB, rdClient *redis.Client, clStorage helpers.CloudStorageInte
 	}
 }
 
-func (mdl *model) Paginate(page, size int) []user.User {
+func (mdl *model) Paginate(searchAndFilter dtos.SearchAndFilter) []user.User {
 	var users []user.User
+	var page = searchAndFilter.Page
+	var size = searchAndFilter.PageSize
+	var name = "%" + searchAndFilter.Name + "%"
 
 	offset := (page - 1) * size
 
-	result := mdl.db.Offset(offset).Limit(size).Find(&users)
+	result := mdl.db.Offset(offset).Limit(size).
+		Where("fullname LIKE ?", name).
+		Find(&users)
 
 	if result.Error != nil {
 		log.Error(result.Error)
@@ -143,6 +149,22 @@ func (mdl *model) GetTotalData() int64 {
 	var totalData int64
 
 	result := mdl.db.Table("users").Where("deleted_at IS NULL").Count(&totalData)
+
+	if result.Error != nil {
+		log.Error(result.Error)
+		return 0
+	}
+
+	return totalData
+}
+
+func (mdl *model) GetTotalDataByName(name string) int64 {
+	var totalData int64
+
+	result := mdl.db.Table("users").
+		Where("deleted_at IS NULL").
+		Where("fullname LIKE ?", "%"+name+"%").
+		Count(&totalData)
 
 	if result.Error != nil {
 		log.Error(result.Error)

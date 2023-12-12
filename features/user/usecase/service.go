@@ -32,11 +32,17 @@ func New(model user.Repository, jwt helpers.JWTInterface, hash helpers.HashInter
 	}
 }
 
-func (svc *service) FindAll(page, size int) ([]dtos.ResUser, int64) {
+func (svc *service) FindAll(searchAndFilter dtos.SearchAndFilter) ([]dtos.ResUser, int64) {
 	var users []dtos.ResUser
 
-	usersEnt := svc.model.Paginate(page, size)
-	totalData := svc.model.GetTotalData()
+	usersEnt := svc.model.Paginate(searchAndFilter)
+
+	var totalData int64
+	if searchAndFilter.Name != "" {
+		totalData = svc.model.GetTotalDataByName(searchAndFilter.Name)
+	} else {
+		totalData = svc.model.GetTotalData()
+	}
 
 	for _, user := range usersEnt {
 		var data dtos.ResUser
