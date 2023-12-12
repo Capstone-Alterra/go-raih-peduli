@@ -62,7 +62,7 @@ func (svc *service) Register(newData dtos.InputUser) (*dtos.ResUser, []string, e
 
 	otp := svc.generator.GenerateRandomOTP()
 
-	err = svc.model.SendOTPByEmail(userModel.Email, otp)
+	err = svc.model.SendOTPByEmail(userModel.Fullname, userModel.Email, otp, "1")
 	if err != nil {
 		return nil, nil, err
 	}
@@ -86,6 +86,7 @@ func (svc *service) Login(data dtos.RequestLogin) (*dtos.LoginResponse, []string
 
 	user, err := svc.model.Login(data.Email)
 	if err != nil {
+		logrus.Error(err)
 		return nil, nil, err
 	}
 
@@ -109,6 +110,10 @@ func (svc *service) Login(data dtos.RequestLogin) (*dtos.LoginResponse, []string
 		log.Error("Token process failed")
 		return nil, nil, errors.New("generate token failed")
 	}
+
+	if err := svc.model.InsertToken(user.ID, data.FCMTokens); err != nil {
+		return nil, nil, err
+	}
 	
 	if user.Personalization == nil {
 		resUser.PersonalizeUser = true
@@ -123,7 +128,11 @@ func (svc *service) Login(data dtos.RequestLogin) (*dtos.LoginResponse, []string
 func (svc *service) ResendOTP(email string) bool {
 	otp := svc.generator.GenerateRandomOTP()
 
-	err := svc.model.SendOTPByEmail(email, otp)
+	data, err := svc.model.SelectByEmail(email)
+	if err != nil {
+		return false
+	}
+	err = svc.model.SendOTPByEmail(data.Fullname,email, otp, "1")
 	if err != nil {
 		return false
 	}

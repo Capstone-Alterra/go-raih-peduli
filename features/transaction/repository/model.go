@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"fmt"
 	"raihpeduli/config"
 	"raihpeduli/features/user"
@@ -10,19 +11,24 @@ import (
 	"raihpeduli/features/transaction"
 
 	"github.com/labstack/gommon/log"
+	"github.com/sirupsen/logrus"
 	"github.com/wneessen/go-mail"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"gorm.io/gorm"
 )
 
 type model struct {
-	db     *gorm.DB
-	config *config.SMTPConfig
+	db         *gorm.DB
+	config     *config.SMTPConfig
+	collection *mongo.Collection
 }
 
-func New(db *gorm.DB, config *config.SMTPConfig) transaction.Repository {
+func New(db *gorm.DB, config *config.SMTPConfig, collection *mongo.Collection) transaction.Repository {
 	return &model{
-		db:     db,
-		config: config,
+		db:         db,
+		config:     config,
+		collection: collection,
 	}
 }
 
@@ -244,4 +250,16 @@ func (mdl *model) SendPaymentConfirmation(email string, amount int, idFundraise 
 	}
 
 	return nil
+}
+
+
+func (mdl *model) GetDeviceToken(userID int) string {
+	var result transaction.NotificationToken
+
+	if err := mdl.collection.FindOne(context.Background(), bson.M{"user_id": userID}).Decode(&result); err != nil {
+		logrus.Error(err)
+		return ""
+	}
+
+	return result.DeviceToken
 }

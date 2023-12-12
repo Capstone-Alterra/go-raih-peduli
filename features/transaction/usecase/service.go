@@ -20,15 +20,22 @@ type service struct {
 	mtRequest     helpers.MidtransInterface
 	coreAPIClient coreapi.Client
 	validation    helpers.ValidationInterface
+	nsRequest     helpers.NotificationInterface
 }
 
-func New(model transaction.Repository, generator helpers.GeneratorInterface, mtRequest helpers.MidtransInterface, coreAPIClient coreapi.Client, validation helpers.ValidationInterface) transaction.Usecase {
+func New(model transaction.Repository,
+	generator helpers.GeneratorInterface,
+	mtRequest helpers.MidtransInterface,
+	coreAPIClient coreapi.Client,
+	validation helpers.ValidationInterface,
+	nsResquest helpers.NotificationInterface) transaction.Usecase {
 	return &service{
 		model:         model,
 		generator:     generator,
 		mtRequest:     mtRequest,
 		coreAPIClient: coreAPIClient,
 		validation:    validation,
+		nsRequest:     nsResquest,
 	}
 }
 
@@ -54,7 +61,7 @@ func (svc *service) FindAll(page, size, roleID, userID int, keyword string) ([]d
 		data.Fullname = transaction.User.Fullname
 		data.Address = transaction.User.Address
 		data.PhoneNumber = transaction.User.PhoneNumber
-		data.ProfilePicture = transaction.User.ProfilePicture
+		data.Photo = transaction.Fundraise.Photo
 		data.Email = transaction.User.Email
 		data.FundraiseName = transaction.Fundraise.Title
 
@@ -138,7 +145,7 @@ func (svc *service) FindByID(transactionID int) *dtos.ResTransaction {
 	res.Fullname = transaction.User.Fullname
 	res.Address = transaction.User.Address
 	res.PhoneNumber = transaction.User.PhoneNumber
-	res.ProfilePicture = transaction.User.ProfilePicture
+	res.Photo = transaction.Fundraise.Photo
 	res.Email = transaction.User.Email
 	res.FundraiseName = transaction.Fundraise.Title
 
@@ -213,7 +220,7 @@ func (svc *service) Create(userID int, newTransaction dtos.InputTransaction) (*d
 		resTransaction.Fullname = user.Fullname
 		resTransaction.Address = user.Address
 		resTransaction.PhoneNumber = user.PhoneNumber
-		resTransaction.ProfilePicture = user.ProfilePicture
+		resTransaction.Photo = transaction.Fundraise.Photo
 		resTransaction.FundraiseID = transaction.FundraiseID
 	case "10":
 		req, validUntil, err := svc.mtRequest.CreateTransactionGopay(strconv.Itoa(transaction.ID), transaction.PaymentType, int64(transaction.Amount))
@@ -241,7 +248,7 @@ func (svc *service) Create(userID int, newTransaction dtos.InputTransaction) (*d
 		resTransaction.Fullname = user.Fullname
 		resTransaction.Address = user.Address
 		resTransaction.PhoneNumber = user.PhoneNumber
-		resTransaction.ProfilePicture = user.ProfilePicture
+		resTransaction.Photo = transaction.Fundraise.Photo
 		resTransaction.FundraiseID = transaction.FundraiseID
 	case "11":
 		req, validUntil, err := svc.mtRequest.CreateTransactionQris(strconv.Itoa(transaction.ID), transaction.PaymentType, int64(transaction.Amount))
@@ -269,7 +276,7 @@ func (svc *service) Create(userID int, newTransaction dtos.InputTransaction) (*d
 		resTransaction.Fullname = user.Fullname
 		resTransaction.Address = user.Address
 		resTransaction.PhoneNumber = user.PhoneNumber
-		resTransaction.ProfilePicture = user.ProfilePicture
+		resTransaction.Photo = transaction.Fundraise.Photo
 		resTransaction.FundraiseID = transaction.FundraiseID
 	default:
 		req, validUntil, err := svc.mtRequest.CreateTransactionBank(strconv.Itoa(transaction.ID), transaction.PaymentType, int64(transaction.Amount))
@@ -295,7 +302,7 @@ func (svc *service) Create(userID int, newTransaction dtos.InputTransaction) (*d
 		resTransaction.Fullname = user.Fullname
 		resTransaction.Address = user.Address
 		resTransaction.PhoneNumber = user.PhoneNumber
-		resTransaction.ProfilePicture = user.ProfilePicture
+		resTransaction.Photo = transaction.Fundraise.Photo
 		resTransaction.FundraiseID = transaction.FundraiseID
 	}
 
@@ -352,20 +359,39 @@ func (svc *service) Notifications(notificationPayload map[string]any) error {
 	transaction.Status = paymentConfirm
 	paymentName := svc.mtRequest.MappingPaymentName(transaction.PaymentType)
 	if paymentConfirm == "5" {
-		err := svc.model.SendPaymentConfirmation(transaction.User.Email, transaction.Amount, transaction.FundraiseID, paymentName)
-		if err != nil {
+		logrus.Info(transaction.UserID)
+		deviceToken := svc.model.GetDeviceToken(transaction.UserID)
+
+		if deviceToken != "" {
+			strAmount := strconv.Itoa(transaction.Amount)
+			message := "Terimakasih orang baik, donasi sebesar Rp. " + strAmount + "akan sangat membantu " + transaction.Fundraise.Title
+			svc.nsRequest.SendNotifications(deviceToken, "Pembayaran Berhasil", message)
+		}
+
+		logrus.Info(deviceToken)
+
+		if err := svc.model.SendPaymentConfirmation(transaction.User.Email, transaction.Amount, transaction.FundraiseID, paymentName); err != nil {
 			logrus.Println(err.Error())
 		}
+
 		transaction.PaidAt = time.Now().Format("2006-01-02 15:04:05")
-		update := svc.model.Update(*transaction)
-		if update == -1 {
+
+		if update := svc.model.Update(*transaction); update == -1 {
 			return nil
 		}
-	} else {
-		update := svc.model.Update(*transaction)
-		if update == -1 {
-			return nil
-		}
+	} else if update := svc.model.Update(*transaction); update == -1 {
+		return nil
+	}
+
+	return nil
+}
+
+func (svc *service) SendPaymentConfirmation() error {
+	message := "Terimakasih orang baik, donasimu membantu palestina"
+	err := svc.nsRequest.SendNotifications("", "Donasi sebesar Rp. 10.000 Berhasil", message)
+	if err != nil {
+		logrus.Print("Notif Send Status Error: ", err)
+		return err
 	}
 
 	return nil

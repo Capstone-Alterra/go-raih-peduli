@@ -71,4 +71,5 @@ jobs:
             -e MONGO_URI="$(echo '${{ secrets.MONGO_URI }}')" \
             -e MONGO_DB_NAME=${{ secrets.MONGO_DB_NAME }} \
             -e OPENAI_KEY=${{ secrets.OPENAI_KEY }} \
+            -e FIREBASE_API_KEY="$(echo '${{secrets.FIREBASE_API_KEY}}')" \
             ${{ secrets.DOCKERHUB_USERNAME }}/imgoraihpeduli

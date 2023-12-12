@@ -3,7 +3,7 @@ package dtos
 import "mime/multipart"
 
 type InputUser struct {
-	Fullname    string `json:"fullname" form:"fullname" validate:"required,fullname"`
+	Fullname    string `json:"fullname" form:"fullname" validate:"required,alphabetic"`
 	Address     string `json:"address" form:"address" validate:"required"`
 	PhoneNumber string `json:"phone_number" form:"phone_number" validate:"required,number,min=10,max=13"`
 	Gender      string `json:"gender" form:"gender" validate:"required"`
@@ -29,9 +29,10 @@ type InputPersonalization struct {
 	Personalization []string `json:"personalization" form:"personalization"`
 }
 
-type Pagination struct {
-	Page     int `query:"page"`
-	PageSize int `query:"page_size"`
+type SearchAndFilter struct {
+	Page     int    `query:"page"`
+	PageSize int    `query:"page_size"`
+	Name     string `query:"name"`
 }
 
 type VerifyOTP struct {

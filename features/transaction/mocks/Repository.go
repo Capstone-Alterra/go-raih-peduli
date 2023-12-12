@@ -53,6 +53,20 @@ func (_m *Repository) DeleteByID(transactionID int) int64 {
 	return r0
 }
 
+// GetDeviceToken provides a mock function with given fields: userID
+func (_m *Repository) GetDeviceToken(userID int) string {
+	ret := _m.Called(userID)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(int) string); ok {
+		r0 = rf(userID)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
 // GetTotalData provides a mock function with given fields: keyword
 func (_m *Repository) GetTotalData(keyword string) int64 {
 	ret := _m.Called(keyword)

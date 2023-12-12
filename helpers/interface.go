@@ -41,6 +41,10 @@ type MidtransInterface interface {
 	MappingPaymentName(paymentType string) string
 }
 
+type NotificationInterface interface {
+	SendNotifications(tokens string, userID string, message string) error
+}
+
 type CloudStorageInterface interface {
 	UploadFile(file multipart.File, object string) error
 	DeleteFile(object string) error
@@ -53,4 +57,8 @@ type ConverterInterface interface {
 type OpenAIInterface interface {
 	GetAppInformation(question string, qnaList map[string]string) (string, error)
 	GetNewsContent(prompt string) (string, error)
+}
+
+type EmailTemplateInterface interface {
+	EmailService(username, email, token, status string) error
 }

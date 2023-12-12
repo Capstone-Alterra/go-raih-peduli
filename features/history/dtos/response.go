@@ -54,19 +54,22 @@ type ResVolunteersVacancyHistory struct {
 }
 
 type ResRegistrantVacancyHistory struct {
-	ID          int      `json:"id"`
-	Email       string   `json:"email"`
-	Fullname    string   `json:"fullname"`
-	Address     string   `json:"address"`
-	PhoneNumber string   `json:"phone_number"`
-	Gender      string   `json:"gender"`
-	Nik         string   `json:"nik"`
-	Skills      []string `json:"skills_required"`
-	Resume      string   `json:"resume"`
-	Reason      string   `json:"reason"`
-	Photo       string   `json:"photo"`
-	Status      string   `json:"status"`
-	PostType    string   `json:"post_type"`
+	ID           int      `json:"id"`
+	Email        string   `json:"email"`
+	Fullname     string   `json:"fullname"`
+	Address      string   `json:"address"`
+	PhoneNumber  string   `json:"phone_number"`
+	Gender       string   `json:"gender"`
+	Nik          string   `json:"nik"`
+	Skills       []string `json:"skills_required"`
+	Resume       string   `json:"resume"`
+	Reason       string   `json:"reason"`
+	Photo        string   `json:"photo"`
+	Status       string   `json:"status"`
+	VacancyID    int      `json:"vacancy_id"`
+	VacancyName  string   `json:"vacancy_name"`
+	VacancyPhoto string   `json:"vacancy_Photo"`
+	PostType     string   `json:"post_type"`
 }
 
 type ResTransactionHistory struct {
@@ -76,15 +79,15 @@ type ResTransactionHistory struct {
 	Fullname       string `json:"fullname"`
 	Address        string `json:"address"`
 	PhoneNumber    string `json:"phone_number"`
-	ProfilePicture string `json:"profile_picture"`
 	FundraiseID    int    `json:"fundraise_id"`
-	FundraiseTitle  string `json:"fundraise_title"`
+	FundraiseName  string `json:"fundraise_name"`
 	FundraisePhoto string `json:"fundraise_photo"`
 	Amount         int    `json:"amount"`
 	PaymentType    string `json:"payment_type"`
 	VirtualAccount string `json:"virtual_account"`
 	UrlCallback    string `json:"url_callback"`
 	PaidAt         string `json:"paid_at"`
+	ValidUntil     string `json:"valid_until"`
 	Status         string `json:"status"`
 	PostType       string `json:"post_type"`
 }

@@ -214,7 +214,7 @@ func TestFindAllHistoryUserTransaction(t *testing.T) {
 			PaidAt:         "xxxxxxxxxxxxxxxxxxx",
 			VirtualAccount: "xxxxxxxxxxxxxxxxx",
 			UrlCallback:    "google.com",
-			CreatedAt:      time.Date(2023, time.April, 15, 15, 30, 0, 0, time.UTC),
+			ValidUntil:     "2 Hari",
 		},
 	}
 

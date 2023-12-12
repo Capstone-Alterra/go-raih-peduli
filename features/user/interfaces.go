@@ -8,22 +8,23 @@ import (
 )
 
 type Repository interface {
-	Paginate(page, size int) []User
+	Paginate(searchAndFilter dtos.SearchAndFilter) []User
 	InsertUser(newUser *User) (*User, error)
 	SelectByID(customerID int) *User
 	SelectByEmail(email string) (*User, error)
 	UpdateUser(user User) int64
 	DeleteByID(customerID int) int64
-	SendOTPByEmail(email string, otp string) error
+	SendOTPByEmail(fullname string, email string, otp string, status string) error
 	InsertVerification(email string, verificationKey string) error
 	ValidateVerification(verificationKey string) string
 	GetTotalData() int64
+	GetTotalDataByName(name string) int64
 	UploadFile(file multipart.File, oldFilename string) (string, error)
 	DeleteFile(fileName string) error
 }
 
 type Usecase interface {
-	FindAll(page, size int) ([]dtos.ResUser, int64)
+	FindAll(searchAndFilter dtos.SearchAndFilter) ([]dtos.ResUser, int64)
 	FindByID(customerID int) *dtos.ResUser
 	Create(newUser dtos.InputUser) (*dtos.ResUser, []string, error)
 	Modify(customerData dtos.InputUpdate, file multipart.File, oldData dtos.ResUser) (error, []string)

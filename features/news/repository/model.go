@@ -124,7 +124,7 @@ func (mdl *model) SelectBookmarkedNewsID(ownerID int) (map[int]string, error) {
 	return mapPostIDs, nil
 }
 
-func (mdl *model) SelectBoockmarkByNewsAndOwnerID(newsID, ownerID int) (string, error) {
+func (mdl *model) SelectBookmarkedByNewsAndOwnerID(newsID, ownerID int) (string, error) {
 	opts := options.FindOne().SetProjection(bson.M{"_id": 1})
 
 	var result bson.M

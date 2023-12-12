@@ -12,8 +12,8 @@ type Handler struct {
 	mock.Mock
 }
 
-// ApplyVacancy provides a mock function with given fields:
-func (_m *Handler) ApplyVacancy() echo.HandlerFunc {
+// AddPersonalization provides a mock function with given fields:
+func (_m *Handler) AddPersonalization() echo.HandlerFunc {
 	ret := _m.Called()
 
 	var r0 echo.HandlerFunc
@@ -28,8 +28,8 @@ func (_m *Handler) ApplyVacancy() echo.HandlerFunc {
 	return r0
 }
 
-// CreateVacancy provides a mock function with given fields:
-func (_m *Handler) CreateVacancy() echo.HandlerFunc {
+// ChangePassword provides a mock function with given fields:
+func (_m *Handler) ChangePassword() echo.HandlerFunc {
 	ret := _m.Called()
 
 	var r0 echo.HandlerFunc
@@ -44,8 +44,8 @@ func (_m *Handler) CreateVacancy() echo.HandlerFunc {
 	return r0
 }
 
-// DeleteVacancy provides a mock function with given fields:
-func (_m *Handler) DeleteVacancy() echo.HandlerFunc {
+// CheckPassword provides a mock function with given fields:
+func (_m *Handler) CheckPassword() echo.HandlerFunc {
 	ret := _m.Called()
 
 	var r0 echo.HandlerFunc
@@ -60,8 +60,8 @@ func (_m *Handler) DeleteVacancy() echo.HandlerFunc {
 	return r0
 }
 
-// GetSkills provides a mock function with given fields:
-func (_m *Handler) GetSkills() echo.HandlerFunc {
+// CreateUser provides a mock function with given fields:
+func (_m *Handler) CreateUser() echo.HandlerFunc {
 	ret := _m.Called()
 
 	var r0 echo.HandlerFunc
@@ -76,24 +76,8 @@ func (_m *Handler) GetSkills() echo.HandlerFunc {
 	return r0
 }
 
-// GetVacancies provides a mock function with given fields: suffix
-func (_m *Handler) GetVacancies(suffix string) echo.HandlerFunc {
-	ret := _m.Called(suffix)
-
-	var r0 echo.HandlerFunc
-	if rf, ok := ret.Get(0).(func(string) echo.HandlerFunc); ok {
-		r0 = rf(suffix)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(echo.HandlerFunc)
-		}
-	}
-
-	return r0
-}
-
-// GetVolunteer provides a mock function with given fields:
-func (_m *Handler) GetVolunteer() echo.HandlerFunc {
+// DeleteUser provides a mock function with given fields:
+func (_m *Handler) DeleteUser() echo.HandlerFunc {
 	ret := _m.Called()
 
 	var r0 echo.HandlerFunc
@@ -108,8 +92,8 @@ func (_m *Handler) GetVolunteer() echo.HandlerFunc {
 	return r0
 }
 
-// GetVolunteersByVacancyID provides a mock function with given fields:
-func (_m *Handler) GetVolunteersByVacancyID() echo.HandlerFunc {
+// ForgetPassword provides a mock function with given fields:
+func (_m *Handler) ForgetPassword() echo.HandlerFunc {
 	ret := _m.Called()
 
 	var r0 echo.HandlerFunc
@@ -124,8 +108,8 @@ func (_m *Handler) GetVolunteersByVacancyID() echo.HandlerFunc {
 	return r0
 }
 
-// UpdateStatusRegistrar provides a mock function with given fields:
-func (_m *Handler) UpdateStatusRegistrar() echo.HandlerFunc {
+// GetUsers provides a mock function with given fields:
+func (_m *Handler) GetUsers() echo.HandlerFunc {
 	ret := _m.Called()
 
 	var r0 echo.HandlerFunc
@@ -140,8 +124,8 @@ func (_m *Handler) UpdateStatusRegistrar() echo.HandlerFunc {
 	return r0
 }
 
-// UpdateStatusVacancy provides a mock function with given fields:
-func (_m *Handler) UpdateStatusVacancy() echo.HandlerFunc {
+// MyProfile provides a mock function with given fields:
+func (_m *Handler) MyProfile() echo.HandlerFunc {
 	ret := _m.Called()
 
 	var r0 echo.HandlerFunc
@@ -156,8 +140,8 @@ func (_m *Handler) UpdateStatusVacancy() echo.HandlerFunc {
 	return r0
 }
 
-// UpdateVacancy provides a mock function with given fields:
-func (_m *Handler) UpdateVacancy() echo.HandlerFunc {
+// ResetPassword provides a mock function with given fields:
+func (_m *Handler) ResetPassword() echo.HandlerFunc {
 	ret := _m.Called()
 
 	var r0 echo.HandlerFunc
@@ -172,8 +156,72 @@ func (_m *Handler) UpdateVacancy() echo.HandlerFunc {
 	return r0
 }
 
-// VacancyDetails provides a mock function with given fields:
-func (_m *Handler) VacancyDetails() echo.HandlerFunc {
+// UpdateProfilePicture provides a mock function with given fields:
+func (_m *Handler) UpdateProfilePicture() echo.HandlerFunc {
+	ret := _m.Called()
+
+	var r0 echo.HandlerFunc
+	if rf, ok := ret.Get(0).(func() echo.HandlerFunc); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(echo.HandlerFunc)
+		}
+	}
+
+	return r0
+}
+
+// UpdateUser provides a mock function with given fields:
+func (_m *Handler) UpdateUser() echo.HandlerFunc {
+	ret := _m.Called()
+
+	var r0 echo.HandlerFunc
+	if rf, ok := ret.Get(0).(func() echo.HandlerFunc); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(echo.HandlerFunc)
+		}
+	}
+
+	return r0
+}
+
+// UserDetails provides a mock function with given fields:
+func (_m *Handler) UserDetails() echo.HandlerFunc {
+	ret := _m.Called()
+
+	var r0 echo.HandlerFunc
+	if rf, ok := ret.Get(0).(func() echo.HandlerFunc); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(echo.HandlerFunc)
+		}
+	}
+
+	return r0
+}
+
+// VerifyEmail provides a mock function with given fields:
+func (_m *Handler) VerifyEmail() echo.HandlerFunc {
+	ret := _m.Called()
+
+	var r0 echo.HandlerFunc
+	if rf, ok := ret.Get(0).(func() echo.HandlerFunc); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(echo.HandlerFunc)
+		}
+	}
+
+	return r0
+}
+
+// VerifyOTP provides a mock function with given fields:
+func (_m *Handler) VerifyOTP() echo.HandlerFunc {
 	ret := _m.Called()
 
 	var r0 echo.HandlerFunc

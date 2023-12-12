@@ -1,9 +1,5 @@
 package dtos
 
-type ResHome struct {
-	Name string `json:"name"`
-}
-
 type ResGetHome struct {
 	Fundraise []ResFundraise `json:"fundraise"`
 	Volunteer []ResVolunteer `json:"volunteer"`

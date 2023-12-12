@@ -29,3 +29,7 @@ type Status struct {
 	Transaction string
 	Order       string
 }
+
+type NotificationToken struct {
+	DeviceToken  string          `bson:"device_token" json:"device_token"`
+}
