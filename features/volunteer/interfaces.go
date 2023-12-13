@@ -33,6 +33,7 @@ type Repository interface {
 	CheckUser(userID int) bool
 	FindUserInVacancy(vacancyID, userID int) bool
 	SelectAllSkills() ([]dtos.Skill, error)
+	GetDeviceToken(userID int) string
 }
 
 type Usecase interface {

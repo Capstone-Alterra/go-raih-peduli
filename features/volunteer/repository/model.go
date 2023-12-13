@@ -396,3 +396,13 @@ func (mdl *model) SelectAllSkills() ([]dtos.Skill, error) {
 
 	return skills, nil
 }
+
+func (mdl *model) GetDeviceToken(userID int) string {
+	var result volunteer.NotificationToken
+
+	if err := mdl.collection.FindOne(context.Background(), bson.M{"user_id": userID}).Decode(&result); err != nil {
+		return ""
+	}
+
+	return result.DeviceToken
+}

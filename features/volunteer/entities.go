@@ -63,3 +63,7 @@ type Skill struct {
 	ID   int    `gorm:"type:int(11)"`
 	Name string `gorm:"type:varchar(255)"`
 }
+
+type NotificationToken struct {
+	DeviceToken string `bson:"device_token" json:"device_token"`
+}
