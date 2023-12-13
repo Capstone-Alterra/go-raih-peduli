@@ -75,11 +75,15 @@ func (mdl *model) HistoryVolunteerVacanciesCreatedByUser(userID int) ([]history.
 	return volunteer_vacancies, nil
 }
 
-func (mdl *model) HistoryVolunteerVacanciesRegisterByUser(userID int) ([]history.Volunteer, error) {
-	var volunteers []history.Volunteer
+func (mdl *model) HistoryVolunteerVacanciesRegisterByUser(userID int) ([]history.VolunteerRegistered, error) {
+	var volunteers []history.VolunteerRegistered
 
-	if err := mdl.db.Table("volunteer_relations AS vr").
-		Select("vr.id", "users.email", "users.fullname", "users.address", "users.phone_number", "users.gender", "users.nik", "vr.skills", "vr.reason", "vr.resume", "vr.status", "vr.photo").Joins("JOIN users ON users.id = vr.user_id").Where("vr.user_id = ? ", userID).Find(&volunteers).Error; err != nil {
+	if err := mdl.db.Table("volunteer_relations").
+		Select("volunteer_relations.id, users.email, users.fullname, users.address, users.phone_number, users.gender, users.nik, volunteer_relations.skills, volunteer_relations.resume, volunteer_relations.reason, users.profile_picture, volunteer_relations.volunteer_id, volunteer_relations.status, volunteer_vacancies.title, volunteer_vacancies.photo").
+		Joins("JOIN volunteer_vacancies ON volunteer_relations.volunteer_id = volunteer_vacancies.id").
+		Joins("JOIN users ON volunteer_relations.user_id = users.id").
+		Where("volunteer_relations.user_id = ?", userID).
+		Find(&volunteers).Error; err != nil {
 		return nil, err
 	}
 
