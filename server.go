@@ -90,9 +90,10 @@ func FundraiseHandler() fundraise.Handler {
 	clStorage := helpers.NewCloudStorage(config.CLOUD_PROJECT_ID, config.CLOUD_BUCKET_NAME, "fundraises/")
 	mongoDB := utils.ConnectMongo()
 	collection := mongoDB.Collection("bookmarks")
+	nfService := helpers.NewNotificationService()
 
 	repo := fr.New(db, clStorage, collection)
-	uc := fu.New(repo, validation)
+	uc := fu.New(repo, validation, nfService)
 	return fh.New(uc)
 }
 
@@ -133,6 +134,7 @@ func AuthHandler() auth.Handler {
 	redis := utils.ConnectRedis()
 	mongoDB := utils.ConnectMongo()
 	collection := mongoDB.Collection("devices")
+
 
 	repo := ar.New(db, redis, smtpConfig, collection)
 	uc := au.New(repo, jwt, hash, generator, validation)

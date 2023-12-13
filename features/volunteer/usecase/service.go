@@ -20,6 +20,7 @@ import (
 type service struct {
 	model      volunteer.Repository
 	validation helpers.ValidationInterface
+	nsRequest  helpers.NotificationInterface
 }
 
 func New(model volunteer.Repository, validation helpers.ValidationInterface) volunteer.Usecase {
@@ -196,6 +197,8 @@ func (svc *service) ModifyVacancyStatus(input dtos.StatusVacancies, oldData dtos
 		return false, errMap
 	}
 
+	deviceToken := svc.model.GetDeviceToken(oldData.UserID)
+
 	var newVacancy volunteer.VolunteerVacancies
 
 	newVacancy.ID = oldData.ID
@@ -205,6 +208,13 @@ func (svc *service) ModifyVacancyStatus(input dtos.StatusVacancies, oldData dtos
 			return false, []string{"rejected_reason field is required when the status is rejected"}
 		}
 		newVacancy.RejectedReason = input.RejectedReason
+		message := "Terima kasih sudah mengajukan lowongan relawan. Saat ini, kami belum bisa menyetujui permohonan ini karena.\n\nAlasan : " + input.RejectedReason + "\n\nTerima kasih atas partisipasinya"
+		err := svc.nsRequest.SendNotifications(deviceToken, "Pengajuan Lowongan Relawan Ditolak", message)
+		log.Error("Send Notifications Error: ", err)
+	} else {
+		message := "Kami ingin memberitahu bahwa pengajuan lowongan relawan Anda untuk " + oldData.Title + " telah diterima! Terima kasih atas langkah inisiatif Anda."
+		err := svc.nsRequest.SendNotifications(deviceToken, "Pengajuan Lowongan Relawan Diterima", message)
+		log.Error("Send Notifications Error: ", err)
 	}
 
 	rowsAffected := svc.model.UpdateVacancy(newVacancy)
@@ -224,10 +234,13 @@ func (svc *service) UpdateStatusRegistrar(input dtos.StatusRegistrar, registrarI
 	}
 
 	registrar := svc.model.SelectRegistrarByID(registrarID)
-
 	if registrar == nil {
 		return false, nil
 	}
+
+	vacancy := svc.model.SelectVacancyByID(registrar.VolunteerID)
+
+	deviceToken := svc.model.GetDeviceToken(registrar.UserID)
 
 	registrar.Status = input.Status
 	if input.Status == "rejected" {
@@ -235,6 +248,13 @@ func (svc *service) UpdateStatusRegistrar(input dtos.StatusRegistrar, registrarI
 			return false, []string{"rejected_reason field is required when the status is rejected"}
 		}
 		registrar.RejectedReason = input.RejectedReason
+		message := "Terima kasih sudah mengajukan diri sebagai relawan. Saat ini, kami belum bisa menyetujui permohonan Anda sebagai relawan di " + vacancy.Title + ".\n\nAlasan : " + input.RejectedReason + "\n\nTerima kasih atas partisipasinya"
+		err := svc.nsRequest.SendNotifications(deviceToken, "Pengajuan Relawan Ditolak", message)
+		log.Error("Send Notifications Error: ", err)
+	} else {
+		message := "Kami ingin memberitahu Anda bahwa pengajuan sebagai relawan di " + vacancy.Title + " telah diterima! Terima kasih atas minat dan dedikasi Anda."
+		err := svc.nsRequest.SendNotifications(deviceToken, "Pengajuan Relawan Diterima", message)
+		log.Error("Send Notifications Error: ", err)
 	}
 
 	rowsAffected := svc.model.UpdateStatusRegistrar(*registrar)
@@ -275,9 +295,6 @@ func (svc *service) CreateVacancy(newVolunteer dtos.InputVacancy, UserID int, fi
 	if errorList, err := svc.ValidateInput(newVolunteer, file); err != nil || len(errorList) > 0 {
 		return nil, errorList, err
 	}
-	// if errMap := svc.validation.ValidateRequest(newVolunteer); errMap != nil {
-	// 	return nil, errMap, errors.New("validation error")
-	// }
 
 	vacancy := volunteer.VolunteerVacancies{}
 
@@ -405,11 +422,6 @@ func (svc *service) FindDetailVolunteers(vacancyID, volunteerID int) *dtos.ResRe
 	res.Photo = volunteer.Photo
 	res.Status = volunteer.Status
 
-	// err := smapping.FillStruct(&res, smapping.MapFields(volunteer))
-	// if err != nil {
-	// 	log.Error("Failed mapping into dtos")
-	// 	return nil
-	// }
 	return &res
 
 }
@@ -444,10 +456,10 @@ func (svc *service) ValidateInput(input dtos.InputVacancy, file multipart.File) 
 		errorList = append(errorList, "description must be at least 50 characters")
 	}
 
-	if len(input.SkillsRequired) <= 1 {
+	if len(input.SkillsRequired) < 1 {
 		errorList = append(errorList, "skillsRequired must be at least 1 word")
 	}
-	if input.NumberOfVacancies <= 1 {
+	if input.NumberOfVacancies < 1 {
 		errorList = append(errorList, "numberOfVacancies must be greater than 1")
 	}
 	if input.ApplicationDeadline.Before(time.Now()) {
