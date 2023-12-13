@@ -19,12 +19,14 @@ import (
 type service struct {
 	model      fundraise.Repository
 	validation helpers.ValidationInterface
+	nsRequest  helpers.NotificationInterface
 }
 
-func New(model fundraise.Repository, validation helpers.ValidationInterface) fundraise.Usecase {
+func New(model fundraise.Repository, validation helpers.ValidationInterface, nsRequest helpers.NotificationInterface) fundraise.Usecase {
 	return &service{
 		model:      model,
 		validation: validation,
+		nsRequest: nsRequest,
 	}
 }
 
@@ -243,6 +245,8 @@ func (svc *service) ModifyStatus(input dtos.InputFundraiseStatus, oldData dtos.F
 		return nil, err
 	}
 
+	var message = ""
+
 	newFundraise.Status = input.Status
 	if input.Status == "rejected" {
 		if input.RejectedReason == "" {
@@ -253,17 +257,27 @@ func (svc *service) ModifyStatus(input dtos.InputFundraiseStatus, oldData dtos.F
 			return []string{"rejected_reason must be at least 20 characters"}, errors.New("characters must be at least 20")
 		}
 		newFundraise.RejectedReason = input.RejectedReason
+
+		message = "Terima kasih sudah mengajukan penggalangan dana. Saat ini, kami belum bisa menyetujui permohonan ini.\n\nAlasan : " + input.RejectedReason + "\n\nTerima kasih atas partisipasinya"
 	}
 
 	if input.Status == "accepted" {
 		if _, err := svc.model.SelectByTitle(newFundraise.Title); err == nil {
 			return nil, errors.New("there is a fundraise that has the same title and status as accepted. change the title first before changing status to accepted")
 		}
+		
+		message = "Kami ingin memberitahu bahwa pengajuan penggalangan dana Anda untuk " + oldData.Title + " telah diterima! Terima kasih atas langkah inisiatif Anda."
 	}
 
 	if err := svc.model.Update(newFundraise); err != nil {
 		logrus.Error(err)
 		return nil, err
+	}
+
+	deviceToken := svc.model.GetDeviceToken(oldData.UserID)
+
+	if deviceToken != "" && message != "" { 
+		svc.nsRequest.SendNotifications(deviceToken, "Penerimaan Penggalangan Dana", message)
 	}
 
 	return nil, nil

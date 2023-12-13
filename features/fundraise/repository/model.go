@@ -246,3 +246,14 @@ func (mdl *model) SelectByTitle(title string) (*fundraise.Fundraise, error) {
 
 	return &fundraise, nil
 }
+
+func (mdl *model) GetDeviceToken(userID int) string {
+	var result fundraise.NotificationToken
+
+	if err := mdl.collection.FindOne(context.Background(), bson.M{"user_id": userID}).Decode(&result); err != nil {
+		logrus.Error(err)
+		return ""
+	}
+
+	return result.DeviceToken
+}
