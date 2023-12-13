@@ -101,6 +101,11 @@ func (svc *service) Create(newData dtos.InputUser) (*dtos.ResUser, []string, err
 
 	otp := svc.generator.GenerateRandomOTP()
 
+	err = svc.model.InsertVerification(userModel.Email, otp)
+	if err != nil {
+		logrus.Error(err)
+	}
+
 	err = svc.model.SendOTPByEmail(userModel.Fullname, userModel.Email, otp, "1")
 	if err != nil {
 		return nil, nil, err
@@ -237,6 +242,11 @@ func (svc *service) ForgetPassword(data dtos.ForgetPassword) error {
 	}
 
 	otp := svc.generator.GenerateRandomOTP()
+
+	err = svc.model.InsertVerification(data.Email, otp)
+	if err != nil {
+		logrus.Error(err)
+	}
 
 	err = svc.model.SendOTPByEmail(user.Fullname, user.Email, otp, "2")
 	if err != nil {

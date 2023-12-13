@@ -60,7 +60,7 @@ func (svc *service) FindAllVacancies(page, size int, searchAndFilter dtos.Search
 		data.UserID = volunteer.UserID
 		data.Title = volunteer.Title
 		data.Description = volunteer.Description
-		data.SkillsRequired = strings.Split(volunteer.SkillsRequired, ",")
+		data.SkillsRequired = strings.Split(volunteer.SkillsRequired, ", ")
 		data.NumberOfVacancies = volunteer.NumberOfVacancies
 		data.ApplicationDeadline = volunteer.ApplicationDeadline
 		data.ContactEmail = volunteer.ContactEmail
@@ -129,7 +129,7 @@ func (svc *service) FindVacancyByID(vacancyID, ownerID int) *dtos.ResVacancy {
 	res.UserID = vacancy.UserID
 	res.Title = vacancy.Title
 	res.Description = vacancy.Description
-	res.SkillsRequired = strings.Split(vacancy.SkillsRequired, ",")
+	res.SkillsRequired = strings.Split(vacancy.SkillsRequired, ", ")
 	res.NumberOfVacancies = vacancy.NumberOfVacancies
 	res.ApplicationDeadline = vacancy.ApplicationDeadline
 	res.ContactEmail = vacancy.ContactEmail
