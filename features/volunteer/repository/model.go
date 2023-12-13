@@ -198,13 +198,13 @@ func (mdl *model) UploadFile(file multipart.File, oldFilename string) (string, e
 	var objectName string
 
 	if file == nil {
-		return "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/vacancies/volunteer-vacancy.jpg", nil
+		return "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/vacancies/default", nil
 	}
 
 	if oldFilename != "" {
 		objectName = oldFilename[urlLength:]
 
-		if objectName == "volunteer-vacancy.jpg" {
+		if objectName == "default" {
 			objectName = ""
 		} else if err := mdl.clStorage.DeleteFile(objectName); err != nil {
 			return "", err
@@ -313,7 +313,7 @@ func (mdl *model) SelectVolunteersByVacancyID(vacancyID int, name string, page, 
 	offset := (page - 1) * size
 
 	result := mdl.db.Table("volunteer_relations AS vr").
-		Select("vr.id","users.email", "users.fullname", "users.address","users.phone_number", "users.gender", "users.nik", "vr.skills", "vr.reason", "vr.resume", "vr.status", "vr.photo").
+		Select("vr.id", "users.email", "users.fullname", "users.address", "users.phone_number", "users.gender", "users.nik", "vr.skills", "vr.reason", "vr.resume", "vr.status", "vr.photo").
 		Joins("JOIN users ON users.id = vr.user_id").
 		Where("vr.volunteer_id = ?", vacancyID).
 		Where("users.fullname LIKE ?", "%"+name+"%").
@@ -330,7 +330,7 @@ func (mdl *model) SelectVolunteerDetails(vacancyID int, volunteerID int) *volunt
 	var volunteers volunteer.Volunteer
 
 	result := mdl.db.Table("volunteer_relations AS vr").
-		Select("vr.id","users.email", "users.fullname", "users.address","users.phone_number", "users.gender", "users.nik", "vr.skills", "vr.reason", "vr.resume", "vr.status", "vr.photo").
+		Select("vr.id", "users.email", "users.fullname", "users.address", "users.phone_number", "users.gender", "users.nik", "vr.skills", "vr.reason", "vr.resume", "vr.status", "vr.photo").
 		Joins("JOIN users ON users.id = vr.user_id").
 		Where("vr.volunteer_id = ? AND vr.id = ?", vacancyID, volunteerID).
 		Find(&volunteers)
