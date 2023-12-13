@@ -98,8 +98,6 @@ func (svc *service) FindAllHistoryVolunteerVacanciesCreatedByUser(userID int) ([
 		data.Status = volunteer.Status
 		data.RejectedReason = volunteer.RejectedReason
 		data.CreatedAt = volunteer.CreatedAt
-		data.UpdatedAt = volunteer.UpdatedAt
-		data.DeletedAt = volunteer.DeletedAt
 
 		if bookmarkIDs != nil {
 			bookmarkID, ok := bookmarkIDs[data.ID]
@@ -142,6 +140,7 @@ func (svc *service) FindAllHistoryVolunteerVacanciesRegisterByUser(userID int) (
 		data.VacancyName = volunteer.VolunteerName
 		data.VacancyPhoto = volunteer.VolunteerPhoto
 		data.PostType = "registered_volunteer_vacancies"
+		data.CreatedAt = volunteer.CreatedAt
 		volunteers = append(volunteers, data)
 	}
 
@@ -168,6 +167,7 @@ func (svc *service) FindAllHistoryUserTransaction(userID int) ([]dtos.ResTransac
 		data.FundraiseName = donation.Fundraise.Title
 		data.FundraisePhoto = donation.Fundraise.Photo
 		data.PostType = "donations"
+		data.CreatedAt = donation.CreatedAt
 		switch donation.Status {
 		case "2":
 			data.Status = "Waiting For Payment"

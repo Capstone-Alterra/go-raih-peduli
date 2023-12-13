@@ -62,6 +62,11 @@ func (svc *service) Register(newData dtos.InputUser) (*dtos.ResUser, []string, e
 
 	otp := svc.generator.GenerateRandomOTP()
 
+	err = svc.model.InsertVerification(userModel.Email, otp)
+	if err != nil {
+		logrus.Error(err)
+	}
+
 	err = svc.model.SendOTPByEmail(userModel.Fullname, userModel.Email, otp, "1")
 	if err != nil {
 		return nil, nil, err
@@ -114,7 +119,7 @@ func (svc *service) Login(data dtos.RequestLogin) (*dtos.LoginResponse, []string
 	if err := svc.model.InsertToken(user.ID, data.FCMTokens); err != nil {
 		return nil, nil, err
 	}
-	
+
 	if user.Personalization == nil {
 		resUser.PersonalizeUser = true
 	}
@@ -132,7 +137,13 @@ func (svc *service) ResendOTP(email string) bool {
 	if err != nil {
 		return false
 	}
-	err = svc.model.SendOTPByEmail(data.Fullname,email, otp, "1")
+
+	err = svc.model.InsertVerification(email, otp)
+	if err != nil {
+		logrus.Error(err)
+	}
+
+	err = svc.model.SendOTPByEmail(data.Fullname, email, otp, "1")
 	if err != nil {
 		return false
 	}
