@@ -65,6 +65,7 @@ type VolunteerRegistered struct {
 	Resume         string `gorm:"column:resume"`
 	Status         string `gorm:"column:status"`
 	RejectedReason string `gorm:"column:rejected_reason"`
+	CreatedAt      time.Time
 }
 
 type Transaction struct {
