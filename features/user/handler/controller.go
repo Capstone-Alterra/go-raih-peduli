@@ -223,7 +223,7 @@ func (ctl *controller) ForgetPassword() echo.HandlerFunc {
 
 		err := ctl.service.ForgetPassword(email)
 		if err != nil {
-			return ctx.JSON(404, helpers.Response("user not found"))
+			return ctx.JSON(404, helpers.Response(err.Error()))
 		}
 
 		return ctx.JSON(200, helpers.Response("OTP has been sent via email"))
@@ -256,7 +256,7 @@ func (ctl *controller) ResetPassword() echo.HandlerFunc {
 		err := ctl.service.ResetPassword(input)
 
 		if err != nil {
-			return ctx.JSON(500, helpers.Response("something went wrong"))
+			return ctx.JSON(500, helpers.Response(err.Error()))
 		}
 
 		return ctx.JSON(200, helpers.Response("success reset password"))
