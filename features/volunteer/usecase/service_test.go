@@ -19,7 +19,8 @@ import (
 func TestFindAllVacancies(t *testing.T) {
 	repo := mocks.NewRepository(t)
 	validation := helperMocks.NewValidationInterface(t)
-	service := New(repo, validation)
+	notification := helperMocks.NewNotificationInterface(t)
+	service := New(repo, validation, notification)
 
 	var bookMarkIDs = map[int]string{
 		1: "123456",
@@ -144,7 +145,8 @@ func TestFindAllVacancies(t *testing.T) {
 func TestFindVacancyByID(t *testing.T) {
 	repo := mocks.NewRepository(t)
 	validation := helperMocks.NewValidationInterface(t)
-	service := New(repo, validation)
+	notification := helperMocks.NewNotificationInterface(t)
+	service := New(repo, validation, notification)
 
 	vacancy := volunteer.VolunteerVacancies{
 		ID:                1,
@@ -194,7 +196,8 @@ func TestFindVacancyByID(t *testing.T) {
 func TestModifyVacancy(t *testing.T) {
 	repo := mocks.NewRepository(t)
 	validation := helperMocks.NewValidationInterface(t)
-	service := New(repo, validation)
+	notification := helperMocks.NewNotificationInterface(t)
+	service := New(repo, validation, notification)
 
 	var file multipart.File
 
@@ -314,7 +317,8 @@ func TestModifyVacancy(t *testing.T) {
 func TestModifyVacancyStatus(t *testing.T) {
 	repo := mocks.NewRepository(t)
 	validation := helperMocks.NewValidationInterface(t)
-	service := New(repo, validation)
+	notification := helperMocks.NewNotificationInterface(t)
+	service := New(repo, validation, notification)
 
 	var statusAccepted = dtos.StatusVacancies{
 		Status: "accepted",
@@ -362,6 +366,9 @@ func TestModifyVacancyStatus(t *testing.T) {
 
 	t.Run("Success Update Status Accepted", func(t *testing.T) {
 		validation.On("ValidateRequest", statusAccepted).Return(nil).Once()
+		repo.On("GetDeviceToken", oldData.ID).Return("deviceToken").Once()
+		message := "Kami ingin memberitahu bahwa pengajuan lowongan relawan Anda untuk " + oldData.Title + " telah diterima! Terima kasih atas langkah inisiatif Anda."
+		notification.On("SendNotifications", "deviceToken", "Pengajuan Lowongan Relawan Diterima", message).Return(nil).Once()
 		repo.On("UpdateVacancy", newVacancyAccepted).Return(int64(1)).Once()
 
 		result, errMap := service.ModifyVacancyStatus(statusAccepted, oldData)
@@ -373,6 +380,9 @@ func TestModifyVacancyStatus(t *testing.T) {
 
 	t.Run("Success Update Status Rejected", func(t *testing.T) {
 		validation.On("ValidateRequest", statusRejected).Return(nil).Once()
+		repo.On("GetDeviceToken", oldData.ID).Return("deviceToken").Once()
+		message := "Terima kasih sudah mengajukan lowongan relawan. Saat ini, kami belum bisa menyetujui permohonan ini karena.\n\nAlasan : " + statusRejected.RejectedReason + "\n\nTerima kasih atas partisipasinya"
+		notification.On("SendNotifications", "deviceToken", "Pengajuan Lowongan Relawan Ditolak", message).Return(nil).Once()
 		repo.On("UpdateVacancy", newVacancyRejected).Return(int64(1)).Once()
 
 		result, errMap := service.ModifyVacancyStatus(statusRejected, oldData)
@@ -394,6 +404,7 @@ func TestModifyVacancyStatus(t *testing.T) {
 
 	t.Run("Status Rejected Not Found", func(t *testing.T) {
 		validation.On("ValidateRequest", statusRejectedWithoutReason).Return(nil).Once()
+		repo.On("GetDeviceToken", oldData.ID).Return("deviceToken").Once()
 
 		result, errMap := service.ModifyVacancyStatus(statusRejectedWithoutReason, oldData)
 		assert.NotNil(t, errMap)
@@ -404,6 +415,9 @@ func TestModifyVacancyStatus(t *testing.T) {
 
 	t.Run("Update Data Failed", func(t *testing.T) {
 		validation.On("ValidateRequest", statusAccepted).Return(nil).Once()
+		repo.On("GetDeviceToken", oldData.ID).Return("deviceToken").Once()
+		message := "Kami ingin memberitahu bahwa pengajuan lowongan relawan Anda untuk " + oldData.Title + " telah diterima! Terima kasih atas langkah inisiatif Anda."
+		notification.On("SendNotifications", "deviceToken", "Pengajuan Lowongan Relawan Diterima", message).Return(nil).Once()
 		repo.On("UpdateVacancy", newVacancyAccepted).Return(int64(0)).Once()
 
 		result, errMap := service.ModifyVacancyStatus(statusAccepted, oldData)
@@ -417,7 +431,8 @@ func TestModifyVacancyStatus(t *testing.T) {
 func TestUpdateStatusRegistrar(t *testing.T) {
 	repo := mocks.NewRepository(t)
 	validation := helperMocks.NewValidationInterface(t)
-	service := New(repo, validation)
+	notification := helperMocks.NewNotificationInterface(t)
+	service := New(repo, validation, notification)
 
 	var statusAccepted = dtos.StatusRegistrar{
 		Status: "accepted",
@@ -433,12 +448,16 @@ func TestUpdateStatusRegistrar(t *testing.T) {
 	}
 
 	var registrarAccepted = volunteer.VolunteerRelations{
-		ID:     1,
-		Status: "accepted",
+		ID:          1,
+		UserID:      1,
+		VolunteerID: 1,
+		Status:      "accepted",
 	}
 
 	var registrarRejected = volunteer.VolunteerRelations{
 		ID:             1,
+		UserID:         1,
+		VolunteerID:    1,
 		Status:         "rejected",
 		RejectedReason: "too kind",
 	}
@@ -447,9 +466,29 @@ func TestUpdateStatusRegistrar(t *testing.T) {
 		"rejected_reason required",
 	}
 
+	var vacancy = volunteer.VolunteerVacancies{
+		ID:                1,
+		UserID:            1,
+		Title:             "bencana alam gunung meletus",
+		Description:       "terjadi tsunami di suatu pantai",
+		SkillsRequired:    "berenang",
+		NumberOfVacancies: 15,
+		ContactEmail:      "081221278393",
+		Province:          "Jawa Barat",
+		City:              "Banten",
+		SubDistrict:       "Rangkasbitung",
+		DetailLocation:    "suatu daerah di banten",
+		Photo:             "https://exampleurl.com/example",
+		Status:            "pending",
+	}
+
 	t.Run("Success Update Status Accepted", func(t *testing.T) {
 		validation.On("ValidateRequest", statusAccepted).Return(nil).Once()
 		repo.On("SelectRegistrarByID", registrarAccepted.ID).Return(&registrarAccepted).Once()
+		repo.On("SelectVacancyByID", registrarAccepted.VolunteerID).Return(&vacancy).Once()
+		repo.On("GetDeviceToken", registrarAccepted.UserID).Return("deviceToken").Once()
+		message := "Kami ingin memberitahu Anda bahwa pengajuan sebagai relawan di " + vacancy.Title + " telah diterima! Terima kasih atas minat dan dedikasi Anda."
+		notification.On("SendNotifications", "deviceToken", "Pengajuan Relawan Diterima", message).Return(nil).Once()
 		repo.On("UpdateStatusRegistrar", registrarAccepted).Return(int64(1)).Once()
 
 		result, errMap := service.UpdateStatusRegistrar(statusAccepted, 1)
@@ -463,6 +502,10 @@ func TestUpdateStatusRegistrar(t *testing.T) {
 	t.Run("Success Update Status Rejected", func(t *testing.T) {
 		validation.On("ValidateRequest", statusRejected).Return(nil).Once()
 		repo.On("SelectRegistrarByID", registrarRejected.ID).Return(&registrarRejected).Once()
+		repo.On("SelectVacancyByID", registrarRejected.VolunteerID).Return(&vacancy).Once()
+		repo.On("GetDeviceToken", registrarRejected.UserID).Return("deviceToken").Once()
+		message := "Terima kasih sudah mengajukan diri sebagai relawan. Saat ini, kami belum bisa menyetujui permohonan Anda sebagai relawan di " + vacancy.Title + ".\n\nAlasan : " + registrarRejected.RejectedReason + "\n\nTerima kasih atas partisipasinya"
+		notification.On("SendNotifications", "deviceToken", "Pengajuan Relawan Ditolak", message).Return(nil).Once()
 		repo.On("UpdateStatusRegistrar", registrarRejected).Return(int64(1)).Once()
 
 		result, errMap := service.UpdateStatusRegistrar(statusRejected, 1)
@@ -498,6 +541,8 @@ func TestUpdateStatusRegistrar(t *testing.T) {
 	t.Run("Rejected Reason Not Found", func(t *testing.T) {
 		validation.On("ValidateRequest", statusRejectedWithoutReason).Return(nil).Once()
 		repo.On("SelectRegistrarByID", registrarRejected.ID).Return(&registrarRejected).Once()
+		repo.On("SelectVacancyByID", registrarRejected.VolunteerID).Return(&vacancy).Once()
+		repo.On("GetDeviceToken", registrarRejected.UserID).Return("deviceToken").Once()
 
 		result, errMap := service.UpdateStatusRegistrar(statusRejectedWithoutReason, 1)
 		assert.NotNil(t, errMap)
@@ -510,6 +555,10 @@ func TestUpdateStatusRegistrar(t *testing.T) {
 	t.Run("Update Data Failed", func(t *testing.T) {
 		validation.On("ValidateRequest", statusAccepted).Return(nil).Once()
 		repo.On("SelectRegistrarByID", registrarAccepted.ID).Return(&registrarAccepted).Once()
+		repo.On("SelectVacancyByID", registrarAccepted.VolunteerID).Return(&vacancy).Once()
+		repo.On("GetDeviceToken", registrarAccepted.UserID).Return("deviceToken").Once()
+		message := "Kami ingin memberitahu Anda bahwa pengajuan sebagai relawan di " + vacancy.Title + " telah diterima! Terima kasih atas minat dan dedikasi Anda."
+		notification.On("SendNotifications", "deviceToken", "Pengajuan Relawan Diterima", message).Return(nil).Once()
 		repo.On("UpdateStatusRegistrar", registrarAccepted).Return(int64(0)).Once()
 
 		result, errMap := service.UpdateStatusRegistrar(statusAccepted, 1)
@@ -524,7 +573,8 @@ func TestUpdateStatusRegistrar(t *testing.T) {
 func TestCreateVacancy(t *testing.T) {
 	repo := mocks.NewRepository(t)
 	validation := helperMocks.NewValidationInterface(t)
-	service := New(repo, validation)
+	notification := helperMocks.NewNotificationInterface(t)
+	service := New(repo, validation, notification)
 
 	file, err := os.Open("file-mock.jpg")
 	if err != nil {
@@ -697,7 +747,8 @@ func TestCreateVacancy(t *testing.T) {
 func TestDeleteVacancy(t *testing.T) {
 	repo := mocks.NewRepository(t)
 	validation := helperMocks.NewValidationInterface(t)
-	service := New(repo, validation)
+	notification := helperMocks.NewNotificationInterface(t)
+	service := New(repo, validation, notification)
 
 	t.Run("Succes deleted vacancy", func(t *testing.T) {
 		volunteerID := 1
@@ -747,7 +798,8 @@ func TestDeleteVacancy(t *testing.T) {
 func TestRegisterVacancy(t *testing.T) {
 	repo := mocks.NewRepository(t)
 	validation := helperMocks.NewValidationInterface(t)
-	service := New(repo, validation)
+	notification := helperMocks.NewNotificationInterface(t)
+	service := New(repo, validation, notification)
 
 	var file multipart.File
 
@@ -829,7 +881,8 @@ func TestRegisterVacancy(t *testing.T) {
 func TestFindAllVolunteersByVacancyID(t *testing.T) {
 	repo := mocks.NewRepository(t)
 	validation := helperMocks.NewValidationInterface(t)
-	service := New(repo, validation)
+	notification := helperMocks.NewNotificationInterface(t)
+	service := New(repo, validation, notification)
 
 	var volunteers = []volunteer.Volunteer{
 		{
@@ -897,7 +950,8 @@ func TestFindAllVolunteersByVacancyID(t *testing.T) {
 func TestFindDetailVolunteers(t *testing.T) {
 	repo := mocks.NewRepository(t)
 	validation := helperMocks.NewValidationInterface(t)
-	service := New(repo, validation)
+	notification := helperMocks.NewNotificationInterface(t)
+	service := New(repo, validation, notification)
 
 	var volunteer = volunteer.Volunteer{
 		ID:          1,
@@ -935,7 +989,8 @@ func TestFindDetailVolunteers(t *testing.T) {
 func TestCheckUser(t *testing.T) {
 	repo := mocks.NewRepository(t)
 	validation := helperMocks.NewValidationInterface(t)
-	service := New(repo, validation)
+	notification := helperMocks.NewNotificationInterface(t)
+	service := New(repo, validation, notification)
 
 	t.Run("Success", func(t *testing.T) {
 		repo.On("CheckUser", 1).Return(true).Once()
@@ -957,7 +1012,8 @@ func TestCheckUser(t *testing.T) {
 func TestFindUserInVacancy(t *testing.T) {
 	repo := mocks.NewRepository(t)
 	validation := helperMocks.NewValidationInterface(t)
-	service := New(repo, validation)
+	notification := helperMocks.NewNotificationInterface(t)
+	service := New(repo, validation, notification)
 
 	t.Run("Success", func(t *testing.T) {
 		repo.On("FindUserInVacancy", 1, 1).Return(true).Once()
@@ -979,7 +1035,8 @@ func TestFindUserInVacancy(t *testing.T) {
 func TestFindAllSkills(t *testing.T) {
 	repo := mocks.NewRepository(t)
 	validation := helperMocks.NewValidationInterface(t)
-	service := New(repo, validation)
+	notification := helperMocks.NewNotificationInterface(t)
+	service := New(repo, validation, notification)
 
 	var skills = []dtos.Skill{
 		{

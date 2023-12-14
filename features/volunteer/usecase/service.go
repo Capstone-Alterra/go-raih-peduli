@@ -23,10 +23,11 @@ type service struct {
 	nsRequest  helpers.NotificationInterface
 }
 
-func New(model volunteer.Repository, validation helpers.ValidationInterface) volunteer.Usecase {
+func New(model volunteer.Repository, validation helpers.ValidationInterface, nsRequest helpers.NotificationInterface) volunteer.Usecase {
 	return &service{
 		model:      model,
 		validation: validation,
+		nsRequest:  nsRequest,
 	}
 }
 

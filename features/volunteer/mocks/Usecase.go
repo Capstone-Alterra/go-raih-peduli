@@ -90,17 +90,17 @@ func (_m *Usecase) FindAllSkills() ([]dtos.Skill, error) {
 	return r0, r1
 }
 
-// FindAllVacancies provides a mock function with given fields: page, size, searchAndFilter, ownerID, status
-func (_m *Usecase) FindAllVacancies(page int, size int, searchAndFilter dtos.SearchAndFilter, ownerID int, status string) ([]dtos.ResVacancy, int64) {
-	ret := _m.Called(page, size, searchAndFilter, ownerID, status)
+// FindAllVacancies provides a mock function with given fields: page, size, searchAndFilter, ownerID, suffix
+func (_m *Usecase) FindAllVacancies(page int, size int, searchAndFilter dtos.SearchAndFilter, ownerID int, suffix string) ([]dtos.ResVacancy, int64) {
+	ret := _m.Called(page, size, searchAndFilter, ownerID, suffix)
 
 	var r0 []dtos.ResVacancy
 	var r1 int64
 	if rf, ok := ret.Get(0).(func(int, int, dtos.SearchAndFilter, int, string) ([]dtos.ResVacancy, int64)); ok {
-		return rf(page, size, searchAndFilter, ownerID, status)
+		return rf(page, size, searchAndFilter, ownerID, suffix)
 	}
 	if rf, ok := ret.Get(0).(func(int, int, dtos.SearchAndFilter, int, string) []dtos.ResVacancy); ok {
-		r0 = rf(page, size, searchAndFilter, ownerID, status)
+		r0 = rf(page, size, searchAndFilter, ownerID, suffix)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]dtos.ResVacancy)
@@ -108,7 +108,7 @@ func (_m *Usecase) FindAllVacancies(page int, size int, searchAndFilter dtos.Sea
 	}
 
 	if rf, ok := ret.Get(1).(func(int, int, dtos.SearchAndFilter, int, string) int64); ok {
-		r1 = rf(page, size, searchAndFilter, ownerID, status)
+		r1 = rf(page, size, searchAndFilter, ownerID, suffix)
 	} else {
 		r1 = ret.Get(1).(int64)
 	}
