@@ -202,7 +202,7 @@ func (svc *service) Modify(fundraiseData dtos.InputFundraise, file multipart.Fil
 		}
 
 		if err := svc.model.DeleteFile(oldFilename); err != nil {
-			return nil, err
+			logrus.Error(err)
 		}
 
 		imageURL, err := svc.model.UploadFile(file)
