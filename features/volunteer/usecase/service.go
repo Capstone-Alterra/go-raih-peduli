@@ -81,7 +81,7 @@ func (svc *service) FindAllVacancies(page, size int, searchAndFilter dtos.Search
 			bookmardID, ok := bookmarkIDs[data.ID]
 
 			if ok {
-				data.BookmarkID = &bookmardID
+				data.BookmarkID = bookmardID
 			}
 		}
 
@@ -123,7 +123,7 @@ func (svc *service) FindVacancyByID(vacancyID, ownerID int) *dtos.ResVacancy {
 		bookmarkID = svc.model.SelectBookmarkByVacancyAndOwnerID(vacancyID, ownerID)
 
 		if bookmarkID != "" {
-			res.BookmarkID = &bookmarkID
+			res.BookmarkID = bookmarkID
 		}
 	}
 

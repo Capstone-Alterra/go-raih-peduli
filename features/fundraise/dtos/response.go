@@ -19,7 +19,7 @@ type ResFundraise struct {
 	RejectedReason string    `json:"rejected_reason"`
 	UserID         int       `json:"user_id"`
 
-	BookmarkID *string `json:"bookmark_id"`
+	BookmarkID string `json:"bookmark_id"`
 
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
@@ -41,7 +41,7 @@ type FundraiseDetails struct {
 	UserFullname   string	 `json:"user_fullname"`
 	UserPhoto	   string 	 `json:"user_photo"`
 
-	BookmarkID *string `json:"bookmark_id"`
+	BookmarkID string `json:"bookmark_id"`
 
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
