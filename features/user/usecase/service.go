@@ -231,14 +231,7 @@ func (svc *service) ForgetPassword(data dtos.ForgetPassword) error {
 	user, err := svc.model.SelectByEmail(data.Email)
 
 	if err != nil {
-		return err
-	}
-
-	rowsAffected := svc.model.UpdateUser(*user)
-
-	if rowsAffected == 0 {
-		log.Error("There is No Customer Updated!")
-		return errors.New("There is No Customer Updated!")
+		return errors.New("user not found")
 	}
 
 	otp := svc.generator.GenerateRandomOTP()
@@ -278,16 +271,11 @@ func (svc *service) ResetPassword(newData dtos.ResetPassword) error {
 	user, err := svc.model.SelectByEmail(newData.Email)
 
 	if err != nil {
-		return err
+		return errors.New("user not found")
 	}
 
 	user.Password = svc.hash.HashPassword(newData.Password)
-	rowsAffected := svc.model.UpdateUser(*user)
-
-	if rowsAffected == 0 {
-		log.Error("There is No Customer Updated!")
-		return errors.New("There is No Customer Updated!")
-	}
+	_ = svc.model.UpdateUser(*user)
 
 	return nil
 }
