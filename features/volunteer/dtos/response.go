@@ -22,7 +22,7 @@ type ResVacancy struct {
 	Photo               string         `json:"photo"`
 	Status              string         `json:"status"`
 	TotalRegistrar      int            `json:"total_registrants"`
-	BookmarkID          *string        `json:"bookmark_id"`
+	BookmarkID          string        `json:"bookmark_id"`
 	RejectedReason      string         `json:"rejected_reason,omitempty"`
 	CreatedAt           time.Time      `json:"created_at"`
 	UpdatedAt           time.Time      `json:"updated_at"`

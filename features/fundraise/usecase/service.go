@@ -80,7 +80,7 @@ func (svc *service) FindAll(pagination dtos.Pagination, searchAndFilter dtos.Sea
 			bookmarkID, ok := bookmarkIDs[data.ID]
 
 			if ok {
-				data.BookmarkID = &bookmarkID
+				data.BookmarkID = bookmarkID
 			}
 		}
 
@@ -124,7 +124,7 @@ func (svc *service) FindByID(fundraiseID, ownerID int) *dtos.FundraiseDetails {
 		bookmarkID, err = svc.model.SelectBookmarkByFundraiseAndOwnerID(fundraiseID, ownerID)
 
 		if bookmarkID != "" {
-			res.BookmarkID = &bookmarkID
+			res.BookmarkID = bookmarkID
 		}
 	}
 
