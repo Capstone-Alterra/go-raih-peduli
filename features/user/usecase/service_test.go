@@ -22,35 +22,53 @@ func TestFindAll(t *testing.T) {
 
 	var entities = []user.User{
 		{
-			ID: 1,
-			RoleID: 1,
-			IsVerified: true,
-			Email: "john@example.com",
-			Password: "random123",
-			ProfilePicture: "google.com",
-			Fullname: "John Doe",
-			Gender: "Male",
-			Address: "planet bumi",
-			PhoneNumber: "080000000000",
-			Nik: "21000000000000",
-			Status: "1",
+			ID:              1,
+			RoleID:          1,
+			IsVerified:      true,
+			Email:           "john@example.com",
+			Password:        "random123",
+			ProfilePicture:  "google.com",
+			Fullname:        "John Doe",
+			Gender:          "Male",
+			Address:         "planet bumi",
+			PhoneNumber:     "080000000000",
+			Nik:             "21000000000000",
+			Status:          "1",
 			Personalization: nil,
 		},
 	}
 
-	var page = 1
-	var pageSize = 10
+	var emptySearchAndFilter = dtos.SearchAndFilter{
+		Page:     1,
+		PageSize: 10,
+		Name:     "",
+	}
 
-	t.Run("Success", func(t *testing.T) {
-		repository.On("Paginate", page, pageSize).Return(entities).Once()
+	var searchAndFilter = dtos.SearchAndFilter{
+		Page:     1,
+		PageSize: 10,
+		Name:     "Nibras",
+	}
+
+	t.Run("Success Witout Searching", func(t *testing.T) {
+		repository.On("Paginate", emptySearchAndFilter).Return(entities).Once()
 		repository.On("GetTotalData").Return(int64(1)).Once()
 
-		res, total := service.FindAll(page, pageSize)
+		res, total := service.FindAll(emptySearchAndFilter)
 		assert.Equal(t, res[0].ID, entities[0].ID)
 		assert.Equal(t, total, int64(1))
 		repository.AssertExpectations(t)
 	})
 
+	t.Run("Success With Searching", func(t *testing.T) {
+		repository.On("Paginate", searchAndFilter).Return(entities).Once()
+		repository.On("GetTotalDataByName", searchAndFilter.Name).Return(int64(1)).Once()
+
+		res, total := service.FindAll(searchAndFilter)
+		assert.Equal(t, res[0].ID, entities[0].ID)
+		assert.Equal(t, total, int64(1))
+		repository.AssertExpectations(t)
+	})
 }
 
 func TestFindByID(t *testing.T) {
@@ -62,18 +80,18 @@ func TestFindByID(t *testing.T) {
 	var service = New(repository, jwt, hash, generator, validation)
 
 	var entity = user.User{
-		ID: 1,
-		RoleID: 1,
-		IsVerified: true,
-		Email: "john@example.com",
-		Password: "random123",
-		ProfilePicture: "google.com",
-		Fullname: "John Doe",
-		Gender: "Male",
-		Address: "planet bumi",
-		PhoneNumber: "080000000000",
-		Nik: "21000000000000",
-		Status: "1",
+		ID:              1,
+		RoleID:          1,
+		IsVerified:      true,
+		Email:           "john@example.com",
+		Password:        "random123",
+		ProfilePicture:  "google.com",
+		Fullname:        "John Doe",
+		Gender:          "Male",
+		Address:         "planet bumi",
+		PhoneNumber:     "080000000000",
+		Nik:             "21000000000000",
+		Status:          "1",
 		Personalization: nil,
 	}
 
@@ -84,7 +102,7 @@ func TestFindByID(t *testing.T) {
 
 		res := service.FindByID(userID)
 		assert.Equal(t, res.ID, entity.ID)
-		repository.AssertExpectations(t) 
+		repository.AssertExpectations(t)
 	})
 
 	t.Run("Failed", func(t *testing.T) {
@@ -92,7 +110,7 @@ func TestFindByID(t *testing.T) {
 
 		res := service.FindByID(userID)
 		assert.Nil(t, res)
-		repository.AssertExpectations(t) 
+		repository.AssertExpectations(t)
 	})
 }
 
@@ -105,24 +123,24 @@ func TestCreate(t *testing.T) {
 	var service = New(repository, jwt, hash, generator, validation)
 
 	var input = dtos.InputUser{
-		Fullname: "John Doe",
-		Address: "planet bumi",
+		Fullname:    "John Doe",
+		Address:     "planet bumi",
 		PhoneNumber: "080000000000",
-		Gender: "Male",
-		Email: "john@example.com",
-		Password: "random123",
+		Gender:      "Male",
+		Email:       "john@example.com",
+		Password:    "random123",
 	}
 
 	var hashPassword = "iowjdoij1o2i3j12"
 
 	var entity = user.User{
-		IsVerified: false,
-		Email: "john@example.com",
-		Password: hashPassword,
-		Fullname: "John Doe",
-		Gender: "Male",
-		Address: "planet bumi",
-		PhoneNumber: "080000000000",
+		IsVerified:      false,
+		Email:           "john@example.com",
+		Password:        hashPassword,
+		Fullname:        "John Doe",
+		Gender:          "Male",
+		Address:         "planet bumi",
+		PhoneNumber:     "080000000000",
 		Personalization: nil,
 	}
 
@@ -136,7 +154,7 @@ func TestCreate(t *testing.T) {
 		hash.On("HashPassword", input.Password).Return(hashPassword).Once()
 		repository.On("InsertUser", &entity).Return(&entity, nil).Once()
 		generator.On("GenerateRandomOTP").Return(otp).Once()
-		repository.On("SendOTPByEmail", input.Email, otp).Return(nil).Once()
+		repository.On("SendOTPByEmail", input.Fullname, input.Email, otp, "1").Return(nil).Once()
 
 		res, errMap, err := service.Create(input)
 		assert.Equal(t, res.Email, entity.Email)
@@ -154,7 +172,7 @@ func TestCreate(t *testing.T) {
 		hash.On("HashPassword", input.Password).Return(hashPassword).Once()
 		repository.On("InsertUser", &entity).Return(&entity, nil).Once()
 		generator.On("GenerateRandomOTP").Return(otp).Once()
-		repository.On("SendOTPByEmail", input.Email, otp).Return(errors.New("error send otp")).Once()
+		repository.On("SendOTPByEmail", input.Fullname, input.Email, otp, "1").Return(errors.New("error send otp")).Once()
 
 		res, errMap, err := service.Create(input)
 		assert.Nil(t, res)
@@ -219,41 +237,40 @@ func TestModify(t *testing.T) {
 	var service = New(repository, jwt, hash, generator, validation)
 
 	var input = dtos.InputUpdate{
-		Fullname: "John Doe",
-		Address: "planet bumi",
+		Fullname:    "John Doe",
+		Address:     "planet bumi",
 		PhoneNumber: "080000000000",
-		Gender: "Male",
-		Email: "john@example.com",
-		Nik: "1231241231232111",
-
+		Gender:      "Male",
+		Email:       "john@example.com",
+		Nik:         "1231241231232111",
 	}
 
 	var file multipart.File
 
 	var oldData = dtos.ResUser{
-		ID: 1,
-		RoleID: 1,
-		Email: "john@example.com",
-		Fullname: "John Doe",
-		Gender: "Male",
-		Address: "planet bumi",
-		PhoneNumber: "080000000000",
+		ID:             1,
+		RoleID:         1,
+		Email:          "john@example.com",
+		Fullname:       "John Doe",
+		Gender:         "Male",
+		Address:        "planet bumi",
+		PhoneNumber:    "080000000000",
 		ProfilePicture: "google.com",
 	}
 
 	var entity = user.User{
-		ID: 1,
-		Email: "john@example.com",
+		ID:             1,
+		Email:          "john@example.com",
 		ProfilePicture: "google.com",
-		Fullname: "John Doe",
-		Gender: "Male",
-		Address: "planet bumi",
-		PhoneNumber: "080000000000",
-		Nik: "1231241231232111",
+		Fullname:       "John Doe",
+		Gender:         "Male",
+		Address:        "planet bumi",
+		PhoneNumber:    "080000000000",
+		Nik:            "1231241231232111",
 	}
 
 	var errMap = []string{"email is required"}
-	
+
 	t.Run("Success", func(t *testing.T) {
 		validation.On("ValidateRequest", input).Return(nil).Once()
 		repository.On("UploadFile", file, oldData.ProfilePicture).Return(oldData.ProfilePicture, nil).Once()
@@ -334,12 +351,12 @@ func TestModifyProfilePicture(t *testing.T) {
 	}
 
 	var oldData = dtos.ResUser{
-		ID: 1,
-		RoleID: 1,
-		Email: "john@example.com",
-		Fullname: "John Doe",
-		Gender: "Male",
-		Address: "planet bumi",
+		ID:          1,
+		RoleID:      1,
+		Email:       "john@example.com",
+		Fullname:    "John Doe",
+		Gender:      "Male",
+		Address:     "planet bumi",
 		PhoneNumber: "080000000000",
 	}
 
@@ -403,12 +420,12 @@ func TestRemove(t *testing.T) {
 	var service = New(repository, jwt, hash, generator, validation)
 
 	var entity = user.User{
-		IsVerified: false,
-		Email: "john@example.com",
-		Fullname: "John Doe",
-		Gender: "Male",
-		Address: "planet bumi",
-		PhoneNumber: "080000000000",
+		IsVerified:     false,
+		Email:          "john@example.com",
+		Fullname:       "John Doe",
+		Gender:         "Male",
+		Address:        "planet bumi",
+		PhoneNumber:    "080000000000",
 		ProfilePicture: "google.com",
 	}
 
@@ -423,7 +440,7 @@ func TestRemove(t *testing.T) {
 		assert.Nil(t, err)
 		repository.AssertExpectations(t)
 	})
-	
+
 	t.Run("Failed : Error When Delete User", func(t *testing.T) {
 		repository.On("SelectByID", userID).Return(&entity).Once()
 		repository.On("DeleteFile", entity.ProfilePicture).Return(nil).Once()
@@ -433,7 +450,7 @@ func TestRemove(t *testing.T) {
 		assert.NotNil(t, err)
 		repository.AssertExpectations(t)
 	})
-	
+
 	t.Run("Failed : Error When Delete File", func(t *testing.T) {
 		repository.On("SelectByID", userID).Return(&entity).Once()
 		repository.On("DeleteFile", entity.ProfilePicture).Return(errors.New("error when delete")).Once()
@@ -442,7 +459,7 @@ func TestRemove(t *testing.T) {
 		assert.NotNil(t, err)
 		repository.AssertExpectations(t)
 	})
-	
+
 	t.Run("Failed : User Not Found", func(t *testing.T) {
 		repository.On("SelectByID", userID).Return(nil).Once()
 
@@ -461,19 +478,19 @@ func TestValidateVerification(t *testing.T) {
 	var service = New(repository, jwt, hash, generator, validation)
 
 	var entity = user.User{
-		IsVerified: false,
-		Email: "john@example.com",
-		Fullname: "John Doe",
-		Gender: "Male",
-		Address: "planet bumi",
-		PhoneNumber: "080000000000",
+		IsVerified:     false,
+		Email:          "john@example.com",
+		Fullname:       "John Doe",
+		Gender:         "Male",
+		Address:        "planet bumi",
+		PhoneNumber:    "080000000000",
 		ProfilePicture: "google.com",
 	}
 
 	var verificationKey = "123192"
 
 	var email = "john@example.com"
-	
+
 	t.Run("Success", func(t *testing.T) {
 		repository.On("ValidateVerification", verificationKey).Return(email).Once()
 		repository.On("SelectByEmail", email).Return(&entity, nil).Once()
@@ -504,7 +521,7 @@ func TestValidateVerification(t *testing.T) {
 		assert.False(t, verified)
 		repository.AssertExpectations(t)
 	})
-	
+
 	t.Run("Failed : Error When Validate Verification", func(t *testing.T) {
 		repository.On("ValidateVerification", verificationKey).Return("").Once()
 
@@ -527,12 +544,12 @@ func TestForgetPassword(t *testing.T) {
 	}
 
 	var entity = user.User{
-		IsVerified: false,
-		Email: "john@example.com",
-		Fullname: "John Doe",
-		Gender: "Male",
-		Address: "planet bumi",
-		PhoneNumber: "080000000000",
+		IsVerified:     false,
+		Email:          "john@example.com",
+		Fullname:       "John Doe",
+		Gender:         "Male",
+		Address:        "planet bumi",
+		PhoneNumber:    "080000000000",
 		ProfilePicture: "google.com",
 	}
 
@@ -542,26 +559,26 @@ func TestForgetPassword(t *testing.T) {
 		repository.On("SelectByEmail", input.Email).Return(&entity, nil).Once()
 		repository.On("UpdateUser", entity).Return(int64(1)).Once()
 		generator.On("GenerateRandomOTP").Return(otp).Once()
-		repository.On("SendOTPByEmail", input.Email, otp).Return(nil).Once()
+		repository.On("SendOTPByEmail", entity.Fullname, entity.Email, otp, "2").Return(nil).Once()
 
 		err := service.ForgetPassword(input)
 		assert.Nil(t, err)
 		repository.AssertExpectations(t)
 		generator.AssertExpectations(t)
 	})
-	
+
 	t.Run("Failed : Error When Send OTP", func(t *testing.T) {
 		repository.On("SelectByEmail", input.Email).Return(&entity, nil).Once()
 		repository.On("UpdateUser", entity).Return(int64(1)).Once()
 		generator.On("GenerateRandomOTP").Return(otp).Once()
-		repository.On("SendOTPByEmail", input.Email, otp).Return(errors.New("error when send otp")).Once()
+		repository.On("SendOTPByEmail", entity.Fullname, entity.Email, otp, "2").Return(errors.New("error when send otp")).Once()
 
 		err := service.ForgetPassword(input)
 		assert.NotNil(t, err)
 		repository.AssertExpectations(t)
 		generator.AssertExpectations(t)
 	})
-	
+
 	t.Run("Failed : Error When Update", func(t *testing.T) {
 		repository.On("SelectByEmail", input.Email).Return(&entity, nil).Once()
 		repository.On("UpdateUser", entity).Return(int64(0)).Once()
@@ -589,14 +606,14 @@ func TestVerifyOTP(t *testing.T) {
 	var service = New(repository, jwt, hash, generator, validation)
 
 	var entity = user.User{
-		ID: 1,
-		RoleID: 1,
-		IsVerified: false,
-		Email: "john@example.com",
-		Fullname: "John Doe",
-		Gender: "Male",
-		Address: "planet bumi",
-		PhoneNumber: "080000000000",
+		ID:             1,
+		RoleID:         1,
+		IsVerified:     false,
+		Email:          "john@example.com",
+		Fullname:       "John Doe",
+		Gender:         "Male",
+		Address:        "planet bumi",
+		PhoneNumber:    "080000000000",
 		ProfilePicture: "google.com",
 	}
 
@@ -626,7 +643,7 @@ func TestVerifyOTP(t *testing.T) {
 		assert.Empty(t, res)
 		repository.AssertExpectations(t)
 	})
-	
+
 	t.Run("Failed : Error When Validate Verification", func(t *testing.T) {
 		repository.On("ValidateVerification", verificationKey).Return("").Once()
 
@@ -645,19 +662,19 @@ func TestResetPassword(t *testing.T) {
 	var service = New(repository, jwt, hash, generator, validation)
 
 	var input = dtos.ResetPassword{
-		Email: "john@example.com",
+		Email:    "john@example.com",
 		Password: "apo12opkawd",
 	}
 
 	var entity = user.User{
-		ID: 1,
-		RoleID: 1,
-		IsVerified: false,
-		Email: "john@example.com",
-		Fullname: "John Doe",
-		Gender: "Male",
-		Address: "planet bumi",
-		PhoneNumber: "080000000000",
+		ID:             1,
+		RoleID:         1,
+		IsVerified:     false,
+		Email:          "john@example.com",
+		Fullname:       "John Doe",
+		Gender:         "Male",
+		Address:        "planet bumi",
+		PhoneNumber:    "080000000000",
 		ProfilePicture: "google.com",
 	}
 
@@ -705,14 +722,14 @@ func TestMyProfile(t *testing.T) {
 	var service = New(repository, jwt, hash, generator, validation)
 
 	var entity = user.User{
-		ID: 1,
-		RoleID: 1,
-		IsVerified: false,
-		Email: "john@example.com",
-		Fullname: "John Doe",
-		Gender: "Male",
-		Address: "planet bumi",
-		PhoneNumber: "080000000000",
+		ID:             1,
+		RoleID:         1,
+		IsVerified:     false,
+		Email:          "john@example.com",
+		Fullname:       "John Doe",
+		Gender:         "Male",
+		Address:        "planet bumi",
+		PhoneNumber:    "080000000000",
 		ProfilePicture: "google.com",
 	}
 
@@ -748,15 +765,15 @@ func TestCheckPassword(t *testing.T) {
 	}
 
 	var entity = user.User{
-		ID: 1,
-		RoleID: 1,
-		IsVerified: false,
-		Email: "john@example.com",
-		Fullname: "John Doe",
-		Gender: "Male",
-		Address: "planet bumi",
-		Password: "random123hashed",
-		PhoneNumber: "080000000000",
+		ID:             1,
+		RoleID:         1,
+		IsVerified:     false,
+		Email:          "john@example.com",
+		Fullname:       "John Doe",
+		Gender:         "Male",
+		Address:        "planet bumi",
+		Password:       "random123hashed",
+		PhoneNumber:    "080000000000",
 		ProfilePicture: "google.com",
 	}
 
@@ -783,23 +800,23 @@ func TestCheckPassword(t *testing.T) {
 		errMap, err := service.CheckPassword(input, userID)
 		assert.Nil(t, errMap)
 		assert.NotNil(t, err)
-		
+
 		validation.AssertExpectations(t)
 		repository.AssertExpectations(t)
 		hash.AssertExpectations(t)
 	})
-	
+
 	t.Run("Failed : User Not Found", func(t *testing.T) {
 		validation.On("ValidateRequest", input).Return(nil).Once()
 		repository.On("SelectByID", userID).Return(nil).Once()
-		
+
 		errMap, err := service.CheckPassword(input, userID)
 		assert.Nil(t, errMap)
 		assert.NotNil(t, err)
 		validation.AssertExpectations(t)
 		repository.AssertExpectations(t)
 	})
-	
+
 	t.Run("Failed : Error When Validate Request", func(t *testing.T) {
 		validation.On("ValidateRequest", input).Return(errMap).Once()
 
@@ -826,7 +843,7 @@ func TestChangePassword(t *testing.T) {
 	var hashed = "awpojdapwo1op23k"
 
 	var entity = user.User{
-		ID: 1,
+		ID:       1,
 		Password: hashed,
 	}
 
@@ -883,16 +900,16 @@ func TestAddPersonalization(t *testing.T) {
 	var personalization = "koki"
 
 	var entity = user.User{
-		ID: 1,
-		RoleID: 1,
-		IsVerified: false,
-		Email: "john@example.com",
-		Fullname: "John Doe",
-		Gender: "Male",
-		Address: "planet bumi",
-		Password: "random123hashed",
-		PhoneNumber: "080000000000",
-		ProfilePicture: "google.com",
+		ID:              1,
+		RoleID:          1,
+		IsVerified:      false,
+		Email:           "john@example.com",
+		Fullname:        "John Doe",
+		Gender:          "Male",
+		Address:         "planet bumi",
+		Password:        "random123hashed",
+		PhoneNumber:     "080000000000",
+		ProfilePicture:  "google.com",
 		Personalization: &personalization,
 	}
 

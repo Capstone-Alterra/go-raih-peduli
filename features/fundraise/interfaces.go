@@ -24,6 +24,7 @@ type Repository interface {
 	GetTotalDataBySearchAndFilter(searchAndFilter dtos.SearchAndFilter) int64
 	GetTotalDataBySearchAndFilterMobile(searchAndFilter dtos.SearchAndFilter) int64
 	SelectByTitle(title string) (*Fundraise, error)
+	GetDeviceToken(userID int) string
 }
 
 type Usecase interface {

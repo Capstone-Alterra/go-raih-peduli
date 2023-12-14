@@ -3,9 +3,11 @@
 package mocks
 
 import (
-	multipart "mime/multipart"
+	dtos "raihpeduli/features/user/dtos"
 
 	mock "github.com/stretchr/testify/mock"
+
+	multipart "mime/multipart"
 
 	user "raihpeduli/features/user"
 )
@@ -57,6 +59,20 @@ func (_m *Repository) GetTotalData() int64 {
 	return r0
 }
 
+// GetTotalDataByName provides a mock function with given fields: name
+func (_m *Repository) GetTotalDataByName(name string) int64 {
+	ret := _m.Called(name)
+
+	var r0 int64
+	if rf, ok := ret.Get(0).(func(string) int64); ok {
+		r0 = rf(name)
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+
+	return r0
+}
+
 // InsertUser provides a mock function with given fields: newUser
 func (_m *Repository) InsertUser(newUser *user.User) (*user.User, error) {
 	ret := _m.Called(newUser)
@@ -97,13 +113,13 @@ func (_m *Repository) InsertVerification(email string, verificationKey string) e
 	return r0
 }
 
-// Paginate provides a mock function with given fields: page, size
-func (_m *Repository) Paginate(page int, size int) []user.User {
-	ret := _m.Called(page, size)
+// Paginate provides a mock function with given fields: searchAndFilter
+func (_m *Repository) Paginate(searchAndFilter dtos.SearchAndFilter) []user.User {
+	ret := _m.Called(searchAndFilter)
 
 	var r0 []user.User
-	if rf, ok := ret.Get(0).(func(int, int) []user.User); ok {
-		r0 = rf(page, size)
+	if rf, ok := ret.Get(0).(func(dtos.SearchAndFilter) []user.User); ok {
+		r0 = rf(searchAndFilter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]user.User)
@@ -155,13 +171,13 @@ func (_m *Repository) SelectByID(customerID int) *user.User {
 	return r0
 }
 
-// SendOTPByEmail provides a mock function with given fields: email, otp
-func (_m *Repository) SendOTPByEmail(email string, otp string) error {
-	ret := _m.Called(email, otp)
+// SendOTPByEmail provides a mock function with given fields: fullname, email, otp, status
+func (_m *Repository) SendOTPByEmail(fullname string, email string, otp string, status string) error {
+	ret := _m.Called(fullname, email, otp, status)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, string) error); ok {
-		r0 = rf(email, otp)
+	if rf, ok := ret.Get(0).(func(string, string, string, string) error); ok {
+		r0 = rf(fullname, email, otp, status)
 	} else {
 		r0 = ret.Error(0)
 	}

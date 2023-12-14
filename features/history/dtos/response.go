@@ -2,8 +2,6 @@ package dtos
 
 import (
 	"time"
-
-	"gorm.io/gorm"
 )
 
 type ResFundraisesHistory struct {
@@ -21,10 +19,8 @@ type ResFundraisesHistory struct {
 
 	BookmarkID *string `json:"bookmark_id"`
 
-	CreatedAt time.Time      `json:"created_at"`
-	UpdatedAt time.Time      `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `json:"deleted_at"`
-	PostType  string         `json:"post_type"`
+	CreatedAt time.Time `json:"created_at"`
+	PostType  string    `json:"post_type"`
 }
 
 type ResVolunteersVacancyHistory struct {
@@ -43,48 +39,49 @@ type ResVolunteersVacancyHistory struct {
 	Photo               string    `json:"photo"`
 	Status              string    `json:"status"`
 	TotalRegistrar      int       `json:"total_registrar"`
-
-	BookmarkID *string `json:"bookmark_id"`
-
-	RejectedReason string         `json:"rejected_reason,omitempty"`
-	CreatedAt      time.Time      `json:"created_at"`
-	UpdatedAt      time.Time      `json:"updated_at"`
-	DeletedAt      gorm.DeletedAt `json:"deleted_at"`
-	PostType       string         `json:"post_type"`
+	BookmarkID          *string   `json:"bookmark_id"`
+	RejectedReason      string    `json:"rejected_reason,omitempty"`
+	CreatedAt           time.Time `json:"created_at"`
+	PostType            string    `json:"post_type"`
 }
 
 type ResRegistrantVacancyHistory struct {
-	ID          int      `json:"id"`
-	Email       string   `json:"email"`
-	Fullname    string   `json:"fullname"`
-	Address     string   `json:"address"`
-	PhoneNumber string   `json:"phone_number"`
-	Gender      string   `json:"gender"`
-	Nik         string   `json:"nik"`
-	Skills      []string `json:"skills_required"`
-	Resume      string   `json:"resume"`
-	Reason      string   `json:"reason"`
-	Photo       string   `json:"photo"`
-	Status      string   `json:"status"`
-	PostType    string   `json:"post_type"`
+	ID           int       `json:"id"`
+	Email        string    `json:"email"`
+	Fullname     string    `json:"fullname"`
+	Address      string    `json:"address"`
+	PhoneNumber  string    `json:"phone_number"`
+	Gender       string    `json:"gender"`
+	Nik          string    `json:"nik"`
+	Skills       []string  `json:"skills_required"`
+	Resume       string    `json:"resume"`
+	Reason       string    `json:"reason"`
+	Photo        string    `json:"photo"`
+	Status       string    `json:"status"`
+	VacancyID    int       `json:"vacancy_id"`
+	VacancyName  string    `json:"vacancy_name"`
+	VacancyPhoto string    `json:"vacancy_Photo"`
+	CreatedAt    time.Time `json:"created_at"`
+	PostType     string    `json:"post_type"`
 }
 
 type ResTransactionHistory struct {
-	ID             int    `json:"transaction_id"`
-	UserID         int    `json:"user_id"`
-	Email          string `json:"email"`
-	Fullname       string `json:"fullname"`
-	Address        string `json:"address"`
-	PhoneNumber    string `json:"phone_number"`
-	ProfilePicture string `json:"profile_picture"`
-	FundraiseID    int    `json:"fundraise_id"`
-	FundraiseName  string `json:"fundraise_name"`
-	Amount         int    `json:"amount"`
-	PaymentType    string `json:"payment_type"`
-	VirtualAccount string `json:"virtual_account"`
-	UrlCallback    string `json:"url_callback"`
-	PaidAt         string `json:"paid_at"`
-	ValidUntil     string `json:"valid_until"`
-	Status         string `json:"status"`
-	PostType       string `json:"post_type"`
+	ID             int       `json:"transaction_id"`
+	UserID         int       `json:"user_id"`
+	Email          string    `json:"email"`
+	Fullname       string    `json:"fullname"`
+	Address        string    `json:"address"`
+	PhoneNumber    string    `json:"phone_number"`
+	FundraiseID    int       `json:"fundraise_id"`
+	FundraiseName  string    `json:"fundraise_name"`
+	FundraisePhoto string    `json:"fundraise_photo"`
+	Amount         int       `json:"amount"`
+	PaymentType    string    `json:"payment_type"`
+	VirtualAccount string    `json:"virtual_account"`
+	UrlCallback    string    `json:"url_callback"`
+	PaidAt         string    `json:"paid_at"`
+	ValidUntil     string    `json:"valid_until"`
+	Status         string    `json:"status"`
+	CreatedAt      time.Time `json:"created_at"`
+	PostType       string    `json:"post_type"`
 }

@@ -29,9 +29,10 @@ type InputPersonalization struct {
 	Personalization []string `json:"personalization" form:"personalization"`
 }
 
-type Pagination struct {
-	Page     int `query:"page"`
-	PageSize int `query:"page_size"`
+type SearchAndFilter struct {
+	Page     int    `query:"page"`
+	PageSize int    `query:"page_size"`
+	Name     string `query:"name"`
 }
 
 type VerifyOTP struct {

@@ -10,7 +10,7 @@ import (
 )
 
 func History(e *echo.Echo, handler history.Handler, jwt helpers.JWTInterface, config config.ProgramConfig) {
-	history := e.Group("/history")
+	history := e.Group("/mobile/history")
 
 	history.GET("", handler.GetAllHistory(), m.AuthorizeJWT(jwt, 1, config.SECRET))
 	history.GET("/fundraises", handler.GetHistoryFundraiseCreatedByUser(), m.AuthorizeJWT(jwt, 1, config.SECRET))

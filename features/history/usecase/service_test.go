@@ -161,20 +161,23 @@ func TestFindAllHistoryVolunteerVacanciewsRegisterByUser(t *testing.T) {
 	var repository = mocks.NewRepository(t)
 	var service = New(repository)
 
-	var entities = []history.Volunteer{
+	var entities = []history.VolunteerRegistered{
 		{
-			ID:          1,
-			Email:       "johndoe@gmail.com",
-			Fullname:    "John Doe",
-			Address:     "Jepang, Jepang Utara",
-			PhoneNumber: "xxxxxxxxxxxxxxx",
-			Gender:      "Male",
-			Skills:      "bisa terbang",
-			Nik:         "xxxxxxxxxxxxxxxx",
-			Resume:      "Resume",
-			Reason:      "Mau Flexing",
-			Photo:       "https://storage.googleapis.com/raih-peduli/fundraises/c",
-			Status:      "accepted",
+			ID:             1,
+			Email:          "johndoe@gmail.com",
+			Fullname:       "John Doe",
+			Address:        "Jepang, Jepang Utara",
+			PhoneNumber:    "xxxxxxxxxxxxxxx",
+			Gender:         "Male",
+			Skills:         "bisa terbang",
+			Nik:            "xxxxxxxxxxxxxxxx",
+			Resume:         "Resume",
+			Reason:         "Mau Flexing",
+			VolunteerID:    2,
+			VolunteerName:  "Bantu Palestina",
+			VolunteerPhoto: "https://storage.googleapis.com/raih-peduli/fundraises/c",
+			Status:         "accepted",
+			RejectedReason: "-",
 		},
 	}
 

@@ -46,34 +46,26 @@ type VolunteerVacancies struct {
 	UpdatedAt           time.Time
 	DeletedAt           gorm.DeletedAt `gorm:"index"`
 
-	VolunteerRelationships []VolunteerRelations `gorm:"foreignKey:VolunteerID;references:ID"`
+	VolunteerRelationships []VolunteerRegistered `gorm:"foreignKey:VolunteerID;references:ID"`
 }
 
-type VolunteerRelations struct {
-	ID             int    `gorm:"type:int(11); primaryKey"`
-	UserID         int    `gorm:"type:int(11)"`
-	VolunteerID    int    `gorm:"type:int(11)"`
-	Skills         string `gorm:"type:varchar(255)"`
-	Reason         string
-	Resume         string `gorm:"type:varchar(255)"`
-	Photo          string `gorm:"type:varchar(255)"`
-	Status         string `gorm:"type:enum('pending','accepted','rejected'); default: 'pending'"`
-	RejectedReason string `gorm:"type:varchar(255)"`
-}
-
-type Volunteer struct {
-	ID          int    `gorm:"type:int(11)"`
-	Email       string `gorm:"type:varchar(255)"`
-	Fullname    string `gorm:"type:varchar(255)"`
-	Address     string `gorm:"type:varchar(255)"`
-	PhoneNumber string `gorm:"type:varchar(255)"`
-	Gender      string `gorm:"type:varchar(255)"`
-	Skills      string `gorm:"type:varchar(255)"`
-	Nik         string `gorm:"type:varchar(255)"`
-	Resume      string `gorm:"type:varchar(255)"`
-	Reason      string
-	Photo       string `gorm:"type:varchar(255)"`
-	Status      string `gorm:"type:enum('pending','accepted','rejected')"`
+type VolunteerRegistered struct {
+	ID             int
+	VolunteerID    int    `gorm:"column:volunteer_id"`
+	VolunteerName  string `gorm:"column:title"`
+	VolunteerPhoto string `gorm:"column:photo"`
+	Fullname       string `gorm:"column:fullname"`
+	Address        string `gorm:"column:address"`
+	PhoneNumber    string `gorm:"column:phone_number"`
+	Gender         string `gorm:"column:gender"`
+	Nik            string `gorm:"column:nik"`
+	Email          string `gorm:"column:email"`
+	Skills         string `gorm:"column:skills"`
+	Reason         string `gorm:"column:reason"`
+	Resume         string `gorm:"column:resume"`
+	Status         string `gorm:"column:status"`
+	RejectedReason string `gorm:"column:rejected_reason"`
+	CreatedAt      time.Time
 }
 
 type Transaction struct {

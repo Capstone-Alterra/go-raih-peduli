@@ -33,10 +33,11 @@ type Repository interface {
 	CheckUser(userID int) bool
 	FindUserInVacancy(vacancyID, userID int) bool
 	SelectAllSkills() ([]dtos.Skill, error)
+	GetDeviceToken(userID int) string
 }
 
 type Usecase interface {
-	FindAllVacancies(page, size int, searchAndFilter dtos.SearchAndFilter, ownerID int, status string) ([]dtos.ResVacancy, int64)
+	FindAllVacancies(page, size int, searchAndFilter dtos.SearchAndFilter, ownerID int, suffix string) ([]dtos.ResVacancy, int64)
 	FindVacancyByID(vacancyID, ownerID int) *dtos.ResVacancy
 	ModifyVacancy(vacancyData dtos.InputVacancy, file multipart.File, oldData dtos.ResVacancy) ([]string, error)
 	ModifyVacancyStatus(input dtos.StatusVacancies, oldData dtos.ResVacancy) (bool, []string)
