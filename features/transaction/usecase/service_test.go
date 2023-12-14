@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"raihpeduli/features/fundraise"
 	"raihpeduli/features/transaction"
 	"raihpeduli/features/transaction/dtos"
 	"raihpeduli/features/transaction/mocks"
@@ -966,6 +967,10 @@ func TestNotifications(t *testing.T) {
 
 	var emptyNotificationsPayload = map[string]any{}
 
+	var wrongTrxID = map[string]any{
+		"order_id": "wrongID",
+	}
+
 	var trx = transaction.Transaction{
 		ID:          876565,
 		FundraiseID: 1,
@@ -975,6 +980,9 @@ func TestNotifications(t *testing.T) {
 		Status:      "5",
 		User: user.User{
 			Email: "seseorang@gmail.com",
+		},
+		Fundraise: fundraise.Fundraise{
+			Title: "Bantu operasi katarak",
 		},
 	}
 
@@ -988,6 +996,9 @@ func TestNotifications(t *testing.T) {
 		User: user.User{
 			Email: "seseorang@gmail.com",
 		},
+		Fundraise: fundraise.Fundraise{
+			Title: "Bantu operasi katarak",
+		},
 	}
 
 	var paymentName = "Bank Permata"
@@ -996,6 +1007,10 @@ func TestNotifications(t *testing.T) {
 		model.On("SelectByID", trx.ID).Return(&trx).Once()
 		mtRequest.On("CheckTransactionStatus", notificationsPayload["order_id"].(string)).Return("5", nil).Once()
 		mtRequest.On("MappingPaymentName", trx.PaymentType).Return(paymentName).Once()
+		model.On("GetDeviceToken", trx.UserID).Return("deviceToken").Once()
+		strAmount := strconv.Itoa(trx.Amount)
+		message := "Terimakasih orang baik, donasi sebesar Rp. " + strAmount + "akan sangat membantu " + trx.Fundraise.Title
+		nsRequest.On("SendNotifications", "deviceToken", "Pembayaran Berhasil", message).Return(nil).Once()
 		model.On("SendPaymentConfirmation", trx.User.Email, trx.Amount, trx.FundraiseID, paymentName).Return(nil).Once()
 		trx.PaidAt = time.Now().Format("2006-01-02 15:04:05")
 		model.On("Update", trx).Return(int64(1)).Once()
@@ -1013,6 +1028,13 @@ func TestNotifications(t *testing.T) {
 		assert.EqualError(t, err, "invalid notification payload")
 	})
 
+	t.Run("Failed Parse TRX ID", func(t *testing.T) {
+		err := service.Notifications(wrongTrxID)
+
+		assert.Error(t, err)
+		assert.EqualError(t, err, "Failed Parse TRX ID")
+	})
+
 	t.Run("Check Transaction Error", func(t *testing.T) {
 		model.On("SelectByID", trx.ID).Return(&trx).Once()
 		mtRequest.On("CheckTransactionStatus", notificationsPayload["order_id"].(string)).Return("", errors.New("transaction not found")).Once()
@@ -1027,7 +1049,11 @@ func TestNotifications(t *testing.T) {
 		model.On("SelectByID", trx.ID).Return(&trx).Once()
 		mtRequest.On("CheckTransactionStatus", notificationsPayload["order_id"].(string)).Return("5", nil).Once()
 		mtRequest.On("MappingPaymentName", trx.PaymentType).Return(paymentName).Once()
-		model.On("SendPaymentConfirmation", trx.User.Email, trx.Amount, trx.FundraiseID, paymentName).Return(errors.New("send payment confirmation failed")).Once()
+		model.On("GetDeviceToken", trx.UserID).Return("deviceToken").Once()
+		strAmount := strconv.Itoa(trx.Amount)
+		message := "Terimakasih orang baik, donasi sebesar Rp. " + strAmount + "akan sangat membantu " + trx.Fundraise.Title
+		nsRequest.On("SendNotifications", "deviceToken", "Pembayaran Berhasil", message).Return(nil).Once()
+		model.On("SendPaymentConfirmation", trx.User.Email, trx.Amount, trx.FundraiseID, paymentName).Return(errors.New("send payment confirmation error")).Once()
 		trx.PaidAt = time.Now().Format("2006-01-02 15:04:05")
 		model.On("Update", trx).Return(int64(1)).Once()
 
@@ -1041,6 +1067,10 @@ func TestNotifications(t *testing.T) {
 		model.On("SelectByID", trx.ID).Return(&trx).Once()
 		mtRequest.On("CheckTransactionStatus", notificationsPayload["order_id"].(string)).Return("5", nil).Once()
 		mtRequest.On("MappingPaymentName", trx.PaymentType).Return(paymentName).Once()
+		model.On("GetDeviceToken", trx.UserID).Return("deviceToken").Once()
+		strAmount := strconv.Itoa(trx.Amount)
+		message := "Terimakasih orang baik, donasi sebesar Rp. " + strAmount + "akan sangat membantu " + trx.Fundraise.Title
+		nsRequest.On("SendNotifications", "deviceToken", "Pembayaran Berhasil", message).Return(nil).Once()
 		model.On("SendPaymentConfirmation", trx.User.Email, trx.Amount, trx.FundraiseID, paymentName).Return(nil).Once()
 		trx.PaidAt = time.Now().Format("2006-01-02 15:04:05")
 		model.On("Update", trx).Return(int64(-1)).Once()
@@ -1061,5 +1091,34 @@ func TestNotifications(t *testing.T) {
 		assert.Nil(t, err)
 		model.AssertExpectations(t)
 		mtRequest.AssertExpectations(t)
+	})
+}
+
+func TestSendPaymentConfirmation(t *testing.T) {
+	var model = mocks.NewRepository(t)
+	var generator = helperMocks.NewGeneratorInterface(t)
+	var mtRequest = helperMocks.NewMidtransInterface(t)
+	var coreAPIClient = coreapi.Client{}
+	var validation = helperMocks.NewValidationInterface(t)
+	var nsRequest = helperMocks.NewNotificationInterface(t)
+	var service = New(model, generator, mtRequest, coreAPIClient, validation, nsRequest)
+
+	t.Run("Success", func(t *testing.T) {
+		message := "Terimakasih orang baik, donasimu membantu palestina"
+		nsRequest.On("SendNotifications", "", "Donasi sebesar Rp. 10.000 Berhasil", message).Return(nil).Once()
+
+		err := service.SendPaymentConfirmation()
+		assert.Nil(t, err)
+		nsRequest.AssertExpectations(t)
+	})
+
+	t.Run("Failed", func(t *testing.T) {
+		message := "Terimakasih orang baik, donasimu membantu palestina"
+		nsRequest.On("SendNotifications", "", "Donasi sebesar Rp. 10.000 Berhasil", message).Return(errors.New("failed send notification")).Once()
+
+		err := service.SendPaymentConfirmation()
+		assert.NotNil(t, err)
+		assert.EqualError(t, err, "failed send notification")
+		nsRequest.AssertExpectations(t)
 	})
 }
