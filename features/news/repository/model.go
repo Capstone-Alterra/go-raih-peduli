@@ -37,7 +37,7 @@ func (mdl *model) Paginate(pagination dtos.Pagination, searchAndFilter dtos.Sear
 	offset := (pagination.Page - 1) * pagination.PageSize
 	title := "%" + searchAndFilter.Title + "%"
 
-	if err := mdl.db.Offset(offset).Limit(pagination.PageSize).Where("title LIKE ?", title).Find(&news).Error; err != nil {
+	if err := mdl.db.Offset(offset).Limit(pagination.PageSize).Where("title LIKE ?", title).Order("created_at desc").Find(&news).Error; err != nil {
 		return nil, err
 	}
 
