@@ -211,9 +211,9 @@ func TestFindAllHistoryUserTransaction(t *testing.T) {
 			ID:             1,
 			FundraiseID:    1,
 			UserID:         1,
-			PaymentType:    "Credit Card",
+			PaymentType:    "4",
 			Amount:         100000,
-			Status:         "success",
+			Status:         "5",
 			PaidAt:         "xxxxxxxxxxxxxxxxxxx",
 			VirtualAccount: "xxxxxxxxxxxxxxxxx",
 			UrlCallback:    "google.com",
@@ -224,6 +224,83 @@ func TestFindAllHistoryUserTransaction(t *testing.T) {
 	var userID = 1
 
 	t.Run("Success", func(t *testing.T) {
+		repository.On("HistoryUserTransaction", userID).Return(entities, nil).Once()
+
+		res, err := service.FindAllHistoryUserTransaction(userID)
+		assert.Equal(t, res[0].ID, entities[0].ID)
+		assert.Nil(t, err)
+		repository.AssertExpectations(t)
+	})
+
+	t.Run("Success V2", func(t *testing.T) {
+		entities[0].Status = "2"
+		entities[0].PaymentType = "5"
+		repository.On("HistoryUserTransaction", userID).Return(entities, nil).Once()
+
+		res, err := service.FindAllHistoryUserTransaction(userID)
+		assert.Equal(t, res[0].ID, entities[0].ID)
+		assert.Nil(t, err)
+		repository.AssertExpectations(t)
+	})
+
+	t.Run("Success V3", func(t *testing.T) {
+		entities[0].Status = "3"
+		entities[0].PaymentType = "6"
+		repository.On("HistoryUserTransaction", userID).Return(entities, nil).Once()
+
+		res, err := service.FindAllHistoryUserTransaction(userID)
+		assert.Equal(t, res[0].ID, entities[0].ID)
+		assert.Nil(t, err)
+		repository.AssertExpectations(t)
+	})
+	
+	t.Run("Success V4", func(t *testing.T) {
+		entities[0].Status = "4"
+		entities[0].PaymentType = "7"
+		repository.On("HistoryUserTransaction", userID).Return(entities, nil).Once()
+
+		res, err := service.FindAllHistoryUserTransaction(userID)
+		assert.Equal(t, res[0].ID, entities[0].ID)
+		assert.Nil(t, err)
+		repository.AssertExpectations(t)
+	})
+
+	t.Run("Success V4", func(t *testing.T) {
+		entities[0].Status = "1"
+		entities[0].PaymentType = "8"
+		repository.On("HistoryUserTransaction", userID).Return(entities, nil).Once()
+
+		res, err := service.FindAllHistoryUserTransaction(userID)
+		assert.Equal(t, res[0].ID, entities[0].ID)
+		assert.Nil(t, err)
+		repository.AssertExpectations(t)
+	})
+	
+	t.Run("Success V5", func(t *testing.T) {
+		entities[0].Status = "1"
+		entities[0].PaymentType = "9"
+		repository.On("HistoryUserTransaction", userID).Return(entities, nil).Once()
+
+		res, err := service.FindAllHistoryUserTransaction(userID)
+		assert.Equal(t, res[0].ID, entities[0].ID)
+		assert.Nil(t, err)
+		repository.AssertExpectations(t)
+	})
+
+	t.Run("Success V6", func(t *testing.T) {
+		entities[0].Status = "1"
+		entities[0].PaymentType = "10"
+		repository.On("HistoryUserTransaction", userID).Return(entities, nil).Once()
+
+		res, err := service.FindAllHistoryUserTransaction(userID)
+		assert.Equal(t, res[0].ID, entities[0].ID)
+		assert.Nil(t, err)
+		repository.AssertExpectations(t)
+	})
+
+	t.Run("Success V6", func(t *testing.T) {
+		entities[0].Status = "1"
+		entities[0].PaymentType = "11"
 		repository.On("HistoryUserTransaction", userID).Return(entities, nil).Once()
 
 		res, err := service.FindAllHistoryUserTransaction(userID)

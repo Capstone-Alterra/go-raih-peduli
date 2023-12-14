@@ -32,7 +32,7 @@ func (mdl *model) Paginate(size, ownerID int) (*dtos.ResBookmark, error) {
 
 	cursor, err := mdl.collection.Find(context.Background(), bson.M{"owner_id": ownerID, "post_type": "fundraise"}, opts)
 	
-	var fundraises []dtos.ResFundraise
+	var fundraises = []dtos.ResFundraise{}
 	if err = cursor.All(context.TODO(), &fundraises); err != nil {
 		logrus.Error(err)
 		return nil, err
@@ -40,7 +40,7 @@ func (mdl *model) Paginate(size, ownerID int) (*dtos.ResBookmark, error) {
 	
 	cursor, err = mdl.collection.Find(context.Background(), bson.M{"owner_id": ownerID, "post_type": "news"}, opts)
 	
-	var news []dtos.ResNews
+	var news = []dtos.ResNews{}
 	if err = cursor.All(context.TODO(), &news); err != nil {
 		logrus.Error(err)
 		return nil, err
@@ -48,7 +48,7 @@ func (mdl *model) Paginate(size, ownerID int) (*dtos.ResBookmark, error) {
 	
 	cursor, err = mdl.collection.Find(context.Background(), bson.M{"owner_id": ownerID, "post_type": "vacancy"}, opts)
 	
-	var vacancies []dtos.ResVolunteerVacancy
+	var vacancies = []dtos.ResVolunteerVacancy{}
 	if err = cursor.All(context.TODO(), &vacancies); err != nil {
 		logrus.Error(err)
 		return nil, err
