@@ -135,7 +135,6 @@ func AuthHandler() auth.Handler {
 	mongoDB := utils.ConnectMongo()
 	collection := mongoDB.Collection("devices")
 
-
 	repo := ar.New(db, redis, smtpConfig, collection)
 	uc := au.New(repo, jwt, hash, generator, validation)
 	return ah.New(uc)
@@ -148,11 +147,11 @@ func VolunteerHandler() volunteer.Handler {
 	db := utils.InitDB()
 	mongoDB := utils.ConnectMongo()
 	collection := mongoDB.Collection("bookmarks")
-
 	clStorage := helpers.NewCloudStorage(config.CLOUD_PROJECT_ID, config.CLOUD_BUCKET_NAME, "vacancies/")
+	nfService := helpers.NewNotificationService()
 
 	repo := vr.New(db, clStorage, collection)
-	uc := vu.New(repo, validation)
+	uc := vu.New(repo, validation, nfService)
 	return vh.New(uc)
 }
 
