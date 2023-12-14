@@ -252,7 +252,6 @@ func TestModifyVacancy(t *testing.T) {
 	}
 
 	t.Run("Success", func(t *testing.T) {
-		repo.On("SelectByTittle", vacancy.Title).Return(errors.New("title not exist")).Once()
 		validation.On("ValidateRequest", vacancy).Return(nil).Once()
 		repo.On("UploadFile", file, oldData.Photo).Return(oldData.Photo, nil).Once()
 		repo.On("UpdateVacancy", newVacancy).Return(int64(1)).Once()
@@ -264,18 +263,7 @@ func TestModifyVacancy(t *testing.T) {
 		validation.AssertExpectations(t)
 	})
 
-	t.Run("Title Already Exists", func(t *testing.T) {
-		repo.On("SelectByTittle", vacancy.Title).Return(nil).Once()
-
-		errMap, err := service.ModifyVacancy(vacancy, file, oldData)
-		assert.Nil(t, errMap)
-		assert.Error(t, err)
-		assert.EqualError(t, err, "title already used by another vacancy")
-		repo.AssertExpectations(t)
-	})
-
 	t.Run("Validation Error", func(t *testing.T) {
-		repo.On("SelectByTittle", vacancy.Title).Return(errors.New("title not exist")).Once()
 		validation.On("ValidateRequest", vacancy).Return(errValidation).Once()
 
 		errMap, err := service.ModifyVacancy(vacancy, file, oldData)
@@ -287,7 +275,6 @@ func TestModifyVacancy(t *testing.T) {
 	})
 
 	t.Run("Upload File Error", func(t *testing.T) {
-		repo.On("SelectByTittle", vacancy.Title).Return(errors.New("title not exist")).Once()
 		validation.On("ValidateRequest", vacancy).Return(nil).Once()
 		repo.On("UploadFile", file, oldData.Photo).Return("", errors.New("upload file failed")).Once()
 
@@ -300,7 +287,6 @@ func TestModifyVacancy(t *testing.T) {
 	})
 
 	t.Run("Update Data Error", func(t *testing.T) {
-		repo.On("SelectByTittle", vacancy.Title).Return(errors.New("title not exist")).Once()
 		validation.On("ValidateRequest", vacancy).Return(nil).Once()
 		repo.On("UploadFile", file, oldData.Photo).Return(oldData.Photo, nil).Once()
 		repo.On("UpdateVacancy", newVacancy).Return(int64(0)).Once()
@@ -599,7 +585,7 @@ func TestCreateVacancy(t *testing.T) {
 	var wrongData = dtos.InputVacancy{
 		Title:               "ini bencana",
 		Description:         "telah terjadi bencana",
-		SkillsRequired:      []string{""},
+		SkillsRequired:      []string{},
 		NumberOfVacancies:   0,
 		ApplicationDeadline: time.Date(2023, time.December, 1, 15, 30, 0, 0, time.UTC),
 		ContactEmail:        "didadejan45@gmail.com",

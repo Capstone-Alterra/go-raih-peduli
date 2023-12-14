@@ -154,6 +154,7 @@ func TestCreate(t *testing.T) {
 		hash.On("HashPassword", input.Password).Return(hashPassword).Once()
 		repository.On("InsertUser", &entity).Return(&entity, nil).Once()
 		generator.On("GenerateRandomOTP").Return(otp).Once()
+		repository.On("InsertVerification", entity.Email, otp).Return(nil).Once()
 		repository.On("SendOTPByEmail", input.Fullname, input.Email, otp, "1").Return(nil).Once()
 
 		res, errMap, err := service.Create(input)
@@ -172,6 +173,26 @@ func TestCreate(t *testing.T) {
 		hash.On("HashPassword", input.Password).Return(hashPassword).Once()
 		repository.On("InsertUser", &entity).Return(&entity, nil).Once()
 		generator.On("GenerateRandomOTP").Return(otp).Once()
+		repository.On("InsertVerification", entity.Email, otp).Return(nil).Once()
+		repository.On("SendOTPByEmail", input.Fullname, input.Email, otp, "1").Return(errors.New("error send otp")).Once()
+
+		res, errMap, err := service.Create(input)
+		assert.Nil(t, res)
+		assert.Nil(t, errMap)
+		assert.NotNil(t, err)
+		validation.AssertExpectations(t)
+		repository.AssertExpectations(t)
+		hash.AssertExpectations(t)
+		generator.AssertExpectations(t)
+	})
+
+	t.Run("Failed: Error When InsertVerification", func(t *testing.T) {
+		validation.On("ValidateRequest", input).Return(nil).Once()
+		repository.On("SelectByEmail", input.Email).Return(nil, errors.New("user not found")).Once()
+		hash.On("HashPassword", input.Password).Return(hashPassword).Once()
+		repository.On("InsertUser", &entity).Return(&entity, nil).Once()
+		generator.On("GenerateRandomOTP").Return(otp).Once()
+		repository.On("InsertVerification", entity.Email, otp).Return(errors.New("error insert verification")).Once()
 		repository.On("SendOTPByEmail", input.Fullname, input.Email, otp, "1").Return(errors.New("error send otp")).Once()
 
 		res, errMap, err := service.Create(input)
@@ -557,8 +578,8 @@ func TestForgetPassword(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		repository.On("SelectByEmail", input.Email).Return(&entity, nil).Once()
-		repository.On("UpdateUser", entity).Return(int64(1)).Once()
 		generator.On("GenerateRandomOTP").Return(otp).Once()
+		repository.On("InsertVerification", input.Email, otp).Return(nil).Once()
 		repository.On("SendOTPByEmail", entity.Fullname, entity.Email, otp, "2").Return(nil).Once()
 
 		err := service.ForgetPassword(input)
@@ -569,23 +590,14 @@ func TestForgetPassword(t *testing.T) {
 
 	t.Run("Failed : Error When Send OTP", func(t *testing.T) {
 		repository.On("SelectByEmail", input.Email).Return(&entity, nil).Once()
-		repository.On("UpdateUser", entity).Return(int64(1)).Once()
 		generator.On("GenerateRandomOTP").Return(otp).Once()
+		repository.On("InsertVerification", input.Email, otp).Return(nil).Once()
 		repository.On("SendOTPByEmail", entity.Fullname, entity.Email, otp, "2").Return(errors.New("error when send otp")).Once()
 
 		err := service.ForgetPassword(input)
 		assert.NotNil(t, err)
 		repository.AssertExpectations(t)
 		generator.AssertExpectations(t)
-	})
-
-	t.Run("Failed : Error When Update", func(t *testing.T) {
-		repository.On("SelectByEmail", input.Email).Return(&entity, nil).Once()
-		repository.On("UpdateUser", entity).Return(int64(0)).Once()
-
-		err := service.ForgetPassword(input)
-		assert.NotNil(t, err)
-		repository.AssertExpectations(t)
 	})
 
 	t.Run("Failed : User Not Found", func(t *testing.T) {
@@ -688,18 +700,6 @@ func TestResetPassword(t *testing.T) {
 
 		err := service.ResetPassword(input)
 		assert.Nil(t, err)
-		repository.AssertExpectations(t)
-		hash.AssertExpectations(t)
-	})
-
-	t.Run("Failed : Error When Update", func(t *testing.T) {
-		repository.On("SelectByEmail", input.Email).Return(&entity, nil).Once()
-		hash.On("HashPassword", input.Password).Return(hashed).Once()
-		entity.Password = hashed
-		repository.On("UpdateUser", entity).Return(int64(0)).Once()
-
-		err := service.ResetPassword(input)
-		assert.NotNil(t, err)
 		repository.AssertExpectations(t)
 		hash.AssertExpectations(t)
 	})
