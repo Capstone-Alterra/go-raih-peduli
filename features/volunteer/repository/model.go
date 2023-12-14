@@ -204,6 +204,10 @@ func (mdl *model) UploadFile(file multipart.File, oldFilename string) (string, e
 	var urlLength int = len("https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/vacancies/")
 	var objectName string
 
+	if file == nil && oldFilename != "" {
+		return oldFilename, nil
+	}
+
 	if file == nil {
 		return "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/vacancies/default", nil
 	}

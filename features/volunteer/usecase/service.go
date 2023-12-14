@@ -152,10 +152,6 @@ func (svc *service) FindVacancyByID(vacancyID, ownerID int) *dtos.ResVacancy {
 }
 
 func (svc *service) ModifyVacancy(vacancyData dtos.InputVacancy, file multipart.File, oldData dtos.ResVacancy) ([]string, error) {
-	if err := svc.model.SelectByTittle(vacancyData.Title); err == nil {
-		return nil, errors.New("title already used by another vacancy")
-	}
-
 	errMap := svc.validation.ValidateRequest(vacancyData)
 	if errMap != nil {
 		return errMap, nil
