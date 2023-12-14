@@ -73,6 +73,20 @@ func (_m *Repository) FindUserInVacancy(vacancyID int, userID int) bool {
 	return r0
 }
 
+// GetDeviceToken provides a mock function with given fields: userID
+func (_m *Repository) GetDeviceToken(userID int) string {
+	ret := _m.Called(userID)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(int) string); ok {
+		r0 = rf(userID)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
 // GetTotalDataVacancies provides a mock function with given fields:
 func (_m *Repository) GetTotalDataVacancies() int64 {
 	ret := _m.Called()
