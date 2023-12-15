@@ -22,7 +22,8 @@ type ResVacancy struct {
 	Photo               string         `json:"photo"`
 	Status              string         `json:"status"`
 	TotalRegistrar      int            `json:"total_registrants"`
-	BookmarkID          string        `json:"bookmark_id"`
+	BookmarkID          string         `json:"bookmark_id"`
+	IsRegistered        bool           `json:"is_registered"`
 	RejectedReason      string         `json:"rejected_reason,omitempty"`
 	CreatedAt           time.Time      `json:"created_at"`
 	UpdatedAt           time.Time      `json:"updated_at"`
@@ -30,21 +31,21 @@ type ResVacancy struct {
 }
 
 type ResRegistrantVacancy struct {
-	ID       		int    `json:"id"`
-	Email 	 		string `json:"email"`
-	Fullname 		string `json:"fullname"`
-	Address  		string `json:"address"`
-	PhoneNumber 	string `json:"phone_number"`
-	Gender    		string `json:"gender"`
-	Nik      		string `json:"nik"`
-	Skills   		[]string `json:"skills_required"`
-	Resume   		string `json:"resume"`
-	Reason 			string `json:"reason"`
-	Photo    		string `json:"photo"`
-	Status   		string `json:"status"`
+	ID          int      `json:"id"`
+	Email       string   `json:"email"`
+	Fullname    string   `json:"fullname"`
+	Address     string   `json:"address"`
+	PhoneNumber string   `json:"phone_number"`
+	Gender      string   `json:"gender"`
+	Nik         string   `json:"nik"`
+	Skills      []string `json:"skills_required"`
+	Resume      string   `json:"resume"`
+	Reason      string   `json:"reason"`
+	Photo       string   `json:"photo"`
+	Status      string   `json:"status"`
 }
 
 type Skill struct {
-	ID		int `json:"id"`
-	Name 	string `json:"name"`
+	ID   int    `json:"id"`
+	Name string `json:"name"`
 }
