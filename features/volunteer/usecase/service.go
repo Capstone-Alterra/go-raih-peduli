@@ -121,6 +121,7 @@ func (svc *service) FindVacancyByID(vacancyID, ownerID int) *dtos.ResVacancy {
 
 	if ownerID != 0 {
 		bookmarkID = svc.model.SelectBookmarkByVacancyAndOwnerID(vacancyID, ownerID)
+		res.IsRegistered = svc.model.FindUserInVacancy(vacancyID, ownerID)
 
 		if bookmarkID != "" {
 			res.BookmarkID = bookmarkID
@@ -145,7 +146,6 @@ func (svc *service) FindVacancyByID(vacancyID, ownerID int) *dtos.ResVacancy {
 	res.CreatedAt = vacancy.CreatedAt
 	res.UpdatedAt = vacancy.UpdatedAt
 	res.DeletedAt = vacancy.DeletedAt
-
 	res.TotalRegistrar = int(svc.model.GetTotalVolunteersByVacancyID(res.ID))
 
 	return &res
