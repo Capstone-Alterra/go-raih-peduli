@@ -147,15 +147,15 @@ func (ctl *controller) UpdateStatusVacancy() echo.HandlerFunc {
 
 		ctx.Bind(&input)
 
-		result, errMap := ctl.service.ModifyVacancyStatus(input, *vacancy)
+		err, errMap := ctl.service.ModifyVacancyStatus(input, *vacancy)
 		if errMap != nil {
 			return ctx.JSON(400, helpers.Response("error missing some data", map[string]any{
 				"error": errMap,
 			}))
 		}
 
-		if !result {
-			return ctx.JSON(500, helpers.Response("something went wrong"))
+		if err != nil {
+			return ctx.JSON(500, helpers.Response(err.Error()))
 		}
 
 		return ctx.JSON(200, helpers.Response("success updated volunteer vacancy status"))
@@ -364,7 +364,7 @@ func (ctl *controller) GetSkills() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 
 		skills, err := ctl.service.FindAllSkills()
-	
+
 		if err != nil {
 			return ctx.JSON(500, helpers.Response(err.Error()))
 		}
@@ -372,6 +372,6 @@ func (ctl *controller) GetSkills() echo.HandlerFunc {
 		return ctx.JSON(200, helpers.Response("success", map[string]any{
 			"data": skills,
 		}))
-	}	
+	}
 
 }
