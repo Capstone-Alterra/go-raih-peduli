@@ -62,8 +62,8 @@ func (oai *openAI) GetNewsContent(prompt string) (string, error) {
 					Content: prompt,
 				},
 			},
-			MaxTokens: 200,
-			Stop: []string{"."},
+			// MaxTokens: 200,
+			// Stop: []string{"."},
 		},
 	)
 
