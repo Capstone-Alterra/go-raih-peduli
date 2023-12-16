@@ -116,8 +116,10 @@ func (svc *service) Login(data dtos.RequestLogin) (*dtos.LoginResponse, []string
 		return nil, nil, errors.New("generate token failed")
 	}
 
-	if err := svc.model.InsertToken(user.ID, data.FCMTokens); err != nil {
-		return nil, nil, err
+	if data.FCMTokens != "" {
+		if err := svc.model.InsertToken(user.ID, data.FCMTokens); err != nil {
+			return nil, nil, err
+		}
 	}
 
 	if user.Personalization == nil {
