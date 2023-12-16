@@ -167,6 +167,7 @@ func TestFindVacancyByID(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		repo.On("SelectVacancyByID", vacancy.ID).Return(&vacancy).Once()
 		repo.On("SelectBookmarkByVacancyAndOwnerID", vacancy.ID, 1).Return("123456").Once()
+		repo.On("FindUserInVacancy", vacancy.ID, 1).Return(true).Once()
 		repo.On("GetTotalVolunteersByVacancyID", vacancy.ID).Return(int64(15)).Once()
 
 		result := service.FindVacancyByID(1, 1)
@@ -177,6 +178,7 @@ func TestFindVacancyByID(t *testing.T) {
 	t.Run("Bookmark empty", func(t *testing.T) {
 		repo.On("SelectVacancyByID", vacancy.ID).Return(&vacancy).Once()
 		repo.On("SelectBookmarkByVacancyAndOwnerID", vacancy.ID, 1).Return("").Once()
+		repo.On("FindUserInVacancy", vacancy.ID, 1).Return(true).Once()
 		repo.On("GetTotalVolunteersByVacancyID", vacancy.ID).Return(int64(15)).Once()
 
 		result := service.FindVacancyByID(1, 1)
@@ -351,64 +353,81 @@ func TestModifyVacancyStatus(t *testing.T) {
 	}
 
 	t.Run("Success Update Status Accepted", func(t *testing.T) {
+		repo.On("SelectByTittle", oldData.Title).Return(errors.New("data not found")).Once()
 		validation.On("ValidateRequest", statusAccepted).Return(nil).Once()
 		repo.On("GetDeviceToken", oldData.ID).Return("deviceToken").Once()
 		message := "Kami ingin memberitahu bahwa pengajuan lowongan relawan Anda untuk " + oldData.Title + " telah diterima! Terima kasih atas langkah inisiatif Anda."
 		notification.On("SendNotifications", "deviceToken", "Pengajuan Lowongan Relawan Diterima", message).Return(nil).Once()
 		repo.On("UpdateVacancy", newVacancyAccepted).Return(int64(1)).Once()
 
-		result, errMap := service.ModifyVacancyStatus(statusAccepted, oldData)
+		err, errMap := service.ModifyVacancyStatus(statusAccepted, oldData)
 		assert.Nil(t, errMap)
-		assert.Equal(t, true, result)
+		assert.Nil(t, err)
 		validation.AssertExpectations(t)
 		repo.AssertExpectations(t)
 	})
 
 	t.Run("Success Update Status Rejected", func(t *testing.T) {
+		repo.On("SelectByTittle", oldData.Title).Return(errors.New("data not found")).Once()
 		validation.On("ValidateRequest", statusRejected).Return(nil).Once()
 		repo.On("GetDeviceToken", oldData.ID).Return("deviceToken").Once()
 		message := "Terima kasih sudah mengajukan lowongan relawan. Saat ini, kami belum bisa menyetujui permohonan ini karena.\n\nAlasan : " + statusRejected.RejectedReason + "\n\nTerima kasih atas partisipasinya"
 		notification.On("SendNotifications", "deviceToken", "Pengajuan Lowongan Relawan Ditolak", message).Return(nil).Once()
 		repo.On("UpdateVacancy", newVacancyRejected).Return(int64(1)).Once()
 
-		result, errMap := service.ModifyVacancyStatus(statusRejected, oldData)
+		err, errMap := service.ModifyVacancyStatus(statusRejected, oldData)
 		assert.Nil(t, errMap)
-		assert.Equal(t, true, result)
+		assert.Nil(t, err)
+		validation.AssertExpectations(t)
+		repo.AssertExpectations(t)
+	})
+
+	t.Run("Title Already Used", func(t *testing.T) {
+		repo.On("SelectByTittle", oldData.Title).Return(nil).Once()
+
+		err, errMap := service.ModifyVacancyStatus(statusRejected, oldData)
+		assert.Nil(t, errMap)
+		assert.Error(t, err)
+		assert.EqualError(t, err, "title already used by another vacancy")
 		validation.AssertExpectations(t)
 		repo.AssertExpectations(t)
 	})
 
 	t.Run("Validation Error", func(t *testing.T) {
+		repo.On("SelectByTittle", oldData.Title).Return(errors.New("data not found")).Once()
 		validation.On("ValidateRequest", statusAccepted).Return(errValidation).Once()
 
-		result, errMap := service.ModifyVacancyStatus(statusAccepted, oldData)
+		err, errMap := service.ModifyVacancyStatus(statusAccepted, oldData)
 		assert.NotNil(t, errMap)
 		assert.Equal(t, errValidation, errMap)
-		assert.Equal(t, false, result)
+		assert.Nil(t, err)
 		validation.AssertExpectations(t)
 	})
 
 	t.Run("Status Rejected Not Found", func(t *testing.T) {
+		repo.On("SelectByTittle", oldData.Title).Return(errors.New("data not found")).Once()
 		validation.On("ValidateRequest", statusRejectedWithoutReason).Return(nil).Once()
 		repo.On("GetDeviceToken", oldData.ID).Return("deviceToken").Once()
 
-		result, errMap := service.ModifyVacancyStatus(statusRejectedWithoutReason, oldData)
+		err, errMap := service.ModifyVacancyStatus(statusRejectedWithoutReason, oldData)
 		assert.NotNil(t, errMap)
 		assert.Equal(t, []string{"rejected_reason field is required when the status is rejected"}, errMap)
-		assert.Equal(t, false, result)
+		assert.Nil(t, err)
 		validation.AssertExpectations(t)
 	})
 
 	t.Run("Update Data Failed", func(t *testing.T) {
+		repo.On("SelectByTittle", oldData.Title).Return(errors.New("data not found")).Once()
 		validation.On("ValidateRequest", statusAccepted).Return(nil).Once()
 		repo.On("GetDeviceToken", oldData.ID).Return("deviceToken").Once()
 		message := "Kami ingin memberitahu bahwa pengajuan lowongan relawan Anda untuk " + oldData.Title + " telah diterima! Terima kasih atas langkah inisiatif Anda."
 		notification.On("SendNotifications", "deviceToken", "Pengajuan Lowongan Relawan Diterima", message).Return(nil).Once()
 		repo.On("UpdateVacancy", newVacancyAccepted).Return(int64(0)).Once()
 
-		result, errMap := service.ModifyVacancyStatus(statusAccepted, oldData)
+		err, errMap := service.ModifyVacancyStatus(statusAccepted, oldData)
 		assert.Nil(t, errMap)
-		assert.Equal(t, false, result)
+		assert.Error(t, err)
+		assert.EqualError(t, err, "there is no vacancy updated")
 		validation.AssertExpectations(t)
 		repo.AssertExpectations(t)
 	})

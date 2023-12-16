@@ -188,10 +188,14 @@ func (svc *service) ModifyVacancy(vacancyData dtos.InputVacancy, file multipart.
 	return nil, nil
 }
 
-func (svc *service) ModifyVacancyStatus(input dtos.StatusVacancies, oldData dtos.ResVacancy) (bool, []string) {
+func (svc *service) ModifyVacancyStatus(input dtos.StatusVacancies, oldData dtos.ResVacancy) (error, []string) {
+	if err := svc.model.SelectByTittle(oldData.Title); err == nil {
+		return errors.New("title already used by another vacancy"), nil
+	}
+
 	errMap := svc.validation.ValidateRequest(input)
 	if errMap != nil {
-		return false, errMap
+		return nil, errMap
 	}
 
 	deviceToken := svc.model.GetDeviceToken(oldData.UserID)
@@ -202,13 +206,13 @@ func (svc *service) ModifyVacancyStatus(input dtos.StatusVacancies, oldData dtos
 	newVacancy.Status = input.Status
 	if input.Status == "rejected" {
 		if input.RejectedReason == "" {
-			return false, []string{"rejected_reason field is required when the status is rejected"}
+			return nil, []string{"rejected_reason field is required when the status is rejected"}
 		}
 		newVacancy.RejectedReason = input.RejectedReason
 		message := "Terima kasih sudah mengajukan lowongan relawan. Saat ini, kami belum bisa menyetujui permohonan ini karena.\n\nAlasan : " + input.RejectedReason + "\n\nTerima kasih atas partisipasinya"
 		err := svc.nsRequest.SendNotifications(deviceToken, "Pengajuan Lowongan Relawan Ditolak", message)
 		log.Error("Send Notifications Error: ", err)
-	} else {
+	} else if input.Status == "accepted" {
 		message := "Kami ingin memberitahu bahwa pengajuan lowongan relawan Anda untuk " + oldData.Title + " telah diterima! Terima kasih atas langkah inisiatif Anda."
 		err := svc.nsRequest.SendNotifications(deviceToken, "Pengajuan Lowongan Relawan Diterima", message)
 		log.Error("Send Notifications Error: ", err)
@@ -217,11 +221,11 @@ func (svc *service) ModifyVacancyStatus(input dtos.StatusVacancies, oldData dtos
 	rowsAffected := svc.model.UpdateVacancy(newVacancy)
 
 	if rowsAffected <= 0 {
-		log.Error("There is No Volunteer Updated!")
-		return false, nil
+		log.Error("There is No Vacancy Updated!")
+		return errors.New("there is no vacancy updated"), nil
 	}
 
-	return true, nil
+	return nil, nil
 }
 
 func (svc *service) UpdateStatusRegistrar(input dtos.StatusRegistrar, registrarID int) (bool, []string) {
@@ -248,7 +252,7 @@ func (svc *service) UpdateStatusRegistrar(input dtos.StatusRegistrar, registrarI
 		message := "Terima kasih sudah mengajukan diri sebagai relawan. Saat ini, kami belum bisa menyetujui permohonan Anda sebagai relawan di " + vacancy.Title + ".\n\nAlasan : " + input.RejectedReason + "\n\nTerima kasih atas partisipasinya"
 		err := svc.nsRequest.SendNotifications(deviceToken, "Pengajuan Relawan Ditolak", message)
 		log.Error("Send Notifications Error: ", err)
-	} else {
+	} else if input.Status == "accepted" {
 		message := "Kami ingin memberitahu Anda bahwa pengajuan sebagai relawan di " + vacancy.Title + " telah diterima! Terima kasih atas minat dan dedikasi Anda."
 		err := svc.nsRequest.SendNotifications(deviceToken, "Pengajuan Relawan Diterima", message)
 		log.Error("Send Notifications Error: ", err)
@@ -324,7 +328,7 @@ func (svc *service) CreateVacancy(newVolunteer dtos.InputVacancy, UserID int, fi
 	resVolun.UserID = result.UserID
 	resVolun.Title = result.Title
 	resVolun.Description = result.Description
-	resVolun.SkillsRequired = strings.Split(result.SkillsRequired, ",")
+	resVolun.SkillsRequired = strings.Split(result.SkillsRequired, ", ")
 	resVolun.NumberOfVacancies = result.NumberOfVacancies
 	resVolun.ApplicationDeadline = result.ApplicationDeadline
 	resVolun.ContactEmail = result.ContactEmail

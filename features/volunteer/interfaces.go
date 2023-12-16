@@ -40,7 +40,7 @@ type Usecase interface {
 	FindAllVacancies(page, size int, searchAndFilter dtos.SearchAndFilter, ownerID int, suffix string) ([]dtos.ResVacancy, int64)
 	FindVacancyByID(vacancyID, ownerID int) *dtos.ResVacancy
 	ModifyVacancy(vacancyData dtos.InputVacancy, file multipart.File, oldData dtos.ResVacancy) ([]string, error)
-	ModifyVacancyStatus(input dtos.StatusVacancies, oldData dtos.ResVacancy) (bool, []string)
+	ModifyVacancyStatus(input dtos.StatusVacancies, oldData dtos.ResVacancy) (error, []string)
 	RemoveVacancy(vacancyID int, oldData dtos.ResVacancy) error
 	CreateVacancy(newVacancy dtos.InputVacancy, UserID int, file multipart.File) (*dtos.ResVacancy, []string, error)
 	RegisterVacancy(newApply dtos.ApplyVacancy, userID int) (bool, []string)
