@@ -374,7 +374,11 @@ func (svc *service) Notifications(notificationPayload map[string]any) error {
 			logrus.Println(err.Error())
 		}
 
-		transaction.PaidAt = time.Now().Format("2006-01-02 15:04:05")
+		currentTimeUTC := time.Now()
+		wibLocation, _ := time.LoadLocation("Asia/Jakarta")
+		currentTimeWIB := currentTimeUTC.In(wibLocation)
+
+		transaction.PaidAt = currentTimeWIB.Format("2006-01-02 15:04:05")
 
 		if update := svc.model.Update(*transaction); update == -1 {
 			return nil
@@ -388,7 +392,7 @@ func (svc *service) Notifications(notificationPayload map[string]any) error {
 
 func (svc *service) SendPaymentConfirmation() error {
 	message := "Terimakasih orang baik, donasimu membantu palestina"
-	err := svc.nsRequest.SendNotifications("", "Donasi sebesar Rp. 10.000 Berhasil", message)
+	err := svc.nsRequest.SendNotifications("ebjJJrr9Qp2CZZYk-e84al:APA91bH0p_NruKDYWOTbGBaLe_MI8Z5Q1r7oo2ui9L6AK7_KgkTkhdakrRznj4ww64ZKzX9dFMU2tTevbbZgoXrhO2bpWwVs-a2WyfUFfVEnvuM9KHBpU80LZsbThfrh40EvxvgKFxun", "Donasi sebesar Rp. 10.000 Berhasil", message)
 	if err != nil {
 		logrus.Print("Notif Send Status Error: ", err)
 		return err
