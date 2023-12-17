@@ -2,8 +2,6 @@ package usecase
 
 import (
 	"errors"
-	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/assert"
 	"math"
 	"os"
 	"raihpeduli/features/fundraise"
@@ -12,6 +10,9 @@ import (
 	helperMocks "raihpeduli/helpers/mocks"
 	"testing"
 	"time"
+
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestFindAll(t *testing.T) {
@@ -227,7 +228,6 @@ func TestModify(t *testing.T) {
 
 }
 
-/*
 func TestModifyStatus(t *testing.T) {
 	var repository = mocks.NewRepository(t)
 	var validation = helperMocks.NewValidationInterface(t)
@@ -283,14 +283,13 @@ func TestModifyStatus(t *testing.T) {
 		repository.On("SelectByTitle", fundraiseItemOld.Title).Return(&fundraiseItemOld, errors.New("error")).Once()
 		repository.On("Update", fundraiseItemNew).Return(nil).Once()
 		repository.On("GetDeviceToken", 1).Return("vxgeeiuwtbl").Once()
-		nsRequest.On("SendNotifications", "vxgeeiuwtbl", notificationTitle, notificationMessage).Once()
+		nsRequest.On("SendNotifications", "vxgeeiuwtbl", notificationTitle, notificationMessage).Return(nil).Once()
 		result, _ := service.ModifyStatus(fundraiseItemInputStatus, oldFundraiseItem)
 		assert.Nil(t, result)
 		repository.AssertExpectations(t)
 	})
 }
 
-*/
 
 func TestRemove(t *testing.T) {
 	var repository = mocks.NewRepository(t)
