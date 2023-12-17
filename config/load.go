@@ -157,22 +157,24 @@ func LoadCloudStorageConfig() *CloudStorageConfig {
 func LoadFirebaseConfig() *FirebaseConfig {
 	var res = new(FirebaseConfig)
 
-	if val, found := os.LookupEnv("FIREBASE_API_KEY"); found {
-		gcredentials, _ := os.LookupEnv("FIREBASE_API_KEY")
+	// if val, found := os.LookupEnv("FIREBASE_API_KEY"); found {
+	// 	gcredentials, _ := os.LookupEnv("FIREBASE_API_KEY")
 
-		file, err := os.Create("firebase_key.json")
-		if err != nil {
-			panic(err)
-		}
-		defer file.Close()
+	// 	file, err := os.Create("firebase_key.json")
+	// 	if err != nil {
+	// 		panic(err)
+	// 	}
+	// 	defer file.Close()
 
-		_, err = io.WriteString(file, gcredentials)
-		if err != nil {
-			panic(err)
-		}
+	// 	_, err = io.WriteString(file, gcredentials)
+	// 	if err != nil {
+	// 		panic(err)
+	// 	}
 
-		res.FIREBASE_API_KEY = val
-	}
+	// 	res.FIREBASE_API_KEY = val
+	// }
+
+	res.FIREBASE_API_KEY = "firebase_key.json"
 	return res
 }
 

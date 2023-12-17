@@ -29,7 +29,6 @@ func (mr *midtransRequest) CreateTransactionBank(IDTransaction string, PaymentTy
 		"6": "bca",
 		"7": "bri",
 		"8": "bni",
-		"9": "mandiri",
 	}
 
 	if bank, ok := bankMap[PaymentType]; ok {
@@ -42,8 +41,6 @@ func (mr *midtransRequest) CreateTransactionBank(IDTransaction string, PaymentTy
 			midtransBank = midtrans.BankBri
 		case "bni":
 			midtransBank = midtrans.BankBni
-		case "mandiri":
-			midtransBank = midtrans.BankMandiri
 		case "cimb":
 			midtransBank = midtrans.BankCimb
 		case "permata":
