@@ -173,6 +173,8 @@ func LoadFirebaseConfig() *FirebaseConfig {
 
 		res.FIREBASE_API_KEY = val
 	}
+
+	res.FIREBASE_API_KEY = "firebase_key.json"
 	return res
 }
 
