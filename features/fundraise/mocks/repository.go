@@ -44,6 +44,20 @@ func (_m *Repository) DeleteFile(filename string) error {
 	return r0
 }
 
+// GetDeviceToken provides a mock function with given fields: userID
+func (_m *Repository) GetDeviceToken(userID int) string {
+	ret := _m.Called(userID)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(int) string); ok {
+		r0 = rf(userID)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
 // GetTotalData provides a mock function with given fields:
 func (_m *Repository) GetTotalData() int64 {
 	ret := _m.Called()
@@ -229,24 +243,50 @@ func (_m *Repository) SelectBookmarkedFundraiseID(ownerID int) (map[int]string, 
 }
 
 // SelectByID provides a mock function with given fields: fundraiseID
-func (_m *Repository) SelectByID(fundraiseID int) (*fundraise.Fundraise, error) {
+func (_m *Repository) SelectByID(fundraiseID int) (*dtos.FundraiseDetails, error) {
 	ret := _m.Called(fundraiseID)
+
+	var r0 *dtos.FundraiseDetails
+	var r1 error
+	if rf, ok := ret.Get(0).(func(int) (*dtos.FundraiseDetails, error)); ok {
+		return rf(fundraiseID)
+	}
+	if rf, ok := ret.Get(0).(func(int) *dtos.FundraiseDetails); ok {
+		r0 = rf(fundraiseID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*dtos.FundraiseDetails)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(int) error); ok {
+		r1 = rf(fundraiseID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// SelectByTitle provides a mock function with given fields: title
+func (_m *Repository) SelectByTitle(title string) (*fundraise.Fundraise, error) {
+	ret := _m.Called(title)
 
 	var r0 *fundraise.Fundraise
 	var r1 error
-	if rf, ok := ret.Get(0).(func(int) (*fundraise.Fundraise, error)); ok {
-		return rf(fundraiseID)
+	if rf, ok := ret.Get(0).(func(string) (*fundraise.Fundraise, error)); ok {
+		return rf(title)
 	}
-	if rf, ok := ret.Get(0).(func(int) *fundraise.Fundraise); ok {
-		r0 = rf(fundraiseID)
+	if rf, ok := ret.Get(0).(func(string) *fundraise.Fundraise); ok {
+		r0 = rf(title)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fundraise.Fundraise)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(int) error); ok {
-		r1 = rf(fundraiseID)
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(title)
 	} else {
 		r1 = ret.Error(1)
 	}
