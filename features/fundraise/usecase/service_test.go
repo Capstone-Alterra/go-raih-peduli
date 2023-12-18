@@ -208,6 +208,19 @@ func TestCreate(t *testing.T) {
 		CreatedAt:   time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC),
 		UpdatedAt:   time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC),
 	}
+	var fundraiseItemFileNil = fundraise.Fundraise{
+		ID:          0,
+		Title:       "Pembangunan Masjid Pembangunan Masjid Pembangunan Masjid",
+		Description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam gravida, turpis consequat malesuada luctus, nisl dolor dignissim justo, a molestie sem massa et nulla. Duis diam ligula, iaculis lacinia iaculis sed, finibus eu urna. Mauris et auctor est. Etiam elementum tortor ac velit porttitor semper. Pellentesque habitant morbi tristique senectus.",
+		Photo:       "https://storage.googleapis.com//fundraises/default",
+		Target:      500000000,
+		StartDate:   time.Date(2023, time.December, 19, 15, 30, 0, 0, time.UTC),
+		EndDate:     time.Date(2024, time.December, 23, 15, 30, 0, 0, time.UTC),
+		Status:      "pending",
+		UserID:      1,
+		CreatedAt:   time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC),
+		UpdatedAt:   time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC),
+	}
 	var fundraiseItemInput = dtos.InputFundraise{
 		Title:       "Pembangunan Masjid Pembangunan Masjid Pembangunan Masjid",
 		Description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam gravida, turpis consequat malesuada luctus, nisl dolor dignissim justo, a molestie sem massa et nulla. Duis diam ligula, iaculis lacinia iaculis sed, finibus eu urna. Mauris et auctor est. Etiam elementum tortor ac velit porttitor semper. Pellentesque habitant morbi tristique senectus.",
@@ -221,6 +234,16 @@ func TestCreate(t *testing.T) {
 		repository.On("UploadFile", mockFile).Return("https://googleapis.com/awdadwd", nil).Once()
 		repository.On("Insert", fundraiseItem).Return(&fundraiseItem, nil).Once()
 		result, _, _ := service.Create(fundraiseItemInput, 1, mockFile)
+		assert.NotNil(t, result)
+		assert.Equal(t, result.ID, fundraiseItem.ID)
+		assert.Equal(t, result.UserID, fundraiseItem.UserID)
+		repository.AssertExpectations(t)
+	})
+	t.Run("Success with file nil", func(t *testing.T) {
+		repository.On("SelectByTitle", fundraiseItemInput.Title).Return(nil, errors.New("error")).Once()
+		validation.On("ValidateRequest", fundraiseItemInput).Return(nil).Once()
+		repository.On("Insert", fundraiseItemFileNil).Return(&fundraiseItemFileNil, nil).Once()
+		result, _, _ := service.Create(fundraiseItemInput, 1, nil)
 		assert.NotNil(t, result)
 		assert.Equal(t, result.ID, fundraiseItem.ID)
 		assert.Equal(t, result.UserID, fundraiseItem.UserID)
