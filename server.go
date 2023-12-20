@@ -83,6 +83,7 @@ func main() {
 }
 
 func FundraiseHandler() fundraise.Handler {
+	config.LoadFirebaseConfig()
 	config := config.LoadCloudStorageConfig()
 	validation := helpers.NewValidationRequest()
 
@@ -142,6 +143,7 @@ func AuthHandler() auth.Handler {
 }
 
 func VolunteerHandler() volunteer.Handler {
+	config.LoadFirebaseConfig()
 	config := config.LoadCloudStorageConfig()
 	validation := helpers.NewValidationRequest()
 
