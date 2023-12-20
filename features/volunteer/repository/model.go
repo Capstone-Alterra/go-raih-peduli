@@ -19,16 +19,18 @@ import (
 )
 
 type model struct {
-	db         *gorm.DB
-	clStorage  helpers.CloudStorageInterface
-	collection *mongo.Collection
+	db           *gorm.DB
+	clStorage    helpers.CloudStorageInterface
+	collection   *mongo.Collection
+	nsCollection *mongo.Collection
 }
 
-func New(db *gorm.DB, clStorage helpers.CloudStorageInterface, collection *mongo.Collection) volunteer.Repository {
+func New(db *gorm.DB, clStorage helpers.CloudStorageInterface, collection *mongo.Collection, nsCollection *mongo.Collection) volunteer.Repository {
 	return &model{
-		db:         db,
-		clStorage:  clStorage,
-		collection: collection,
+		db:           db,
+		clStorage:    clStorage,
+		collection:   collection,
+		nsCollection: nsCollection,
 	}
 }
 
@@ -422,7 +424,7 @@ func (mdl *model) SelectAllSkills() ([]dtos.Skill, error) {
 func (mdl *model) GetDeviceToken(userID int) string {
 	var result volunteer.NotificationToken
 
-	if err := mdl.collection.FindOne(context.Background(), bson.M{"user_id": userID}).Decode(&result); err != nil {
+	if err := mdl.nsCollection.FindOne(context.Background(), bson.M{"user_id": userID}).Decode(&result); err != nil {
 		return ""
 	}
 

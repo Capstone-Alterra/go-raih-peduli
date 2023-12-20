@@ -19,16 +19,18 @@ import (
 )
 
 type model struct {
-	db         *gorm.DB
-	clStorage  helpers.CloudStorageInterface
-	collection *mongo.Collection
+	db           *gorm.DB
+	clStorage    helpers.CloudStorageInterface
+	collection   *mongo.Collection
+	nsCollection *mongo.Collection
 }
 
-func New(db *gorm.DB, clStorage helpers.CloudStorageInterface, collection *mongo.Collection) fundraise.Repository {
+func New(db *gorm.DB, clStorage helpers.CloudStorageInterface, collection *mongo.Collection, nsCollection *mongo.Collection) fundraise.Repository {
 	return &model{
-		db:         db,
-		clStorage:  clStorage,
-		collection: collection,
+		db:           db,
+		clStorage:    clStorage,
+		collection:   collection,
+		nsCollection: nsCollection,
 	}
 }
 
@@ -86,7 +88,7 @@ func (mdl *model) SelectByID(fundraiseID int) (*dtos.FundraiseDetails, error) {
 
 	if err := mdl.db.Table("fundraises").Select("fundraises.*, users.fullname as user_fullname, users.profile_picture as user_photo").Joins("LEFT JOIN users ON users.id = fundraises.user_id").
 		First(&fundraise, fundraiseID).Error; err != nil {
-			return nil, err
+		return nil, err
 	}
 
 	return &fundraise, nil
@@ -199,8 +201,8 @@ func (mdl *model) GetTotalDataMobile() int64 {
 		Where("deleted_at IS NULL").
 		Where("status = ?", "accepted").
 		Count(&totalData).Error; err != nil {
-			logrus.Error(err)
-			return 0
+		logrus.Error(err)
+		return 0
 	}
 
 	return totalData
@@ -228,7 +230,7 @@ func (mdl *model) GetTotalDataBySearchAndFilterMobile(searchAndFilter dtos.Searc
 	var totalData int64
 
 	title := "%" + searchAndFilter.Title + "%"
-	
+
 	currentTimeUTC := time.Now()
 	wibLocation, _ := time.LoadLocation("Asia/Jakarta")
 	currentTimeWIB := currentTimeUTC.In(wibLocation)
@@ -253,7 +255,7 @@ func (mdl *model) SelectByTitle(title string) (*fundraise.Fundraise, error) {
 
 	if err := mdl.db.Where("title = ?", title).
 		Where("status = ?", "accepted").First(&fundraise).Error; err != nil {
-			return nil, err
+		return nil, err
 	}
 
 	return &fundraise, nil
@@ -262,7 +264,7 @@ func (mdl *model) SelectByTitle(title string) (*fundraise.Fundraise, error) {
 func (mdl *model) GetDeviceToken(userID int) string {
 	var result fundraise.NotificationToken
 
-	if err := mdl.collection.FindOne(context.Background(), bson.M{"user_id": userID}).Decode(&result); err != nil {
+	if err := mdl.nsCollection.FindOne(context.Background(), bson.M{"user_id": userID}).Decode(&result); err != nil {
 		logrus.Error(err)
 		return ""
 	}
