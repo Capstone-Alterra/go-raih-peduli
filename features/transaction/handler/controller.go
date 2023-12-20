@@ -28,13 +28,12 @@ var validate *validator.Validate
 func (ctl *controller) GetTransactions() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		pagination := dtos.Pagination{}
+		var roleID = ctx.Get("role_id")
 
 		ctx.Bind(&pagination)
 
 		keyword := ctx.QueryParam("fullname")
-
 		userID := ctx.Get("user_id").(int)
-		roleID, _ := strconv.Atoi(ctx.Get("role_id").(string))
 
 		page := pagination.Page
 		size := pagination.PageSize
@@ -43,7 +42,7 @@ func (ctl *controller) GetTransactions() echo.HandlerFunc {
 			return ctx.JSON(400, helper.Response("Please provide query `page` and `size` in number!"))
 		}
 
-		transactions, totalData := ctl.service.FindAll(page, size, roleID, userID, keyword)
+		transactions, totalData := ctl.service.FindAll(page, size, roleID.(int), userID, keyword)
 
 		if transactions == nil {
 			return ctx.JSON(404, helper.Response("There is No Transactions!"))
@@ -195,5 +194,17 @@ func (ctl *controller) Notifications() echo.HandlerFunc {
 		}
 
 		return c.JSON(200, echo.Map{"status": "ok"})
+	}
+}
+
+func (ctl *controller) SendNotifications() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		err := ctl.service.SendPaymentConfirmation()
+
+		if err != nil {
+			return ctx.JSON(505, helper.Response(err.Error()))
+		}
+
+		return ctx.JSON(200, helper.Response("Transaction Success Deleted!", nil))
 	}
 }

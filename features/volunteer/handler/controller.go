@@ -114,15 +114,15 @@ func (ctl *controller) UpdateVacancy() echo.HandlerFunc {
 			file = formFile
 		}
 
-		result, errMap := ctl.service.ModifyVacancy(input, file, *vacancy)
+		errMap, err := ctl.service.ModifyVacancy(input, file, *vacancy)
 		if errMap != nil {
 			return ctx.JSON(400, helpers.Response("error missing some data", map[string]any{
 				"error": errMap,
 			}))
 		}
 
-		if !result {
-			return ctx.JSON(500, helpers.Response("something went wrong"))
+		if err != nil {
+			return ctx.JSON(500, helpers.Response(err.Error()))
 		}
 
 		return ctx.JSON(200, helpers.Response("success updated volunteer vacancy"))
@@ -147,15 +147,15 @@ func (ctl *controller) UpdateStatusVacancy() echo.HandlerFunc {
 
 		ctx.Bind(&input)
 
-		result, errMap := ctl.service.ModifyVacancyStatus(input, *vacancy)
+		err, errMap := ctl.service.ModifyVacancyStatus(input, *vacancy)
 		if errMap != nil {
 			return ctx.JSON(400, helpers.Response("error missing some data", map[string]any{
 				"error": errMap,
 			}))
 		}
 
-		if !result {
-			return ctx.JSON(500, helpers.Response("something went wrong"))
+		if err != nil {
+			return ctx.JSON(500, helpers.Response(err.Error()))
 		}
 
 		return ctx.JSON(200, helpers.Response("success updated volunteer vacancy status"))
@@ -211,10 +211,6 @@ func (ctl *controller) CreateVacancy() echo.HandlerFunc {
 			return ctx.JSON(400, helpers.Response("missing some data", map[string]any{
 				"error": errMap,
 			}))
-		}
-
-		if volun == nil {
-			return ctx.JSON(500, helpers.Response("something when wrong", nil))
 		}
 
 		if err != nil {
@@ -362,4 +358,20 @@ func (ctl *controller) GetVolunteer() echo.HandlerFunc {
 			"data": volunteer,
 		}))
 	}
+}
+
+func (ctl *controller) GetSkills() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+
+		skills, err := ctl.service.FindAllSkills()
+
+		if err != nil {
+			return ctx.JSON(500, helpers.Response(err.Error()))
+		}
+
+		return ctx.JSON(200, helpers.Response("success", map[string]any{
+			"data": skills,
+		}))
+	}
+
 }

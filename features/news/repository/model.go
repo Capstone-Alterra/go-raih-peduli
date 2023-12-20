@@ -37,7 +37,7 @@ func (mdl *model) Paginate(pagination dtos.Pagination, searchAndFilter dtos.Sear
 	offset := (pagination.Page - 1) * pagination.PageSize
 	title := "%" + searchAndFilter.Title + "%"
 
-	if err := mdl.db.Offset(offset).Limit(pagination.PageSize).Where("title LIKE ?", title).Find(&news).Error; err != nil {
+	if err := mdl.db.Offset(offset).Limit(pagination.PageSize).Where("title LIKE ?", title).Order("created_at desc").Find(&news).Error; err != nil {
 		return nil, err
 	}
 
@@ -124,7 +124,7 @@ func (mdl *model) SelectBookmarkedNewsID(ownerID int) (map[int]string, error) {
 	return mapPostIDs, nil
 }
 
-func (mdl *model) SelectBoockmarkByNewsAndOwnerID(newsID, ownerID int) (string, error) {
+func (mdl *model) SelectBookmarkedByNewsAndOwnerID(newsID, ownerID int) (string, error) {
 	opts := options.FindOne().SetProjection(bson.M{"_id": 1})
 
 	var result bson.M

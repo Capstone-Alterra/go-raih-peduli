@@ -62,7 +62,12 @@ func (svc *service) Register(newData dtos.InputUser) (*dtos.ResUser, []string, e
 
 	otp := svc.generator.GenerateRandomOTP()
 
-	err = svc.model.SendOTPByEmail(userModel.Email, otp)
+	err = svc.model.InsertVerification(userModel.Email, otp)
+	if err != nil {
+		logrus.Error(err)
+	}
+
+	err = svc.model.SendOTPByEmail(userModel.Fullname, userModel.Email, otp, "1")
 	if err != nil {
 		return nil, nil, err
 	}
@@ -78,14 +83,20 @@ func (svc *service) Register(newData dtos.InputUser) (*dtos.ResUser, []string, e
 	return &resCustomer, nil, nil
 }
 
-func (svc *service) Login(data dtos.RequestLogin) (*dtos.LoginResponse, error) {
+func (svc *service) Login(data dtos.RequestLogin) (*dtos.LoginResponse, []string, error) {
+	errMap := svc.validator.ValidateRequest(data)
+	if errMap != nil {
+		return nil, errMap, nil
+	}
+
 	user, err := svc.model.Login(data.Email)
 	if err != nil {
-		return nil, err
+		logrus.Error(err)
+		return nil, nil, err
 	}
 
 	if !svc.hash.CompareHash(data.Password, user.Password) {
-		return nil, errors.New("invalid password")
+		return nil, nil, errors.New("invalid password")
 	}
 
 	resUser := dtos.LoginResponse{}
@@ -93,7 +104,7 @@ func (svc *service) Login(data dtos.RequestLogin) (*dtos.LoginResponse, error) {
 	err = smapping.FillStruct(&resUser, smapping.MapFields(user))
 	if err != nil {
 		log.Error(err)
-		return nil, err
+		return nil, nil, err
 	}
 
 	userID := strconv.Itoa(user.ID)
@@ -102,19 +113,39 @@ func (svc *service) Login(data dtos.RequestLogin) (*dtos.LoginResponse, error) {
 
 	if tokenData == nil {
 		log.Error("Token process failed")
-		return nil, errors.New("generate token failed")
+		return nil, nil, errors.New("generate token failed")
+	}
+
+	if data.FCMTokens != "" {
+		if err := svc.model.InsertToken(user.ID, data.FCMTokens); err != nil {
+			return nil, nil, err
+		}
+	}
+
+	if user.Personalization == nil {
+		resUser.PersonalizeUser = true
 	}
 
 	resUser.AccessToken = tokenData["access_token"].(string)
 	resUser.RefreshToken = tokenData["refresh_token"].(string)
 
-	return &resUser, nil
+	return &resUser, nil, nil
 }
 
 func (svc *service) ResendOTP(email string) bool {
 	otp := svc.generator.GenerateRandomOTP()
 
-	err := svc.model.SendOTPByEmail(email, otp)
+	data, err := svc.model.SelectByEmail(email)
+	if err != nil {
+		return false
+	}
+
+	err = svc.model.InsertVerification(email, otp)
+	if err != nil {
+		logrus.Error(err)
+	}
+
+	err = svc.model.SendOTPByEmail(data.Fullname, email, otp, "1")
 	if err != nil {
 		return false
 	}
@@ -123,7 +154,7 @@ func (svc *service) ResendOTP(email string) bool {
 }
 
 func (svc *service) RefreshJWT(jwt dtos.RefreshJWT) (*dtos.ResJWT, error) {
-	parsedRefreshToken, err := svc.jwt.ValidateToken(jwt.RefreshToken, os.Getenv("SECRET"))
+	parsedRefreshToken, err := svc.jwt.ValidateToken(jwt.RefreshToken, os.Getenv("REFSECRET"))
 	if err != nil {
 		return nil, errors.New("validate token failed")
 	}

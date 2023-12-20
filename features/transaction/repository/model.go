@@ -1,22 +1,34 @@
 package repository
 
 import (
+	"context"
+	"fmt"
+	"raihpeduli/config"
 	"raihpeduli/features/user"
+	"strconv"
 
 	"raihpeduli/features/fundraise"
 	"raihpeduli/features/transaction"
 
 	"github.com/labstack/gommon/log"
+	"github.com/sirupsen/logrus"
+	"github.com/wneessen/go-mail"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"gorm.io/gorm"
 )
 
 type model struct {
-	db *gorm.DB
+	db         *gorm.DB
+	config     *config.SMTPConfig
+	collection *mongo.Collection
 }
 
-func New(db *gorm.DB) transaction.Repository {
+func New(db *gorm.DB, config *config.SMTPConfig, collection *mongo.Collection) transaction.Repository {
 	return &model{
-		db: db,
+		db:         db,
+		config:     config,
+		collection: collection,
 	}
 }
 
@@ -26,9 +38,10 @@ func (mdl *model) Paginate(page, size int, keyword string) []transaction.Transac
 	offset := (page - 1) * size
 	searching := "%" + keyword + "%"
 
-	result := mdl.db.Preload("User").
+	result := mdl.db.Preload("Fundraise").Preload("User").
 		Table("transactions").
 		Joins("JOIN users ON transactions.user_id = users.id").
+		Joins("JOIN fundraises ON transactions.fundraise_id = fundraises.id").
 		Where("users.fullname LIKE ?", searching).
 		Offset(offset).Limit(size).
 		Find(&transactions)
@@ -61,6 +74,16 @@ func (mdl *model) SelectUserByID(userID int) *user.User {
 	}
 
 	return &user
+}
+
+func (mdl *model) GetFundraiseByID(fundraiseID int) (*fundraise.Fundraise, error) {
+	var result fundraise.Fundraise
+
+	if err := mdl.db.Where("id = ?", fundraiseID).First(&result).Error; err != nil {
+		return nil, err
+	}
+
+	return &result, nil
 }
 
 func (mdl *model) GetTotalData(keyword string) int64 {
@@ -108,7 +131,7 @@ func (mdl *model) PaginateUser(page, size, userID int) []transaction.Transaction
 
 	offset := (page - 1) * size
 
-	result := mdl.db.Preload("User").Where("user_id = ?", userID).Offset(offset).Limit(size).Find(&transactions)
+	result := mdl.db.Preload("Fundraise").Preload("User").Where("user_id = ?", userID).Offset(offset).Limit(size).Find(&transactions)
 
 	if result.Error != nil {
 		log.Error(result.Error)
@@ -131,7 +154,7 @@ func (mdl *model) Insert(newTransaction transaction.Transaction) int64 {
 
 func (mdl *model) SelectByID(transactionID int) *transaction.Transaction {
 	var transaction transaction.Transaction
-	result := mdl.db.Preload("User").First(&transaction, transactionID)
+	result := mdl.db.Preload("Fundraise").Preload("User").First(&transaction, transactionID)
 
 	if result.Error != nil {
 		log.Error(result.Error)
@@ -160,4 +183,83 @@ func (mdl *model) DeleteByID(transactionID int) int64 {
 	}
 
 	return result.RowsAffected
+}
+
+func (mdl *model) SendPaymentConfirmation(email string, amount int, idFundraise int, paymentType string) error {
+	user := mdl.config.SMTP_USER
+	password := mdl.config.SMTP_PASS
+	port := mdl.config.SMTP_PORT
+
+	fundraise, err := mdl.GetFundraiseByID(idFundraise)
+	if err != nil {
+		return err
+	}
+
+	convPort, err := strconv.Atoi(port)
+	if err != nil {
+		return err
+	}
+
+	m := mail.NewMsg()
+	if err := m.From(user); err != nil {
+		return err
+	}
+	if err := m.To(email); err != nil {
+		return err
+	}
+	m.Subject("Konfirmasi Pembayaran - Raih Peduli")
+
+	// HTML body
+	body := fmt.Sprintf(`
+        <html>
+            <head>
+                <style>
+                    /* Add your CSS styles here */
+                    body {
+                        font-family: Arial, sans-serif;
+                    }
+                    .confirmation-container {
+                        max-width: 600px;
+                        margin: 0 auto;
+                        padding: 20px;
+                        border: 1px solid #ccc;
+                        border-radius: 5px;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="confirmation-container">
+                    <h2>Terima kasih, Orang Baik!</h2>
+                    <h3>Detail Penggalangan Dana</h3>
+                    <p>Judul: %s</p>
+                    <p>Jumlah Donasi: Rp. %d</p>
+                    <p>Metode Pembayaran: %s</p>
+                </div>
+            </body>
+        </html>
+    `, fundraise.Title, amount, paymentType)
+
+	m.SetBodyString(mail.TypeTextHTML, body)
+
+	c, err := mail.NewClient("smtp.gmail.com", mail.WithPort(convPort), mail.WithSMTPAuth(mail.SMTPAuthPlain), mail.WithUsername(user), mail.WithPassword(password))
+	if err != nil {
+		return err
+	}
+	if err := c.DialAndSend(m); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+
+func (mdl *model) GetDeviceToken(userID int) string {
+	var result transaction.NotificationToken
+
+	if err := mdl.collection.FindOne(context.Background(), bson.M{"user_id": userID}).Decode(&result); err != nil {
+		logrus.Error(err)
+		return ""
+	}
+
+	return result.DeviceToken
 }

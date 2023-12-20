@@ -1,6 +1,9 @@
 package helpers
 
 import (
+	"regexp"
+	"strings"
+
 	"github.com/go-playground/validator/v10"
 )
 
@@ -11,15 +14,17 @@ func NewValidationRequest() ValidationInterface {
 }
 
 func (v validation) ValidateRequest(request any) []string {
-	// var requestType = reflect.TypeOf(request)
-	// var newRequest = reflect.New(requestType).Interface()
-
 	var validate = validator.New()
+
+	validate.RegisterValidation("alphabetic", func(fl validator.FieldLevel) bool {
+		regex := regexp.MustCompile("^[a-zA-Z ]+$")
+		return regex.MatchString(fl.Field().String())
+	})
 
 	if err := validate.Struct(request); err != nil {
 		var errMap = []string{}
 		for _, err := range err.(validator.ValidationErrors) {
-			errMap = append(errMap, err.Error())
+			errMap = append(errMap, strings.ToLower(err.Error()))
 		}
 
 		return errMap

@@ -2,18 +2,16 @@ package repository
 
 import (
 	"mime/multipart"
-	"os"
 	"raihpeduli/config"
 	"raihpeduli/features/user"
+	"raihpeduli/features/user/dtos"
 	"raihpeduli/helpers"
-	"strconv"
 	"time"
 
 	"github.com/go-redis/redis"
 	"github.com/google/uuid"
 	"github.com/labstack/gommon/log"
 	"github.com/sirupsen/logrus"
-	"github.com/wneessen/go-mail"
 	"gorm.io/gorm"
 )
 
@@ -31,12 +29,17 @@ func New(db *gorm.DB, rdClient *redis.Client, clStorage helpers.CloudStorageInte
 	}
 }
 
-func (mdl *model) Paginate(page, size int) []user.User {
+func (mdl *model) Paginate(searchAndFilter dtos.SearchAndFilter) []user.User {
 	var users []user.User
+	var page = searchAndFilter.Page
+	var size = searchAndFilter.PageSize
+	var name = "%" + searchAndFilter.Name + "%"
 
 	offset := (page - 1) * size
 
-	result := mdl.db.Offset(offset).Limit(size).Find(&users)
+	result := mdl.db.Offset(offset).Limit(size).
+		Where("fullname LIKE ?", name).
+		Find(&users)
 
 	if result.Error != nil {
 		log.Error(result.Error)
@@ -133,37 +136,10 @@ func (mdl *model) DeleteByID(userID int) int64 {
 	return result.RowsAffected
 }
 
-func (mdl *model) SendOTPByEmail(email string, otp string) error {
-	secret_user := os.Getenv("SMTP_USER")
-	secret_pass := os.Getenv("SMTP_PASS")
-	secret_port := os.Getenv("SMTP_PORT")
-
-	convPort, err := strconv.Atoi(secret_port)
+func (mdl *model) SendOTPByEmail(fullname string, email string, otp string, status string) error {
+	err := helpers.EmailService(fullname, email, otp, status)
 	if err != nil {
 		return err
-	}
-
-	m := mail.NewMsg()
-	if err := m.From(secret_user); err != nil {
-		return err
-	}
-	if err := m.To(email); err != nil {
-		return err
-	}
-	m.Subject("Verifikasi Email - Raih Peduli")
-	m.SetBodyString(mail.TypeTextPlain, "Kode OTP anda adalah : "+otp)
-
-	c, err := mail.NewClient("smtp.gmail.com", mail.WithPort(convPort), mail.WithSMTPAuth(mail.SMTPAuthPlain), mail.WithUsername(secret_user), mail.WithPassword(secret_pass))
-	if err != nil {
-		return err
-	}
-	if err := c.DialAndSend(m); err != nil {
-		return err
-	}
-
-	query := mdl.InsertVerification(email, otp)
-	if query != nil {
-		return query
 	}
 
 	return nil
@@ -182,20 +158,58 @@ func (mdl *model) GetTotalData() int64 {
 	return totalData
 }
 
-func (mdl *model) UploadFile(file multipart.File) (string, error) {
-	config := config.LoadCloudStorageConfig()
-	randomChar := uuid.New().String()
+func (mdl *model) GetTotalDataByName(name string) int64 {
+	var totalData int64
 
-	if err := mdl.clStorage.UploadFile(file, randomChar); err != nil {
+	result := mdl.db.Table("users").
+		Where("deleted_at IS NULL").
+		Where("fullname LIKE ?", "%"+name+"%").
+		Count(&totalData)
+
+	if result.Error != nil {
+		log.Error(result.Error)
+		return 0
+	}
+
+	return totalData
+}
+
+func (mdl *model) UploadFile(file multipart.File, oldFilename string) (string, error) {
+	var config = config.LoadCloudStorageConfig()
+	var urlLength int = len("https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/users/")
+	var objectName string
+
+	if file == nil {
+		return oldFilename, nil
+	}
+
+	if oldFilename != "" {
+		objectName = oldFilename[urlLength:]
+
+		if objectName == "default" {
+			objectName = ""
+		} else if err := mdl.clStorage.DeleteFile(objectName); err != nil {
+			return "", err
+		}
+	}
+	objectName = uuid.New().String()
+
+	if err := mdl.clStorage.UploadFile(file, objectName); err != nil {
 		return "", err
 	}
 
-	return "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/users/" + randomChar, nil
+	return "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/users/" + objectName, nil
 }
 
-func (mdl *model) DeleteFile(filename string) error {
-	if err := mdl.clStorage.DeleteFile(filename); err != nil {
-		return err
+func (mdl *model) DeleteFile(fileName string) error {
+	var config = config.LoadCloudStorageConfig()
+	var urlLength int = len("https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/users/")
+	var objectName = fileName[urlLength:]
+
+	if objectName != "default" {
+		if err := mdl.clStorage.DeleteFile(objectName); err != nil {
+			return err
+		}
 	}
 
 	return nil

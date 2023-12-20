@@ -10,12 +10,13 @@ type Repository interface {
 	Login(email string) (*User, error)
 	Register(newUser *User) (*User, error)
 	SelectByEmail(email string) (*User, error)
-	SendOTPByEmail(email string, otp string) error
+	SendOTPByEmail(fullname string, email string, otp string, status string) error
 	InsertVerification(email string, verificationKey string) error
+	InsertToken(userID int, fcmToken string) error
 }
 
 type Usecase interface {
-	Login(dtos.RequestLogin) (*dtos.LoginResponse, error)
+	Login(dtos.RequestLogin) (*dtos.LoginResponse, []string, error)
 	Register(newUser dtos.InputUser) (*dtos.ResUser, []string, error)
 	ResendOTP(email string) bool
 	RefreshJWT(jwt dtos.RefreshJWT) (*dtos.ResJWT, error)

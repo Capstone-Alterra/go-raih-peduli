@@ -2,28 +2,32 @@ package usecase
 
 import (
 	"errors"
+	"io"
 	"math"
 	"mime/multipart"
+	"net/http"
 	"raihpeduli/config"
 	"raihpeduli/features/volunteer"
 	"raihpeduli/features/volunteer/dtos"
 	"raihpeduli/helpers"
 	"strings"
+	"time"
 
 	"github.com/labstack/gommon/log"
-	"github.com/mashingan/smapping"
 	"github.com/sirupsen/logrus"
 )
 
 type service struct {
 	model      volunteer.Repository
 	validation helpers.ValidationInterface
+	nsRequest  helpers.NotificationInterface
 }
 
-func New(model volunteer.Repository, validation helpers.ValidationInterface) volunteer.Usecase {
+func New(model volunteer.Repository, validation helpers.ValidationInterface, nsRequest helpers.NotificationInterface) volunteer.Usecase {
 	return &service{
 		model:      model,
 		validation: validation,
+		nsRequest:  nsRequest,
 	}
 }
 
@@ -58,13 +62,14 @@ func (svc *service) FindAllVacancies(page, size int, searchAndFilter dtos.Search
 		data.UserID = volunteer.UserID
 		data.Title = volunteer.Title
 		data.Description = volunteer.Description
-		data.SkillsRequired = strings.Split(volunteer.SkillsRequired, ",")
+		data.SkillsRequired = strings.Split(volunteer.SkillsRequired, ", ")
 		data.NumberOfVacancies = volunteer.NumberOfVacancies
 		data.ApplicationDeadline = volunteer.ApplicationDeadline
 		data.ContactEmail = volunteer.ContactEmail
 		data.Province = volunteer.Province
 		data.City = volunteer.City
 		data.SubDistrict = volunteer.SubDistrict
+		data.DetailLocation = volunteer.DetailLocation
 		data.Photo = volunteer.Photo
 		data.Status = volunteer.Status
 		data.RejectedReason = volunteer.RejectedReason
@@ -76,7 +81,7 @@ func (svc *service) FindAllVacancies(page, size int, searchAndFilter dtos.Search
 			bookmardID, ok := bookmarkIDs[data.ID]
 
 			if ok {
-				data.BookmarkID = &bookmardID
+				data.BookmarkID = bookmardID
 			}
 		}
 
@@ -116,9 +121,10 @@ func (svc *service) FindVacancyByID(vacancyID, ownerID int) *dtos.ResVacancy {
 
 	if ownerID != 0 {
 		bookmarkID = svc.model.SelectBookmarkByVacancyAndOwnerID(vacancyID, ownerID)
+		res.IsRegistered = svc.model.FindUserInVacancy(vacancyID, ownerID)
 
 		if bookmarkID != "" {
-			res.BookmarkID = &bookmarkID
+			res.BookmarkID = bookmarkID
 		}
 	}
 
@@ -126,36 +132,36 @@ func (svc *service) FindVacancyByID(vacancyID, ownerID int) *dtos.ResVacancy {
 	res.UserID = vacancy.UserID
 	res.Title = vacancy.Title
 	res.Description = vacancy.Description
-	res.SkillsRequired = strings.Split(vacancy.SkillsRequired, ",")
+	res.SkillsRequired = strings.Split(vacancy.SkillsRequired, ", ")
 	res.NumberOfVacancies = vacancy.NumberOfVacancies
 	res.ApplicationDeadline = vacancy.ApplicationDeadline
 	res.ContactEmail = vacancy.ContactEmail
 	res.Province = vacancy.Province
 	res.City = vacancy.City
 	res.SubDistrict = vacancy.SubDistrict
+	res.DetailLocation = vacancy.DetailLocation
 	res.Photo = vacancy.Photo
 	res.Status = vacancy.Status
 	res.RejectedReason = vacancy.RejectedReason
 	res.CreatedAt = vacancy.CreatedAt
 	res.UpdatedAt = vacancy.UpdatedAt
 	res.DeletedAt = vacancy.DeletedAt
-
 	res.TotalRegistrar = int(svc.model.GetTotalVolunteersByVacancyID(res.ID))
 
 	return &res
 }
 
-func (svc *service) ModifyVacancy(vacancyData dtos.InputVacancy, file multipart.File, oldData dtos.ResVacancy) (bool, []string) {
+func (svc *service) ModifyVacancy(vacancyData dtos.InputVacancy, file multipart.File, oldData dtos.ResVacancy) ([]string, error) {
 	errMap := svc.validation.ValidateRequest(vacancyData)
 	if errMap != nil {
-		return false, errMap
+		return errMap, nil
 	}
 
 	var newVacancy volunteer.VolunteerVacancies
 
 	url, err := svc.model.UploadFile(file, oldData.Photo)
 	if err != nil {
-		return false, nil
+		return nil, errors.New("upload file failed")
 	}
 
 	newVacancy.ID = oldData.ID
@@ -176,17 +182,23 @@ func (svc *service) ModifyVacancy(vacancyData dtos.InputVacancy, file multipart.
 
 	if rowsAffected <= 0 {
 		log.Error("There is No Volunteer Updated!")
-		return false, nil
+		return nil, errors.New("there is no vacancy updated")
 	}
 
-	return true, nil
+	return nil, nil
 }
 
-func (svc *service) ModifyVacancyStatus(input dtos.StatusVacancies, oldData dtos.ResVacancy) (bool, []string) {
+func (svc *service) ModifyVacancyStatus(input dtos.StatusVacancies, oldData dtos.ResVacancy) (error, []string) {
+	if err := svc.model.SelectByTittle(oldData.Title); err == nil {
+		return errors.New("title already used by another vacancy"), nil
+	}
+
 	errMap := svc.validation.ValidateRequest(input)
 	if errMap != nil {
-		return false, errMap
+		return nil, errMap
 	}
+
+	deviceToken := svc.model.GetDeviceToken(oldData.UserID)
 
 	var newVacancy volunteer.VolunteerVacancies
 
@@ -194,19 +206,26 @@ func (svc *service) ModifyVacancyStatus(input dtos.StatusVacancies, oldData dtos
 	newVacancy.Status = input.Status
 	if input.Status == "rejected" {
 		if input.RejectedReason == "" {
-			return false, []string{"rejected_reason field is required when the status is rejected"}
+			return nil, []string{"rejected_reason field is required when the status is rejected"}
 		}
 		newVacancy.RejectedReason = input.RejectedReason
+		message := "Terima kasih sudah mengajukan lowongan relawan. Saat ini, kami belum bisa menyetujui permohonan ini karena.\n\nAlasan : " + input.RejectedReason + "\n\nTerima kasih atas partisipasinya"
+		err := svc.nsRequest.SendNotifications(deviceToken, "Pengajuan Lowongan Relawan Ditolak", message)
+		log.Error("Send Notifications Error: ", err)
+	} else if input.Status == "accepted" {
+		message := "Kami ingin memberitahu bahwa pengajuan lowongan relawan Anda untuk " + oldData.Title + " telah diterima! Terima kasih atas langkah inisiatif Anda."
+		err := svc.nsRequest.SendNotifications(deviceToken, "Pengajuan Lowongan Relawan Diterima", message)
+		log.Error("Send Notifications Error: ", err)
 	}
 
 	rowsAffected := svc.model.UpdateVacancy(newVacancy)
 
 	if rowsAffected <= 0 {
-		log.Error("There is No Volunteer Updated!")
-		return false, nil
+		log.Error("There is No Vacancy Updated!")
+		return errors.New("there is no vacancy updated"), nil
 	}
 
-	return true, nil
+	return nil, nil
 }
 
 func (svc *service) UpdateStatusRegistrar(input dtos.StatusRegistrar, registrarID int) (bool, []string) {
@@ -216,10 +235,13 @@ func (svc *service) UpdateStatusRegistrar(input dtos.StatusRegistrar, registrarI
 	}
 
 	registrar := svc.model.SelectRegistrarByID(registrarID)
-
 	if registrar == nil {
 		return false, nil
 	}
+
+	vacancy := svc.model.SelectVacancyByID(registrar.VolunteerID)
+
+	deviceToken := svc.model.GetDeviceToken(registrar.UserID)
 
 	registrar.Status = input.Status
 	if input.Status == "rejected" {
@@ -227,6 +249,13 @@ func (svc *service) UpdateStatusRegistrar(input dtos.StatusRegistrar, registrarI
 			return false, []string{"rejected_reason field is required when the status is rejected"}
 		}
 		registrar.RejectedReason = input.RejectedReason
+		message := "Terima kasih sudah mengajukan diri sebagai relawan. Saat ini, kami belum bisa menyetujui permohonan Anda sebagai relawan di " + vacancy.Title + ".\n\nAlasan : " + input.RejectedReason + "\n\nTerima kasih atas partisipasinya"
+		err := svc.nsRequest.SendNotifications(deviceToken, "Pengajuan Relawan Ditolak", message)
+		log.Error("Send Notifications Error: ", err)
+	} else if input.Status == "accepted" {
+		message := "Kami ingin memberitahu Anda bahwa pengajuan sebagai relawan di " + vacancy.Title + " telah diterima! Terima kasih atas minat dan dedikasi Anda."
+		err := svc.nsRequest.SendNotifications(deviceToken, "Pengajuan Relawan Diterima", message)
+		log.Error("Send Notifications Error: ", err)
 	}
 
 	rowsAffected := svc.model.UpdateStatusRegistrar(*registrar)
@@ -253,15 +282,19 @@ func (svc *service) RemoveVacancy(volunteerID int, oldData dtos.ResVacancy) erro
 
 	if err := svc.model.DeleteVacancyByID(volunteerID); err != nil {
 		logrus.Error(err)
-		return err 
+		return err
 	}
 
 	return nil
 }
 
 func (svc *service) CreateVacancy(newVolunteer dtos.InputVacancy, UserID int, file multipart.File) (*dtos.ResVacancy, []string, error) {
-	if errMap := svc.validation.ValidateRequest(newVolunteer); errMap != nil {
-		return nil, errMap, errors.New("validation error")
+	if err := svc.model.SelectByTittle(newVolunteer.Title); err == nil {
+		return nil, nil, errors.New("title already used by another vacancy")
+	}
+
+	if errorList, err := svc.ValidateInput(newVolunteer, file); err != nil || len(errorList) > 0 {
+		return nil, errorList, err
 	}
 
 	vacancy := volunteer.VolunteerVacancies{}
@@ -295,7 +328,7 @@ func (svc *service) CreateVacancy(newVolunteer dtos.InputVacancy, UserID int, fi
 	resVolun.UserID = result.UserID
 	resVolun.Title = result.Title
 	resVolun.Description = result.Description
-	resVolun.SkillsRequired = strings.Split(result.SkillsRequired, ",")
+	resVolun.SkillsRequired = strings.Split(result.SkillsRequired, ", ")
 	resVolun.NumberOfVacancies = result.NumberOfVacancies
 	resVolun.ApplicationDeadline = result.ApplicationDeadline
 	resVolun.ContactEmail = result.ContactEmail
@@ -349,10 +382,18 @@ func (svc *service) FindAllVolunteersByVacancyID(page, size int, vacancyID int, 
 	for _, volunteer := range volunteerEnt {
 		var data dtos.ResRegistrantVacancy
 
-		if err := smapping.FillStruct(&data, smapping.MapFields(volunteer)); err != nil {
-			log.Error(err.Error())
-		}
-
+		data.ID = volunteer.ID
+		data.Email = volunteer.Email
+		data.Fullname = volunteer.Fullname
+		data.Address = volunteer.Address
+		data.PhoneNumber = volunteer.PhoneNumber
+		data.Gender = volunteer.Gender
+		data.Nik = volunteer.Nik
+		data.Skills = strings.Split(volunteer.Skills, ", ")
+		data.Resume = volunteer.Resume
+		data.Reason = volunteer.Reason
+		data.Photo = volunteer.Photo
+		data.Status = volunteer.Status
 		volunteers = append(volunteers, data)
 	}
 
@@ -369,11 +410,19 @@ func (svc *service) FindDetailVolunteers(vacancyID, volunteerID int) *dtos.ResRe
 		return nil
 	}
 
-	err := smapping.FillStruct(&res, smapping.MapFields(volunteer))
-	if err != nil {
-		log.Error("Failed mapping into dtos")
-		return nil
-	}
+	res.ID = volunteer.ID
+	res.Email = volunteer.Email
+	res.Fullname = volunteer.Fullname
+	res.Address = volunteer.Address
+	res.PhoneNumber = volunteer.PhoneNumber
+	res.Gender = volunteer.Gender
+	res.Nik = volunteer.Nik
+	res.Skills = strings.Split(volunteer.Skills, ", ")
+	res.Resume = volunteer.Resume
+	res.Reason = volunteer.Reason
+	res.Photo = volunteer.Photo
+	res.Status = volunteer.Status
+
 	return &res
 
 }
@@ -394,4 +443,78 @@ func (svc *service) FindUserInVacancy(vacancyID, userID int) bool {
 	}
 
 	return true
+}
+
+func (svc *service) ValidateInput(input dtos.InputVacancy, file multipart.File) ([]string, error) {
+	var errorList []string
+	if errMap := svc.validation.ValidateRequest(input); errMap != nil {
+		errorList = append(errorList, errMap...)
+	}
+	if len(input.Title) <= 20 {
+		errorList = append(errorList, "title must be at least 20 characters")
+	}
+	if len(input.Description) <= 50 {
+		errorList = append(errorList, "description must be at least 50 characters")
+	}
+
+	if len(input.SkillsRequired) < 1 {
+		errorList = append(errorList, "skillsRequired must be at least 1 word")
+	}
+	if input.NumberOfVacancies < 1 {
+		errorList = append(errorList, "numberOfVacancies must be greater than 1")
+	}
+	if input.ApplicationDeadline.Before(time.Now()) {
+		errorList = append(errorList, "applicationDeadline must be greater than today")
+	}
+	if file != nil {
+		buffer := make([]byte, 512)
+
+		if _, err := file.Read(buffer); err != nil {
+			return nil, err
+		}
+
+		contentType := http.DetectContentType(buffer)
+		isImage := contentType[:5] == "image"
+
+		if !isImage {
+			errorList = append(errorList, "photo file has to be an image (png, jpg, or jpeg)")
+		}
+
+		const maxFileSize = 5 * 1024 * 1024
+		var fileSize int64
+
+		buffer = make([]byte, 1024)
+		for {
+			n, err := file.Read(buffer)
+
+			fileSize += int64(n)
+
+			if err == io.EOF {
+				break
+			}
+
+			if err != nil {
+				errorList = append(errorList, "unknown file size")
+			}
+		}
+
+		if _, err := file.Seek(0, io.SeekStart); err != nil {
+			return nil, err
+		}
+
+		if fileSize > maxFileSize {
+			errorList = append(errorList, "fize size exceeds the allowed limit (5MB)")
+		}
+	}
+	return errorList, nil
+}
+
+func (svc *service) FindAllSkills() ([]dtos.Skill, error) {
+	skills, err := svc.model.SelectAllSkills()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return skills, nil
 }

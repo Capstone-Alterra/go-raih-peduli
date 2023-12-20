@@ -55,7 +55,8 @@ func TestRegister(t *testing.T) {
 
 		model.On("Register", &newUser).Return(&newUser, nil).Once()
 		generator.On("GenerateRandomOTP").Return(OTP).Once()
-		model.On("SendOTPByEmail", newUser.Email, OTP).Return(nil).Once()
+		model.On("InsertVerification", newUser.Email, OTP).Return(nil).Once()
+		model.On("SendOTPByEmail", newUser.Fullname, newUser.Email, OTP, "1").Return(nil).Once()
 
 		var resUser dtos.ResUser
 		smapping.FillStruct(&resUser, smapping.MapFields(newUser))
@@ -118,6 +119,36 @@ func TestRegister(t *testing.T) {
 		hash.AssertExpectations(t)
 	})
 
+	t.Run("Insert Verification Failed", func(t *testing.T) {
+		validator.On("ValidateRequest", newData).Return(nil).Once()
+
+		var newUser auth.User
+		smapping.FillStruct(&newUser, smapping.MapFields(newData))
+
+		model.On("SelectByEmail", newUser.Email).Return(nil, nil).Once()
+		hash.On("HashPassword", newUser.Password).Return("randomhash").Once()
+		newUser.Password = "randomhash"
+		newUser.ProfilePicture = "https://storage.googleapis.com//users/default"
+
+		model.On("Register", &newUser).Return(&newUser, nil).Once()
+		generator.On("GenerateRandomOTP").Return(OTP).Once()
+		model.On("InsertVerification", newUser.Email, OTP).Return(errors.New("insert verification error")).Once()
+		model.On("SendOTPByEmail", newUser.Fullname, newUser.Email, OTP, "1").Return(nil).Once()
+
+		var resUser dtos.ResUser
+		smapping.FillStruct(&resUser, smapping.MapFields(newUser))
+
+		result, errMap, err := service.Register(newData)
+		assert.Nil(t, errMap)
+		assert.Nil(t, err)
+		assert.Equal(t, newUser.Fullname, result.Fullname)
+		assert.Equal(t, newUser.Email, result.Email)
+		validator.AssertExpectations(t)
+		model.AssertExpectations(t)
+		hash.AssertExpectations(t)
+		generator.AssertExpectations(t)
+	})
+
 	t.Run("Send OTP by email failed", func(t *testing.T) {
 		validator.On("ValidateRequest", newData).Return(nil).Once()
 
@@ -131,11 +162,15 @@ func TestRegister(t *testing.T) {
 
 		model.On("Register", &newUser).Return(&newUser, nil).Once()
 		generator.On("GenerateRandomOTP").Return(OTP).Once()
-		model.On("SendOTPByEmail", newUser.Email, OTP).Return(errors.New("failed to send OTP")).Once()
+		model.On("InsertVerification", newUser.Email, OTP).Return(nil).Once()
+		model.On("SendOTPByEmail", newUser.Fullname, newUser.Email, OTP, "1").Return(errors.New("send OTP by email failed")).Once()
+
+		var resUser dtos.ResUser
+		smapping.FillStruct(&resUser, smapping.MapFields(newUser))
 
 		result, errMap, err := service.Register(newData)
 		assert.Error(t, err)
-		assert.EqualError(t, err, "failed to send OTP")
+		assert.EqualError(t, err, "send OTP by email failed")
 		assert.Nil(t, result)
 		assert.Nil(t, errMap)
 		validator.AssertExpectations(t)
@@ -154,8 +189,9 @@ func TestLogin(t *testing.T) {
 	var service = New(model, JWT, hash, generator, validator)
 
 	var loginData = dtos.RequestLogin{
-		Email:    "bagus@gmail.com",
-		Password: "bagus123",
+		Email:     "bagus@gmail.com",
+		Password:  "bagus123",
+		FCMTokens: "fcm_token",
 	}
 
 	var userData = auth.User{
@@ -171,45 +207,68 @@ func TestLogin(t *testing.T) {
 		"refresh_token": "random_refresh_token",
 	}
 
+	var errValidation = []string{
+		"email required",
+		"password required",
+	}
+
 	t.Run("Success", func(t *testing.T) {
+		validator.On("ValidateRequest", loginData).Return(nil).Once()
 		model.On("Login", loginData.Email).Return(&userData, nil).Once()
 		hash.On("CompareHash", loginData.Password, userData.Password).Return(true).Once()
 
 		userID := strconv.Itoa(userData.ID)
 		roleID := strconv.Itoa(userData.RoleID)
 		JWT.On("GenerateJWT", userID, roleID).Return(token).Once()
+		model.On("InsertToken", userData.ID, loginData.FCMTokens).Return(nil).Once()
 
-		result, err := service.Login(loginData)
+		result, errMap, err := service.Login(loginData)
 		assert.Nil(t, err)
+		assert.Nil(t, errMap)
 		assert.Equal(t, loginData.Email, result.Email)
 		model.AssertExpectations(t)
 		hash.AssertExpectations(t)
 		JWT.AssertExpectations(t)
 	})
 
-	t.Run("User not found", func(t *testing.T) {
-		model.On("Login", loginData.Email).Return(nil, errors.New("user not found")).Once()
+	t.Run("Error validation", func(t *testing.T) {
+		validator.On("ValidateRequest", loginData).Return(errValidation).Once()
 
-		result, err := service.Login(loginData)
-		assert.Error(t, err)
-		assert.EqualError(t, err, "user not found")
+		result, errMap, err := service.Login(loginData)
+		assert.Equal(t, errValidation, errMap)
+		assert.Nil(t, err)
 		assert.Nil(t, result)
 		model.AssertExpectations(t)
 	})
 
+	t.Run("User not found", func(t *testing.T) {
+		validator.On("ValidateRequest", loginData).Return(nil).Once()
+		model.On("Login", loginData.Email).Return(nil, errors.New("user not found")).Once()
+
+		result, errMap, err := service.Login(loginData)
+		assert.Error(t, err)
+		assert.EqualError(t, err, "user not found")
+		assert.Nil(t, result)
+		assert.Nil(t, errMap)
+		model.AssertExpectations(t)
+	})
+
 	t.Run("Password not match", func(t *testing.T) {
+		validator.On("ValidateRequest", loginData).Return(nil).Once()
 		model.On("Login", loginData.Email).Return(&userData, nil).Once()
 		hash.On("CompareHash", loginData.Password, userData.Password).Return(false).Once()
 
-		result, err := service.Login(loginData)
+		result, errMap, err := service.Login(loginData)
 		assert.Error(t, err)
 		assert.EqualError(t, err, "invalid password")
 		assert.Nil(t, result)
+		assert.Nil(t, errMap)
 		model.AssertExpectations(t)
 		hash.AssertExpectations(t)
 	})
 
 	t.Run("Generate JWT failed", func(t *testing.T) {
+		validator.On("ValidateRequest", loginData).Return(nil).Once()
 		model.On("Login", loginData.Email).Return(&userData, nil).Once()
 		hash.On("CompareHash", loginData.Password, userData.Password).Return(true).Once()
 
@@ -217,10 +276,31 @@ func TestLogin(t *testing.T) {
 		roleID := strconv.Itoa(userData.RoleID)
 		JWT.On("GenerateJWT", userID, roleID).Return(nil).Once()
 
-		result, err := service.Login(loginData)
+		result, errMap, err := service.Login(loginData)
 		assert.Error(t, err)
 		assert.EqualError(t, err, "generate token failed")
 		assert.Nil(t, result)
+		assert.Nil(t, errMap)
+		model.AssertExpectations(t)
+		hash.AssertExpectations(t)
+		JWT.AssertExpectations(t)
+	})
+
+	t.Run("Insert Token Failed", func(t *testing.T) {
+		validator.On("ValidateRequest", loginData).Return(nil).Once()
+		model.On("Login", loginData.Email).Return(&userData, nil).Once()
+		hash.On("CompareHash", loginData.Password, userData.Password).Return(true).Once()
+
+		userID := strconv.Itoa(userData.ID)
+		roleID := strconv.Itoa(userData.RoleID)
+		JWT.On("GenerateJWT", userID, roleID).Return(token).Once()
+		model.On("InsertToken", userData.ID, loginData.FCMTokens).Return(errors.New("insert token error")).Once()
+
+		result, errMap, err := service.Login(loginData)
+		assert.Nil(t, result)
+		assert.Nil(t, errMap)
+		assert.Error(t, err)
+		assert.EqualError(t, err, "insert token error")
 		model.AssertExpectations(t)
 		hash.AssertExpectations(t)
 		JWT.AssertExpectations(t)
@@ -235,24 +315,57 @@ func TestResendOTP(t *testing.T) {
 	var validator = helperMocks.NewValidationInterface(t)
 	var service = New(model, JWT, hash, generator, validator)
 
-	var email = "bagus@gmail.com"
 	var OTP = "123456"
+
+	var user = auth.User{
+		ID:         1,
+		RoleID:     1,
+		IsVerified: true,
+		Email:      "bagus@gmail.com",
+		Fullname:   "Bagus Ario Yudanto",
+	}
 
 	t.Run("Success", func(t *testing.T) {
 		generator.On("GenerateRandomOTP").Return(OTP).Once()
-		model.On("SendOTPByEmail", email, OTP).Return(nil).Once()
+		model.On("SelectByEmail", user.Email).Return(&user, nil).Once()
+		model.On("InsertVerification", user.Email, OTP).Return(nil).Once()
+		model.On("SendOTPByEmail", user.Fullname, user.Email, OTP, "1").Return(nil).Once()
 
-		result := service.ResendOTP(email)
+		result := service.ResendOTP(user.Email)
 		assert.Equal(t, true, result)
 		generator.AssertExpectations(t)
 		model.AssertExpectations(t)
 	})
 
-	t.Run("Failed", func(t *testing.T) {
+	t.Run("User not found", func(t *testing.T) {
 		generator.On("GenerateRandomOTP").Return(OTP).Once()
-		model.On("SendOTPByEmail", email, OTP).Return(errors.New("Send OTP failed")).Once()
+		model.On("SelectByEmail", user.Email).Return(nil, errors.New("user not found")).Once()
 
-		result := service.ResendOTP(email)
+		result := service.ResendOTP(user.Email)
+		assert.Equal(t, false, result)
+		generator.AssertExpectations(t)
+		model.AssertExpectations(t)
+	})
+
+	t.Run("Insert Verification Failed", func(t *testing.T) {
+		generator.On("GenerateRandomOTP").Return(OTP).Once()
+		model.On("SelectByEmail", user.Email).Return(&user, nil).Once()
+		model.On("InsertVerification", user.Email, OTP).Return(errors.New("insert verification error")).Once()
+		model.On("SendOTPByEmail", user.Fullname, user.Email, OTP, "1").Return(nil).Once()
+
+		result := service.ResendOTP(user.Email)
+		assert.Equal(t, true, result)
+		generator.AssertExpectations(t)
+		model.AssertExpectations(t)
+	})
+
+	t.Run("Send OTP by Email Failed", func(t *testing.T) {
+		generator.On("GenerateRandomOTP").Return(OTP).Once()
+		model.On("SelectByEmail", user.Email).Return(&user, nil).Once()
+		model.On("InsertVerification", user.Email, OTP).Return(nil).Once()
+		model.On("SendOTPByEmail", user.Fullname, user.Email, OTP, "1").Return(errors.New("send OTP by email error")).Once()
+
+		result := service.ResendOTP(user.Email)
 		assert.Equal(t, false, result)
 		generator.AssertExpectations(t)
 		model.AssertExpectations(t)

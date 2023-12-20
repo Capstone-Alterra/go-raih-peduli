@@ -16,7 +16,7 @@ func NewMidtransRequest() MidtransInterface {
 	return &midtransRequest{}
 }
 
-func (mr *midtransRequest) CreateTransactionBank(IDTransaction string, PaymentType string, Amount int64) (string, error) {
+func (mr *midtransRequest) CreateTransactionBank(IDTransaction string, PaymentType string, Amount int64) (string, string, error) {
 	mtconfig := config.LoadMidtransConfig()
 
 	midtrans.ServerKey = mtconfig.MT_SERVER_KEY
@@ -29,7 +29,6 @@ func (mr *midtransRequest) CreateTransactionBank(IDTransaction string, PaymentTy
 		"6": "bca",
 		"7": "bri",
 		"8": "bni",
-		"9": "mandiri",
 	}
 
 	if bank, ok := bankMap[PaymentType]; ok {
@@ -42,8 +41,6 @@ func (mr *midtransRequest) CreateTransactionBank(IDTransaction string, PaymentTy
 			midtransBank = midtrans.BankBri
 		case "bni":
 			midtransBank = midtrans.BankBni
-		case "mandiri":
-			midtransBank = midtrans.BankMandiri
 		case "cimb":
 			midtransBank = midtrans.BankCimb
 		case "permata":
@@ -63,25 +60,25 @@ func (mr *midtransRequest) CreateTransactionBank(IDTransaction string, PaymentTy
 
 		chargeResp, err := coreapi.ChargeTransaction(chargeReq)
 		if err != nil {
-			return "", err
+			return "", "", err
 		}
 
-		var vaAccount string
+		var vaAccount, validUntil string
 		for _, va := range chargeResp.VaNumbers {
 			if va.Bank == bank {
 				vaAccount = va.VANumber
+				validUntil = chargeResp.ExpiryTime
 				break
 			}
 		}
 
-		return vaAccount, nil
+		return vaAccount, validUntil, nil
 	}
 
-	return "", errors.New("unsupported payment type")
-
+	return "", "", errors.New("unsupported payment type")
 }
 
-func (mr *midtransRequest) CreateTransactionGopay(IDTransaction string, PaymentType string, Amount int64) (string, error) {
+func (mr *midtransRequest) CreateTransactionGopay(IDTransaction string, PaymentType string, Amount int64) (string, string, error) {
 	mtconfig := config.LoadMidtransConfig()
 
 	midtrans.ServerKey = mtconfig.MT_SERVER_KEY
@@ -101,10 +98,10 @@ func (mr *midtransRequest) CreateTransactionGopay(IDTransaction string, PaymentT
 
 	chargeResp, err := coreapi.ChargeTransaction(chargeReq)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	var callback_url = ""
+	var callback_url, validUntil string
 	if len(chargeResp.Actions) > 0 {
 		for _, action := range chargeResp.Actions {
 			if action.Name == "deeplink-redirect" {
@@ -112,13 +109,14 @@ func (mr *midtransRequest) CreateTransactionGopay(IDTransaction string, PaymentT
 				callback_url = deepLinkURL
 				break
 			}
+			validUntil = chargeResp.ExpiryTime
 		}
 	}
 
-	return callback_url, nil
+	return callback_url, validUntil, nil
 }
 
-func (mr *midtransRequest) CreateTransactionQris(IDTransaction string, PaymentType string, Amount int64) (string, error) {
+func (mr *midtransRequest) CreateTransactionQris(IDTransaction string, PaymentType string, Amount int64) (string, string, error) {
 	mtconfig := config.LoadMidtransConfig()
 
 	midtrans.ServerKey = mtconfig.MT_SERVER_KEY
@@ -138,20 +136,22 @@ func (mr *midtransRequest) CreateTransactionQris(IDTransaction string, PaymentTy
 
 	chargeResp, err := coreapi.ChargeTransaction(chargeReq)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	var url string
+	var callback_url, validUntil string
+
 	if len(chargeResp.Actions) > 0 {
 		for _, action := range chargeResp.Actions {
 			if action.Name == "generate-qr-code" {
-				url = action.URL
+				callback_url = action.URL
 				break
 			}
 		}
+		validUntil = chargeResp.ExpiryTime
 	}
 
-	return url, nil
+	return callback_url, validUntil, nil
 }
 
 func (mr *midtransRequest) TransactionStatus(transactionStatusResp *coreapi.TransactionStatusResponse) transaction.Status {
@@ -188,4 +188,42 @@ func (mr *midtransRequest) TransactionStatus(transactionStatusResp *coreapi.Tran
 	}
 
 	return status
+}
+
+func (mr *midtransRequest) CheckTransactionStatus(IDTransaction string) (string, error) {
+	transactionStatusResp, err := coreapi.CheckTransaction(IDTransaction)
+	if err != nil {
+		return "", err
+	}
+
+	if transactionStatusResp != nil {
+		status := mr.TransactionStatus(transactionStatusResp)
+		if err != nil {
+			return "", err
+		}
+		return status.Order, nil
+	} else {
+		return "", nil
+	}
+}
+
+func (mr *midtransRequest) MappingPaymentName(paymentType string) string {
+	switch paymentType {
+	case "4":
+		return "Bank Permata"
+	case "5":
+		return "Bank CIMB"
+	case "6":
+		return "Bank BCA"
+	case "7":
+		return "Bank BRI"
+	case "8":
+		return "Bank BNI"
+	case "10":
+		return "Gopay"
+	case "11":
+		return "Qris"
+	default:
+		return "Other"
+	}
 }

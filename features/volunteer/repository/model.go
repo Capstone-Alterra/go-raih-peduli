@@ -7,6 +7,7 @@ import (
 	"raihpeduli/features/volunteer"
 	"raihpeduli/features/volunteer/dtos"
 	"raihpeduli/helpers"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/labstack/gommon/log"
@@ -42,6 +43,7 @@ func (mdl *model) Paginate(page, size int, searchAndFilter dtos.SearchAndFilter)
 		Where("skills_required LIKE ?", "%"+searchAndFilter.Skill+"%").
 		Where("number_of_vacancies >= ?", searchAndFilter.MinParticipant).
 		Where("number_of_vacancies <= ?", searchAndFilter.MaxParticipant).
+		Order("created_at DESC").
 		Find(&volunteers)
 
 	if result.Error != nil {
@@ -57,12 +59,17 @@ func (mdl *model) PaginateMobile(page, size int, searchAndFilter dtos.SearchAndF
 
 	offset := (page - 1) * size
 
+	currentTimeUTC := time.Now()
+	wibLocation, _ := time.LoadLocation("Asia/Jakarta")
+	currentTimeWIB := currentTimeUTC.In(wibLocation)
+
 	result := mdl.db.Offset(offset).Limit(size).
 		Where("title LIKE ?", "%"+searchAndFilter.Title+"%").
 		Where("city LIKE ?", "%"+searchAndFilter.City+"%").
 		Where("skills_required LIKE ?", "%"+searchAndFilter.Skill+"%").
 		Where("number_of_vacancies >= ?", searchAndFilter.MinParticipant).
 		Where("number_of_vacancies <= ?", searchAndFilter.MaxParticipant).
+		Where("application_deadline > ?", currentTimeWIB.Format("2006-01-02 15:04:05")).
 		Where("status = ?", "accepted").
 		Find(&volunteers)
 
@@ -84,6 +91,17 @@ func (mdl *model) SelectVacancyByID(volunteerID int) *volunteer.VolunteerVacanci
 	}
 
 	return &volunteer
+}
+
+func (mdl *model) SelectByTittle(title string) error {
+	var vacancy volunteer.VolunteerVacancies
+
+	if err := mdl.db.Table("volunteer_vacancies").Where("title = ?", title).
+		Where("status = ?", "accepted").First(&vacancy).Error; err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (mdl *model) SelectBookmarkedVacancyID(ownerID int) (map[int]string, error) {
@@ -186,14 +204,18 @@ func (mdl *model) UploadFile(file multipart.File, oldFilename string) (string, e
 	var urlLength int = len("https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/vacancies/")
 	var objectName string
 
+	if file == nil && oldFilename != "" {
+		return oldFilename, nil
+	}
+
 	if file == nil {
-		return "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/vacancies/volunteer-vacancy.jpg", nil
+		return "https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/vacancies/default", nil
 	}
 
 	if oldFilename != "" {
 		objectName = oldFilename[urlLength:]
 
-		if objectName == "volunteer-vacancy.jpg" {
+		if objectName == "default" {
 			objectName = ""
 		} else if err := mdl.clStorage.DeleteFile(objectName); err != nil {
 			return "", err
@@ -232,8 +254,13 @@ func (mdl *model) GetTotalDataVacancies() int64 {
 func (mdl *model) GetTotalDataVacanciesMobile() int64 {
 	var totalData int64
 
+	currentTimeUTC := time.Now()
+	wibLocation, _ := time.LoadLocation("Asia/Jakarta")
+	currentTimeWIB := currentTimeUTC.In(wibLocation)
+
 	result := mdl.db.Table("volunteer_vacancies").
 		Where("deleted_at IS NULL").
+		Where("application_deadline > ?", currentTimeWIB.Format("2006-01-02 15:04:05")).
 		Where("status = ?", "accepted").
 		Count(&totalData)
 
@@ -267,12 +294,17 @@ func (mdl *model) GetTotalDataVacanciesBySearchAndFilter(searchAndFilter dtos.Se
 func (mdl *model) GetTotalDataVacanciesBySearchAndFilterMobile(searchAndFilter dtos.SearchAndFilter) int64 {
 	var totalData int64
 
+	currentTimeUTC := time.Now()
+	wibLocation, _ := time.LoadLocation("Asia/Jakarta")
+	currentTimeWIB := currentTimeUTC.In(wibLocation)
+
 	result := mdl.db.Table("volunteer_vacancies").
 		Where("title LIKE ?", "%"+searchAndFilter.Title+"%").
 		Where("city LIKE ?", "%"+searchAndFilter.City+"%").
 		Where("skills_required LIKE ?", "%"+searchAndFilter.Skill+"%").
 		Where("number_of_vacancies >= ?", searchAndFilter.MinParticipant).
 		Where("number_of_vacancies <= ?", searchAndFilter.MaxParticipant).
+		Where("application_deadline > ?", currentTimeWIB.Format("2006-01-02 15:04:05")).
 		Where("status = ?", "accepted").
 		Count(&totalData)
 
@@ -302,10 +334,11 @@ func (mdl *model) SelectVolunteersByVacancyID(vacancyID int, name string, page, 
 	offset := (page - 1) * size
 
 	result := mdl.db.Table("volunteer_relations AS vr").
-		Select("vr.id", "users.fullname", "users.address", "users.nik", "vr.resume", "vr.status", "vr.photo").
+		Select("vr.id", "users.email", "users.fullname", "users.address", "users.phone_number", "users.gender", "users.nik", "vr.skills", "vr.reason", "vr.resume", "vr.status", "vr.photo").
 		Joins("JOIN users ON users.id = vr.user_id").
 		Where("vr.volunteer_id = ?", vacancyID).
 		Where("users.fullname LIKE ?", "%"+name+"%").
+		Order("vr.created_at DESC").
 		Offset(offset).Limit(size).Find(&volunteers)
 	if result.Error != nil {
 		log.Error(result.Error)
@@ -319,7 +352,7 @@ func (mdl *model) SelectVolunteerDetails(vacancyID int, volunteerID int) *volunt
 	var volunteers volunteer.Volunteer
 
 	result := mdl.db.Table("volunteer_relations AS vr").
-		Select("vr.id", "users.fullname", "users.address", "users.nik", "vr.resume", "vr.status", "vr.photo").
+		Select("vr.id", "users.email", "users.fullname", "users.address", "users.phone_number", "users.gender", "users.nik", "vr.skills", "vr.reason", "vr.resume", "vr.status", "vr.photo").
 		Joins("JOIN users ON users.id = vr.user_id").
 		Where("vr.volunteer_id = ? AND vr.id = ?", vacancyID, volunteerID).
 		Find(&volunteers)
@@ -374,4 +407,24 @@ func (mdl *model) FindUserInVacancy(vacancyID, userID int) bool {
 	}
 
 	return true
+}
+
+func (mdl *model) SelectAllSkills() ([]dtos.Skill, error) {
+	var skills []dtos.Skill
+
+	if err := mdl.db.Table("skills").Find(&skills).Error; err != nil {
+		return nil, err
+	}
+
+	return skills, nil
+}
+
+func (mdl *model) GetDeviceToken(userID int) string {
+	var result volunteer.NotificationToken
+
+	if err := mdl.collection.FindOne(context.Background(), bson.M{"user_id": userID}).Decode(&result); err != nil {
+		return ""
+	}
+
+	return result.DeviceToken
 }

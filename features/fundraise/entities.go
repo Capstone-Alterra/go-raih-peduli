@@ -25,3 +25,25 @@ type Fundraise struct {
 
 	User auth.User
 }
+
+type NotificationToken struct {
+	DeviceToken string `bson:"device_token" json:"device_token"`
+}
+
+func (m *Fundraise) BeforeCreate(tx *gorm.DB) error {
+	wibLocation, err := time.LoadLocation("Asia/Jakarta")
+	if err != nil {
+		return err
+	}
+	m.CreatedAt = time.Now().In(wibLocation)
+	return nil
+}
+
+func (m *Fundraise) BeforeUpdate(tx *gorm.DB) error {
+	wibLocation, err := time.LoadLocation("Asia/Jakarta")
+	if err != nil {
+		return err
+	}
+	m.UpdatedAt = time.Now().In(wibLocation)
+	return nil
+}

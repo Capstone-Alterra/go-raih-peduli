@@ -17,7 +17,7 @@ func NewOpenAI(API_KEY string) OpenAIInterface {
 	}
 }
 
-func (oai *openAI) GetReplyFromGPT(question string, qnaList map[string]string) (string, error) {
+func (oai *openAI) GetAppInformation(question string, qnaList map[string]string) (string, error) {
 	var listOfQuestionNPrompt string
 
 	for question, prompt := range qnaList {
@@ -44,7 +44,32 @@ func (oai *openAI) GetReplyFromGPT(question string, qnaList map[string]string) (
 	if err != nil {
 		return "", err
 	}
+	
+	return resp.Choices[0].Message.Content, nil
+}
 
+func (oai *openAI) GetNewsContent(prompt string) (string, error) {
+	fmt.Println(prompt)
+	client := openai.NewClient(oai.API_KEY)
+
+	resp, err := client.CreateChatCompletion(
+		context.Background(),
+		openai.ChatCompletionRequest{
+			Model: openai.GPT3Dot5Turbo,
+			Messages: []openai.ChatCompletionMessage{
+				{
+					Role:    openai.ChatMessageRoleUser,
+					Content: prompt,
+				},
+			},
+			// MaxTokens: 200,
+			// Stop: []string{"."},
+		},
+	)
+
+	if err != nil {
+		return "", err
+	}
 	
 	return resp.Choices[0].Message.Content, nil
 }

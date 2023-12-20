@@ -36,7 +36,7 @@ type RedisConfig struct {
 }
 
 type MongoConfig struct {
-	MONGO_URI string
+	MONGO_URI     string
 	MONGO_DB_NAME string
 }
 
@@ -44,6 +44,10 @@ type CloudStorageConfig struct {
 	GOOGLE_APPLICATION_CREDENTIALS string
 	CLOUD_PROJECT_ID               string
 	CLOUD_BUCKET_NAME              string
+}
+
+type FirebaseConfig struct {
+	FIREBASE_API_KEY string
 }
 
 type MidtransConfig struct {
@@ -56,7 +60,7 @@ type ProgramConfig struct {
 	REFRESH_SECRET string
 	SERVER_PORT    string
 	OTP_SECRET     string
-	OPENAI_KEY	   string
+	OPENAI_KEY     string
 }
 
 type SMTPConfig struct {
@@ -147,6 +151,30 @@ func LoadCloudStorageConfig() *CloudStorageConfig {
 		res.CLOUD_BUCKET_NAME = val
 	}
 
+	return res
+}
+
+func LoadFirebaseConfig() *FirebaseConfig {
+	var res = new(FirebaseConfig)
+
+	if val, found := os.LookupEnv("FIREBASE_API_KEY"); found {
+		gcredentials, _ := os.LookupEnv("FIREBASE_API_KEY")
+
+		file, err := os.Create("firebase_key.json")
+		if err != nil {
+			panic(err)
+		}
+		defer file.Close()
+
+		_, err = io.WriteString(file, gcredentials)
+		if err != nil {
+			panic(err)
+		}
+
+		res.FIREBASE_API_KEY = val
+	}
+
+	res.FIREBASE_API_KEY = "firebase_key.json"
 	return res
 }
 

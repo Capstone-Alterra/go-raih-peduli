@@ -11,6 +11,7 @@ type Repository interface {
 	Paginate(page, size int, searchAndFilter dtos.SearchAndFilter) []VolunteerVacancies
 	PaginateMobile(page, size int, searchAndFilter dtos.SearchAndFilter) []VolunteerVacancies
 	SelectVacancyByID(vacancyID int) *VolunteerVacancies
+	SelectByTittle(title string) error
 	SelectBookmarkedVacancyID(ownerID int) (map[int]string, error)
 	SelectBookmarkByVacancyAndOwnerID(vacancyID, ownerID int) string
 	UpdateVacancy(vacancy VolunteerVacancies) int64
@@ -31,13 +32,15 @@ type Repository interface {
 	SelectVolunteerDetails(vacancyID int, volunteerID int) *Volunteer
 	CheckUser(userID int) bool
 	FindUserInVacancy(vacancyID, userID int) bool
+	SelectAllSkills() ([]dtos.Skill, error)
+	GetDeviceToken(userID int) string
 }
 
 type Usecase interface {
-	FindAllVacancies(page, size int, searchAndFilter dtos.SearchAndFilter, ownerID int, status string) ([]dtos.ResVacancy, int64)
+	FindAllVacancies(page, size int, searchAndFilter dtos.SearchAndFilter, ownerID int, suffix string) ([]dtos.ResVacancy, int64)
 	FindVacancyByID(vacancyID, ownerID int) *dtos.ResVacancy
-	ModifyVacancy(vacancyData dtos.InputVacancy, file multipart.File, oldData dtos.ResVacancy) (bool, []string)
-	ModifyVacancyStatus(input dtos.StatusVacancies, oldData dtos.ResVacancy) (bool, []string)
+	ModifyVacancy(vacancyData dtos.InputVacancy, file multipart.File, oldData dtos.ResVacancy) ([]string, error)
+	ModifyVacancyStatus(input dtos.StatusVacancies, oldData dtos.ResVacancy) (error, []string)
 	RemoveVacancy(vacancyID int, oldData dtos.ResVacancy) error
 	CreateVacancy(newVacancy dtos.InputVacancy, UserID int, file multipart.File) (*dtos.ResVacancy, []string, error)
 	RegisterVacancy(newApply dtos.ApplyVacancy, userID int) (bool, []string)
@@ -46,6 +49,7 @@ type Usecase interface {
 	FindDetailVolunteers(vacancyID, volunteerID int) *dtos.ResRegistrantVacancy
 	CheckUser(userID int) bool
 	FindUserInVacancy(vacancyID, userID int) bool
+	FindAllSkills() ([]dtos.Skill, error)
 }
 
 type Handler interface {
@@ -59,4 +63,5 @@ type Handler interface {
 	UpdateStatusRegistrar() echo.HandlerFunc
 	GetVolunteersByVacancyID() echo.HandlerFunc
 	GetVolunteer() echo.HandlerFunc
+	GetSkills() echo.HandlerFunc
 }

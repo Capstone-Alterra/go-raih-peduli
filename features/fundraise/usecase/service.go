@@ -2,12 +2,15 @@ package usecase
 
 import (
 	"errors"
+	"io"
 	"math"
 	"mime/multipart"
+	"net/http"
 	"raihpeduli/config"
 	"raihpeduli/features/fundraise"
 	"raihpeduli/features/fundraise/dtos"
 	"raihpeduli/helpers"
+	"time"
 
 	"github.com/mashingan/smapping"
 	"github.com/sirupsen/logrus"
@@ -16,12 +19,14 @@ import (
 type service struct {
 	model      fundraise.Repository
 	validation helpers.ValidationInterface
+	nsRequest  helpers.NotificationInterface
 }
 
-func New(model fundraise.Repository, validation helpers.ValidationInterface) fundraise.Usecase {
+func New(model fundraise.Repository, validation helpers.ValidationInterface, nsRequest helpers.NotificationInterface) fundraise.Usecase {
 	return &service{
 		model:      model,
 		validation: validation,
+		nsRequest: nsRequest,
 	}
 }
 
@@ -32,7 +37,7 @@ func (svc *service) FindAll(pagination dtos.Pagination, searchAndFilter dtos.Sea
 	if pagination.Page == 0 {
 		pagination.Page = 1
 	}
-	
+
 	if pagination.PageSize == 0 {
 		pagination.PageSize = 10
 	}
@@ -64,11 +69,6 @@ func (svc *service) FindAll(pagination dtos.Pagination, searchAndFilter dtos.Sea
 		}
 	}
 
-	if err != nil {
-		logrus.Error(err)
-		return nil, 0
-	}
-
 	for _, fundraise := range entities {
 		var data dtos.ResFundraise
 
@@ -80,7 +80,7 @@ func (svc *service) FindAll(pagination dtos.Pagination, searchAndFilter dtos.Sea
 			bookmarkID, ok := bookmarkIDs[data.ID]
 
 			if ok {
-				data.BookmarkID = &bookmarkID
+				data.BookmarkID = bookmarkID
 			}
 		}
 
@@ -107,13 +107,11 @@ func (svc *service) FindAll(pagination dtos.Pagination, searchAndFilter dtos.Sea
 		}
 	}
 
-
 	return fundraises, totalData
 }
 
-func (svc *service) FindByID(fundraiseID, ownerID int) *dtos.ResFundraise {
-	var res dtos.ResFundraise
-	fundraise, err := svc.model.SelectByID(fundraiseID)
+func (svc *service) FindByID(fundraiseID, ownerID int) *dtos.FundraiseDetails {
+	res, err := svc.model.SelectByID(fundraiseID)
 
 	if err != nil {
 		logrus.Error(err)
@@ -126,13 +124,8 @@ func (svc *service) FindByID(fundraiseID, ownerID int) *dtos.ResFundraise {
 		bookmarkID, err = svc.model.SelectBookmarkByFundraiseAndOwnerID(fundraiseID, ownerID)
 
 		if bookmarkID != "" {
-			res.BookmarkID = &bookmarkID
+			res.BookmarkID = bookmarkID
 		}
-	}
-
-	if err := smapping.FillStruct(&res, smapping.MapFields(fundraise)); err != nil {
-		logrus.Error(err)
-		return nil
 	}
 
 	if res.FundAcquired, err = svc.model.TotalFundAcquired(fundraiseID); err != nil {
@@ -140,12 +133,16 @@ func (svc *service) FindByID(fundraiseID, ownerID int) *dtos.ResFundraise {
 		return nil
 	}
 
-	return &res
+	return res
 }
 
 func (svc *service) Create(newFundraise dtos.InputFundraise, userID int, file multipart.File) (*dtos.ResFundraise, []string, error) {
-	if errMap := svc.validation.ValidateRequest(newFundraise); errMap != nil {
-		return nil, errMap, errors.New("error")
+	if _, err := svc.model.SelectByTitle(newFundraise.Title); err == nil {
+		return nil, nil, errors.New("title already used by another fundraise")
+	}
+
+	if errorList, err := svc.validateInput(newFundraise, file); err != nil || len(errorList) > 0 {
+		return nil, errorList, err
 	}
 
 	var fundraise fundraise.Fundraise
@@ -188,9 +185,9 @@ func (svc *service) Create(newFundraise dtos.InputFundraise, userID int, file mu
 	return &res, nil, nil
 }
 
-func (svc *service) Modify(fundraiseData dtos.InputFundraise, file multipart.File, oldData dtos.ResFundraise) ([]string, error) {
-	if errMap := svc.validation.ValidateRequest(fundraiseData); errMap != nil {
-		return errMap, errors.New("error")
+func (svc *service) Modify(fundraiseData dtos.InputFundraise, file multipart.File, oldData dtos.FundraiseDetails) ([]string, error) {
+	if errorList, err := svc.validateInput(fundraiseData, file); len(errorList) > 0 || err != nil {
+		return errorList, errors.New("error")
 	}
 
 	var newFundraise fundraise.Fundraise
@@ -205,7 +202,7 @@ func (svc *service) Modify(fundraiseData dtos.InputFundraise, file multipart.Fil
 		}
 
 		if err := svc.model.DeleteFile(oldFilename); err != nil {
-			return nil, err
+			logrus.Error(err)
 		}
 
 		imageURL, err := svc.model.UploadFile(file)
@@ -236,7 +233,7 @@ func (svc *service) Modify(fundraiseData dtos.InputFundraise, file multipart.Fil
 	return nil, nil
 }
 
-func (svc *service) ModifyStatus(input dtos.InputFundraiseStatus, oldData dtos.ResFundraise) ([]string, error) {
+func (svc *service) ModifyStatus(input dtos.InputFundraiseStatus, oldData dtos.FundraiseDetails) ([]string, error) {
 	if errMap := svc.validation.ValidateRequest(input); errMap != nil {
 		return errMap, errors.New("error")
 	}
@@ -248,12 +245,28 @@ func (svc *service) ModifyStatus(input dtos.InputFundraiseStatus, oldData dtos.R
 		return nil, err
 	}
 
+	var message = ""
+
 	newFundraise.Status = input.Status
 	if input.Status == "rejected" {
 		if input.RejectedReason == "" {
 			return []string{"rejected_reason field is required when the status is rejected"}, errors.New("error reason empty string")
 		}
+
+		if len(input.RejectedReason) < 20 {
+			return []string{"rejected_reason must be at least 20 characters"}, errors.New("characters must be at least 20")
+		}
 		newFundraise.RejectedReason = input.RejectedReason
+
+		message = "Terima kasih sudah mengajukan penggalangan dana. Saat ini, kami belum bisa menyetujui permohonan ini.\n\nAlasan : " + input.RejectedReason + "\n\nTerima kasih atas partisipasinya"
+	}
+
+	if input.Status == "accepted" {
+		if _, err := svc.model.SelectByTitle(newFundraise.Title); err == nil {
+			return nil, errors.New("there is a fundraise that has the same title and status as accepted. change the title first before changing status to accepted")
+		}
+		
+		message = "Kami ingin memberitahu bahwa pengajuan penggalangan dana Anda untuk " + oldData.Title + " telah diterima! Terima kasih atas langkah inisiatif Anda."
 	}
 
 	if err := svc.model.Update(newFundraise); err != nil {
@@ -261,10 +274,16 @@ func (svc *service) ModifyStatus(input dtos.InputFundraiseStatus, oldData dtos.R
 		return nil, err
 	}
 
+	deviceToken := svc.model.GetDeviceToken(oldData.UserID)
+
+	if deviceToken != "" && message != "" { 
+		svc.nsRequest.SendNotifications(deviceToken, "Penerimaan Penggalangan Dana", message)
+	}
+
 	return nil, nil
 }
 
-func (svc *service) Remove(fundraiseID int, oldData dtos.ResFundraise) error {
+func (svc *service) Remove(fundraiseID int, oldData dtos.FundraiseDetails) error {
 	var config = config.LoadCloudStorageConfig()
 	var oldFilename string = oldData.Photo
 	var urlLength int = len("https://storage.googleapis.com/" + config.CLOUD_BUCKET_NAME + "/fundraises/")
@@ -276,11 +295,90 @@ func (svc *service) Remove(fundraiseID int, oldData dtos.ResFundraise) error {
 	if oldFilename != "default" {
 		svc.model.DeleteFile(oldFilename)
 	}
-	
+
 	if err := svc.model.DeleteByID(fundraiseID); err != nil {
 		logrus.Error(err)
 		return err
 	}
 
 	return nil
+}
+
+func (svc *service) validateInput(input dtos.InputFundraise, file multipart.File) ([]string, error) {
+	var errorList []string 
+	if errMap := svc.validation.ValidateRequest(input); errMap != nil {
+		errorList = append(errorList, errMap...)
+	}
+
+	if len(input.Title) < 20 {
+		errorList = append(errorList, "title must be at least 20 characters")
+	}
+
+	if len(input.Description) < 50 {
+		errorList = append(errorList, "description must be at least 50 characters")
+	}
+
+	if input.Target < 100 {
+		errorList = append(errorList, "target must be at less 100 rupiahs")
+	}
+
+	if file != nil {
+		buffer := make([]byte, 512)
+		
+		if _, err := file.Read(buffer); err != nil {
+			return nil, err
+		}
+
+		contentType := http.DetectContentType(buffer)
+		isImage := contentType[:5] == "image"
+
+		if !isImage {
+			errorList = append(errorList, "photo file has to be an image (png, jpg, or jpeg)")
+		}
+
+		const maxFileSize = 5 * 1024 * 1024
+		var fileSize int64
+
+		buffer = make([]byte, 1024)
+		for {
+			n, err := file.Read(buffer)
+
+			fileSize += int64(n)
+
+			if err == io.EOF {
+				break
+			}
+
+			if err != nil {
+				errorList = append(errorList, "unknown file size")
+			}
+		}
+
+		if _, err := file.Seek(0, io.SeekStart); err != nil {
+			return nil, err
+		}
+
+		if fileSize > maxFileSize {
+			errorList = append(errorList, "fize size exceeds the allowed limit (5MB)")
+		}
+	}
+
+	if input.EndDate.Before(input.StartDate) {
+		errorList = append(errorList, "end_date can not be earlier than start_date")
+	}
+
+	wibLocation, err := time.LoadLocation("Asia/Jakarta")
+	if err != nil {
+		logrus.Error(err)
+		return nil, err
+	}
+
+	startDate := input.StartDate.Truncate(24 * time.Hour)
+	currentDate := time.Now().In(wibLocation).Truncate(24 * time.Hour)
+
+	if startDate.Sub(currentDate).Milliseconds() < 0 {
+		errorList = append(errorList, "start_date can not be earlier than current date")
+	}
+
+	return errorList, nil
 }

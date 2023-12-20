@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"raihpeduli/config"
+	"raihpeduli/features/home"
 	"raihpeduli/helpers"
 	"raihpeduli/middlewares"
 	"raihpeduli/routes"
@@ -12,6 +13,7 @@ import (
 	ah "raihpeduli/features/auth/handler"
 	ar "raihpeduli/features/auth/repository"
 	au "raihpeduli/features/auth/usecase"
+	"raihpeduli/features/history"
 
 	"raihpeduli/features/user"
 	uh "raihpeduli/features/user/handler"
@@ -48,6 +50,14 @@ import (
 	cr "raihpeduli/features/chatbot/repository"
 	cu "raihpeduli/features/chatbot/usecase"
 
+	hh "raihpeduli/features/history/handler"
+	hr "raihpeduli/features/history/repository"
+	hu "raihpeduli/features/history/usecase"
+
+	hoh "raihpeduli/features/home/handler"
+	hor "raihpeduli/features/home/repository"
+	hou "raihpeduli/features/home/usecase"
+
 	"github.com/labstack/echo/v4"
 )
 
@@ -55,6 +65,8 @@ func main() {
 	e := echo.New()
 	cfg := config.InitConfig()
 	jwtService := helpers.NewJWT(*cfg)
+
+	middlewares.LogMiddlewares(e)
 
 	routes.Auth(e, AuthHandler())
 	routes.Users(e, UserHandler(), jwtService, *cfg)
@@ -64,8 +76,8 @@ func main() {
 	routes.Transactions(e, TransactionHandler(), jwtService, *cfg)
 	routes.Bookmarks(e, BookmarkHandler(), jwtService, *cfg)
 	routes.Chatbots(e, ChatbotHandler(cfg), jwtService, *cfg)
-
-	middlewares.LogMiddlewares(e)
+	routes.History(e, HistoryHandler(), jwtService, *cfg)
+	routes.Homes(e, HomeHandler(), jwtService, *cfg)
 
 	e.Start(fmt.Sprintf(":%s", cfg.SERVER_PORT))
 }
@@ -78,10 +90,19 @@ func FundraiseHandler() fundraise.Handler {
 	clStorage := helpers.NewCloudStorage(config.CLOUD_PROJECT_ID, config.CLOUD_BUCKET_NAME, "fundraises/")
 	mongoDB := utils.ConnectMongo()
 	collection := mongoDB.Collection("bookmarks")
+	nfService := helpers.NewNotificationService()
 
 	repo := fr.New(db, clStorage, collection)
-	uc := fu.New(repo, validation)
+	uc := fu.New(repo, validation, nfService)
 	return fh.New(uc)
+}
+
+func HomeHandler() home.Handler {
+	db := utils.InitDB()
+
+	repo := hor.New(db)
+	uc := hou.New(repo)
+	return hoh.New(uc)
 }
 
 func UserHandler() user.Handler {
@@ -111,8 +132,10 @@ func AuthHandler() auth.Handler {
 	generator := helpers.NewGenerator()
 	validation := helpers.NewValidationRequest()
 	redis := utils.ConnectRedis()
+	mongoDB := utils.ConnectMongo()
+	collection := mongoDB.Collection("devices")
 
-	repo := ar.New(db, redis, smtpConfig)
+	repo := ar.New(db, redis, smtpConfig, collection)
 	uc := au.New(repo, jwt, hash, generator, validation)
 	return ah.New(uc)
 }
@@ -124,11 +147,11 @@ func VolunteerHandler() volunteer.Handler {
 	db := utils.InitDB()
 	mongoDB := utils.ConnectMongo()
 	collection := mongoDB.Collection("bookmarks")
-
 	clStorage := helpers.NewCloudStorage(config.CLOUD_PROJECT_ID, config.CLOUD_BUCKET_NAME, "vacancies/")
+	nfService := helpers.NewNotificationService()
 
 	repo := vr.New(db, clStorage, collection)
-	uc := vu.New(repo, validation)
+	uc := vu.New(repo, validation, nfService)
 	return vh.New(uc)
 }
 
@@ -147,14 +170,20 @@ func NewsHandler() news.Handler {
 }
 
 func TransactionHandler() transaction.Handler {
+	config.LoadFirebaseConfig()
+	mongoDB := utils.ConnectMongo()
+	collection := mongoDB.Collection("devices")
+	smtpConfig := config.LoadSMTPConfig()
 	db := utils.InitDB()
-	repo := tr.New(db)
+	repo := tr.New(db, smtpConfig, collection)
 	coreAPIClient := utils.MidtransCoreAPIClient()
 	validation := helpers.NewValidationRequest()
+	nfService := helpers.NewNotificationService()
 
 	generator := helpers.NewGenerator()
 	midtrans := helpers.NewMidtransRequest()
-	tc := tu.New(repo, generator, midtrans, coreAPIClient, validation)
+
+	tc := tu.New(repo, generator, midtrans, coreAPIClient, validation, nfService)
 	return th.New(tc)
 }
 
@@ -180,4 +209,15 @@ func ChatbotHandler(cfg *config.ProgramConfig) chatbot.Handler {
 	repo := cr.New(db, collection)
 	uc := cu.New(repo, validation, openAI)
 	return ch.New(uc)
+}
+
+func HistoryHandler() history.Handler {
+	db := utils.InitDB()
+
+	mongoDB := utils.ConnectMongo()
+	collection := mongoDB.Collection("bookmarks")
+
+	repo := hr.New(db, collection)
+	uc := hu.New(repo)
+	return hh.New(uc)
 }

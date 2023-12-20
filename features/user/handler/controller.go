@@ -23,23 +23,21 @@ func New(service user.Usecase) user.Handler {
 
 func (ctl *controller) GetUsers() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		pagination := dtos.Pagination{}
-		ctx.Bind(&pagination)
+		searchAndFilter := dtos.SearchAndFilter{}
+		ctx.Bind(&searchAndFilter)
 
-		if pagination.Page < 1 || pagination.PageSize < 1 {
-			pagination.Page = 1
-			pagination.PageSize = 20
+		if searchAndFilter.Page < 1 || searchAndFilter.PageSize < 1 {
+			searchAndFilter.Page = 1
+			searchAndFilter.PageSize = 20
 		}
 
-		page := pagination.Page
-		size := pagination.PageSize
-		users, totalData := ctl.service.FindAll(page, size)
+		users, totalData := ctl.service.FindAll(searchAndFilter)
 
 		if users == nil {
 			return ctx.JSON(404, helpers.Response("there is no users"))
 		}
 
-		paginationResponse := helpers.PaginationResponse(page, size, int(totalData))
+		paginationResponse := helpers.PaginationResponse(searchAndFilter.Page, searchAndFilter.PageSize, int(totalData))
 
 		return ctx.JSON(200, helpers.Response("success", map[string]any{
 			"data":       users,
@@ -95,20 +93,25 @@ func (ctl *controller) CreateUser() echo.HandlerFunc {
 
 func (ctl *controller) UpdateUser() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		input := dtos.InputUpdate{}
+		var roleID = ctx.Get("role_id")
+		var userID int
+		var input dtos.InputUpdate
 
-		userID := ctx.Get("user_id").(int)
+		if roleID == 2 {
+			userID, _ = strconv.Atoi(ctx.Param("id"))
+		} else {
+			userID = ctx.Get("user_id").(int)
+		}
 
 		user := ctl.service.FindByID(userID)
-
 		if user == nil {
 			return ctx.JSON(404, helpers.Response("user not found"))
 		}
 
 		ctx.Bind(&input)
 
-		fileHeader, err := ctx.FormFile("profile_picture")
 		var file multipart.File
+		fileHeader, err := ctx.FormFile("profile_picture")
 
 		if err == nil {
 			formFile, err := fileHeader.Open()
@@ -120,15 +123,15 @@ func (ctl *controller) UpdateUser() echo.HandlerFunc {
 			file = formFile
 		}
 
-		update, errMap := ctl.service.Modify(input, file, *user)
+		err, errMap := ctl.service.Modify(input, file, *user)
 		if errMap != nil {
 			return ctx.JSON(400, helpers.Response("missing some data", map[string]any{
 				"error": errMap,
 			}))
 		}
 
-		if !update {
-			return ctx.JSON(500, helpers.Response("something went wrong"))
+		if err != nil {
+			return ctx.JSON(500, helpers.Response(err.Error()))
 		}
 
 		return ctx.JSON(200, helpers.Response("success updated user"))
@@ -159,15 +162,15 @@ func (ctl *controller) UpdateProfilePicture() echo.HandlerFunc {
 			input.ProfilePicture = formFile
 		}
 
-		update, errMap := ctl.service.ModifyProfilePicture(input, *user)
+		err, errMap := ctl.service.ModifyProfilePicture(input, *user)
 		if errMap != nil {
 			return ctx.JSON(400, helpers.Response("missing some data", map[string]any{
 				"error": errMap,
 			}))
 		}
 
-		if !update {
-			return ctx.JSON(500, helpers.Response("something went wrong"))
+		if err != nil {
+			return ctx.JSON(500, helpers.Response(err.Error()))
 		}
 
 		return ctx.JSON(200, helpers.Response("success updated user"))
@@ -188,10 +191,9 @@ func (ctl *controller) DeleteUser() echo.HandlerFunc {
 			return ctx.JSON(404, helpers.Response("user not found"))
 		}
 
-		delete := ctl.service.Remove(userID)
-
-		if !delete {
-			return ctx.JSON(500, helpers.Response("something went wrong"))
+		err = ctl.service.Remove(userID)
+		if err != nil {
+			return ctx.JSON(500, helpers.Response(err.Error()))
 		}
 
 		return ctx.JSON(200, helpers.Response("success deleted user", nil))
@@ -221,7 +223,7 @@ func (ctl *controller) ForgetPassword() echo.HandlerFunc {
 
 		err := ctl.service.ForgetPassword(email)
 		if err != nil {
-			return ctx.JSON(404, helpers.Response("user not found"))
+			return ctx.JSON(404, helpers.Response(err.Error()))
 		}
 
 		return ctx.JSON(200, helpers.Response("OTP has been sent via email"))
@@ -254,7 +256,7 @@ func (ctl *controller) ResetPassword() echo.HandlerFunc {
 		err := ctl.service.ResetPassword(input)
 
 		if err != nil {
-			return ctx.JSON(500, helpers.Response("something went wrong"))
+			return ctx.JSON(500, helpers.Response(err.Error()))
 		}
 
 		return ctx.JSON(200, helpers.Response("success reset password"))
@@ -265,7 +267,7 @@ func (ctl *controller) MyProfile() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		userID := ctx.Get("user_id").(int)
 
-		user := ctl.service.FindByID(userID)
+		user := ctl.service.MyProfile(userID)
 		if user == nil {
 			return ctx.JSON(404, helpers.Response("user not found"))
 		}
@@ -273,5 +275,68 @@ func (ctl *controller) MyProfile() echo.HandlerFunc {
 		return ctx.JSON(200, helpers.Response("success", map[string]any{
 			"data": user,
 		}))
+	}
+}
+
+func (ctl *controller) CheckPassword() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		userID := ctx.Get("user_id").(int)
+
+		var input dtos.CheckPassword
+
+		ctx.Bind(&input)
+
+		errMap, err := ctl.service.CheckPassword(input, userID)
+		if errMap != nil {
+			return ctx.JSON(400, helpers.Response("missing some data", map[string]any{
+				"error": errMap,
+			}))
+		}
+
+		if err != nil {
+			return ctx.JSON(500, helpers.Response(err.Error()))
+		}
+
+		return ctx.JSON(200, helpers.Response("success check password"))
+	}
+}
+
+func (ctl *controller) ChangePassword() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		userID := ctx.Get("user_id").(int)
+
+		var input dtos.ChangePassword
+
+		ctx.Bind(&input)
+
+		errMap, err := ctl.service.ChangePassword(input, userID)
+		if errMap != nil {
+			return ctx.JSON(400, helpers.Response("missing some data", map[string]any{
+				"error": errMap,
+			}))
+		}
+
+		if err != nil {
+			return ctx.JSON(500, helpers.Response(err.Error()))
+		}
+
+		return ctx.JSON(200, helpers.Response("success change password"))
+	}
+}
+
+func (ctl *controller) AddPersonalization() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		userID := ctx.Get("user_id").(int)
+
+		var input dtos.InputPersonalization
+
+		ctx.Bind(&input)
+
+		err := ctl.service.AddPersonalization(userID, input)
+		if err != nil {
+			return ctx.JSON(500, helpers.Response(err.Error()))
+		}
+
+		return ctx.JSON(200, helpers.Response("success add personalization"))
 	}
 }

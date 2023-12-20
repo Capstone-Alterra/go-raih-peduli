@@ -13,6 +13,20 @@ type Repository struct {
 	mock.Mock
 }
 
+// InsertToken provides a mock function with given fields: userID, fcmToken
+func (_m *Repository) InsertToken(userID int, fcmToken string) error {
+	ret := _m.Called(userID, fcmToken)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(int, string) error); ok {
+		r0 = rf(userID, fcmToken)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // InsertVerification provides a mock function with given fields: email, verificationKey
 func (_m *Repository) InsertVerification(email string, verificationKey string) error {
 	ret := _m.Called(email, verificationKey)
@@ -105,13 +119,13 @@ func (_m *Repository) SelectByEmail(email string) (*auth.User, error) {
 	return r0, r1
 }
 
-// SendOTPByEmail provides a mock function with given fields: email, otp
-func (_m *Repository) SendOTPByEmail(email string, otp string) error {
-	ret := _m.Called(email, otp)
+// SendOTPByEmail provides a mock function with given fields: fullname, email, otp, status
+func (_m *Repository) SendOTPByEmail(fullname string, email string, otp string, status string) error {
+	ret := _m.Called(fullname, email, otp, status)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, string) error); ok {
-		r0 = rf(email, otp)
+	if rf, ok := ret.Get(0).(func(string, string, string, string) error); ok {
+		r0 = rf(fullname, email, otp, status)
 	} else {
 		r0 = ret.Error(0)
 	}

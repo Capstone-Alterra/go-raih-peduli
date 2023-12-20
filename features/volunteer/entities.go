@@ -30,13 +30,18 @@ type VolunteerVacancies struct {
 }
 
 type Volunteer struct {
-	ID       int    `gorm:"type:int(11)"`
-	Fullname string `gorm:"type:varchar(255)"`
-	Address  string `gorm:"type:varchar(255)"`
-	Nik      string `gorm:"type:varchar(255)"`
-	Resume   string `gorm:"type:varchar(255)"`
-	Photo    string `gorm:"type:varchar(255)"`
-	Status   string `gorm:"type:enum('pending','accepted','rejected')"`
+	ID          int    `gorm:"type:int(11)"`
+	Email       string `gorm:"type:varchar(255)"`
+	Fullname    string `gorm:"type:varchar(255)"`
+	Address     string `gorm:"type:varchar(255)"`
+	PhoneNumber string `gorm:"type:varchar(255)"`
+	Gender      string `gorm:"type:varchar(255)"`
+	Skills      string `gorm:"type:varchar(255)"`
+	Nik         string `gorm:"type:varchar(255)"`
+	Resume      string `gorm:"type:varchar(255)"`
+	Reason      string
+	Photo       string `gorm:"type:varchar(255)"`
+	Status      string `gorm:"type:enum('pending','accepted','rejected')"`
 }
 
 type VolunteerRelations struct {
@@ -49,4 +54,16 @@ type VolunteerRelations struct {
 	Photo          string `gorm:"type:varchar(255)"`
 	Status         string `gorm:"type:enum('pending','accepted','rejected'); default: 'pending'"`
 	RejectedReason string `gorm:"type:varchar(255)"`
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	DeletedAt      gorm.DeletedAt `gorm:"index"`
+}
+
+type Skill struct {
+	ID   int    `gorm:"type:int(11)"`
+	Name string `gorm:"type:varchar(255)"`
+}
+
+type NotificationToken struct {
+	DeviceToken string `bson:"device_token" json:"device_token"`
 }

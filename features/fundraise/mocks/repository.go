@@ -4,6 +4,7 @@ package mocks
 
 import (
 	fundraise "raihpeduli/features/fundraise"
+	dtos "raihpeduli/features/fundraise/dtos"
 
 	mock "github.com/stretchr/testify/mock"
 
@@ -16,42 +17,118 @@ type Repository struct {
 }
 
 // DeleteByID provides a mock function with given fields: fundraiseID
-func (_m *Repository) DeleteByID(fundraiseID int) (int, error) {
+func (_m *Repository) DeleteByID(fundraiseID int) error {
 	ret := _m.Called(fundraiseID)
 
-	var r0 int
-	var r1 error
-	if rf, ok := ret.Get(0).(func(int) (int, error)); ok {
-		return rf(fundraiseID)
-	}
-	if rf, ok := ret.Get(0).(func(int) int); ok {
+	var r0 error
+	if rf, ok := ret.Get(0).(func(int) error); ok {
 		r0 = rf(fundraiseID)
 	} else {
-		r0 = ret.Get(0).(int)
+		r0 = ret.Error(0)
 	}
 
-	if rf, ok := ret.Get(1).(func(int) error); ok {
-		r1 = rf(fundraiseID)
+	return r0
+}
+
+// DeleteFile provides a mock function with given fields: filename
+func (_m *Repository) DeleteFile(filename string) error {
+	ret := _m.Called(filename)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string) error); ok {
+		r0 = rf(filename)
 	} else {
-		r1 = ret.Error(1)
+		r0 = ret.Error(0)
 	}
 
-	return r0, r1
+	return r0
+}
+
+// GetDeviceToken provides a mock function with given fields: userID
+func (_m *Repository) GetDeviceToken(userID int) string {
+	ret := _m.Called(userID)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(int) string); ok {
+		r0 = rf(userID)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// GetTotalData provides a mock function with given fields:
+func (_m *Repository) GetTotalData() int64 {
+	ret := _m.Called()
+
+	var r0 int64
+	if rf, ok := ret.Get(0).(func() int64); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+
+	return r0
+}
+
+// GetTotalDataBySearchAndFilter provides a mock function with given fields: searchAndFilter
+func (_m *Repository) GetTotalDataBySearchAndFilter(searchAndFilter dtos.SearchAndFilter) int64 {
+	ret := _m.Called(searchAndFilter)
+
+	var r0 int64
+	if rf, ok := ret.Get(0).(func(dtos.SearchAndFilter) int64); ok {
+		r0 = rf(searchAndFilter)
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+
+	return r0
+}
+
+// GetTotalDataBySearchAndFilterMobile provides a mock function with given fields: searchAndFilter
+func (_m *Repository) GetTotalDataBySearchAndFilterMobile(searchAndFilter dtos.SearchAndFilter) int64 {
+	ret := _m.Called(searchAndFilter)
+
+	var r0 int64
+	if rf, ok := ret.Get(0).(func(dtos.SearchAndFilter) int64); ok {
+		r0 = rf(searchAndFilter)
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+
+	return r0
+}
+
+// GetTotalDataMobile provides a mock function with given fields:
+func (_m *Repository) GetTotalDataMobile() int64 {
+	ret := _m.Called()
+
+	var r0 int64
+	if rf, ok := ret.Get(0).(func() int64); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+
+	return r0
 }
 
 // Insert provides a mock function with given fields: newFundraise
-func (_m *Repository) Insert(newFundraise fundraise.Fundraise) (int, error) {
+func (_m *Repository) Insert(newFundraise fundraise.Fundraise) (*fundraise.Fundraise, error) {
 	ret := _m.Called(newFundraise)
 
-	var r0 int
+	var r0 *fundraise.Fundraise
 	var r1 error
-	if rf, ok := ret.Get(0).(func(fundraise.Fundraise) (int, error)); ok {
+	if rf, ok := ret.Get(0).(func(fundraise.Fundraise) (*fundraise.Fundraise, error)); ok {
 		return rf(newFundraise)
 	}
-	if rf, ok := ret.Get(0).(func(fundraise.Fundraise) int); ok {
+	if rf, ok := ret.Get(0).(func(fundraise.Fundraise) *fundraise.Fundraise); ok {
 		r0 = rf(newFundraise)
 	} else {
-		r0 = ret.Get(0).(int)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fundraise.Fundraise)
+		}
 	}
 
 	if rf, ok := ret.Get(1).(func(fundraise.Fundraise) error); ok {
@@ -63,25 +140,101 @@ func (_m *Repository) Insert(newFundraise fundraise.Fundraise) (int, error) {
 	return r0, r1
 }
 
-// Paginate provides a mock function with given fields: page, size, title
-func (_m *Repository) Paginate(page int, size int, title string) ([]fundraise.Fundraise, error) {
-	ret := _m.Called(page, size, title)
+// Paginate provides a mock function with given fields: pagination, searchAndFilter
+func (_m *Repository) Paginate(pagination dtos.Pagination, searchAndFilter dtos.SearchAndFilter) ([]fundraise.Fundraise, error) {
+	ret := _m.Called(pagination, searchAndFilter)
 
 	var r0 []fundraise.Fundraise
 	var r1 error
-	if rf, ok := ret.Get(0).(func(int, int, string) ([]fundraise.Fundraise, error)); ok {
-		return rf(page, size, title)
+	if rf, ok := ret.Get(0).(func(dtos.Pagination, dtos.SearchAndFilter) ([]fundraise.Fundraise, error)); ok {
+		return rf(pagination, searchAndFilter)
 	}
-	if rf, ok := ret.Get(0).(func(int, int, string) []fundraise.Fundraise); ok {
-		r0 = rf(page, size, title)
+	if rf, ok := ret.Get(0).(func(dtos.Pagination, dtos.SearchAndFilter) []fundraise.Fundraise); ok {
+		r0 = rf(pagination, searchAndFilter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]fundraise.Fundraise)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(int, int, string) error); ok {
-		r1 = rf(page, size, title)
+	if rf, ok := ret.Get(1).(func(dtos.Pagination, dtos.SearchAndFilter) error); ok {
+		r1 = rf(pagination, searchAndFilter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// PaginateMobile provides a mock function with given fields: pagination, searchAndFilter
+func (_m *Repository) PaginateMobile(pagination dtos.Pagination, searchAndFilter dtos.SearchAndFilter) ([]fundraise.Fundraise, error) {
+	ret := _m.Called(pagination, searchAndFilter)
+
+	var r0 []fundraise.Fundraise
+	var r1 error
+	if rf, ok := ret.Get(0).(func(dtos.Pagination, dtos.SearchAndFilter) ([]fundraise.Fundraise, error)); ok {
+		return rf(pagination, searchAndFilter)
+	}
+	if rf, ok := ret.Get(0).(func(dtos.Pagination, dtos.SearchAndFilter) []fundraise.Fundraise); ok {
+		r0 = rf(pagination, searchAndFilter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]fundraise.Fundraise)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(dtos.Pagination, dtos.SearchAndFilter) error); ok {
+		r1 = rf(pagination, searchAndFilter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// SelectBookmarkByFundraiseAndOwnerID provides a mock function with given fields: fundraiseID, ownerID
+func (_m *Repository) SelectBookmarkByFundraiseAndOwnerID(fundraiseID int, ownerID int) (string, error) {
+	ret := _m.Called(fundraiseID, ownerID)
+
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(int, int) (string, error)); ok {
+		return rf(fundraiseID, ownerID)
+	}
+	if rf, ok := ret.Get(0).(func(int, int) string); ok {
+		r0 = rf(fundraiseID, ownerID)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(int, int) error); ok {
+		r1 = rf(fundraiseID, ownerID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// SelectBookmarkedFundraiseID provides a mock function with given fields: ownerID
+func (_m *Repository) SelectBookmarkedFundraiseID(ownerID int) (map[int]string, error) {
+	ret := _m.Called(ownerID)
+
+	var r0 map[int]string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(int) (map[int]string, error)); ok {
+		return rf(ownerID)
+	}
+	if rf, ok := ret.Get(0).(func(int) map[int]string); ok {
+		r0 = rf(ownerID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[int]string)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(int) error); ok {
+		r1 = rf(ownerID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -90,20 +243,70 @@ func (_m *Repository) Paginate(page int, size int, title string) ([]fundraise.Fu
 }
 
 // SelectByID provides a mock function with given fields: fundraiseID
-func (_m *Repository) SelectByID(fundraiseID int) (*fundraise.Fundraise, error) {
+func (_m *Repository) SelectByID(fundraiseID int) (*dtos.FundraiseDetails, error) {
 	ret := _m.Called(fundraiseID)
+
+	var r0 *dtos.FundraiseDetails
+	var r1 error
+	if rf, ok := ret.Get(0).(func(int) (*dtos.FundraiseDetails, error)); ok {
+		return rf(fundraiseID)
+	}
+	if rf, ok := ret.Get(0).(func(int) *dtos.FundraiseDetails); ok {
+		r0 = rf(fundraiseID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*dtos.FundraiseDetails)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(int) error); ok {
+		r1 = rf(fundraiseID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// SelectByTitle provides a mock function with given fields: title
+func (_m *Repository) SelectByTitle(title string) (*fundraise.Fundraise, error) {
+	ret := _m.Called(title)
 
 	var r0 *fundraise.Fundraise
 	var r1 error
-	if rf, ok := ret.Get(0).(func(int) (*fundraise.Fundraise, error)); ok {
-		return rf(fundraiseID)
+	if rf, ok := ret.Get(0).(func(string) (*fundraise.Fundraise, error)); ok {
+		return rf(title)
 	}
-	if rf, ok := ret.Get(0).(func(int) *fundraise.Fundraise); ok {
-		r0 = rf(fundraiseID)
+	if rf, ok := ret.Get(0).(func(string) *fundraise.Fundraise); ok {
+		r0 = rf(title)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fundraise.Fundraise)
 		}
+	}
+
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(title)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// TotalFundAcquired provides a mock function with given fields: fundraiseID
+func (_m *Repository) TotalFundAcquired(fundraiseID int) (int32, error) {
+	ret := _m.Called(fundraiseID)
+
+	var r0 int32
+	var r1 error
+	if rf, ok := ret.Get(0).(func(int) (int32, error)); ok {
+		return rf(fundraiseID)
+	}
+	if rf, ok := ret.Get(0).(func(int) int32); ok {
+		r0 = rf(fundraiseID)
+	} else {
+		r0 = ret.Get(0).(int32)
 	}
 
 	if rf, ok := ret.Get(1).(func(int) error); ok {
@@ -116,46 +319,36 @@ func (_m *Repository) SelectByID(fundraiseID int) (*fundraise.Fundraise, error) 
 }
 
 // Update provides a mock function with given fields: _a0
-func (_m *Repository) Update(_a0 fundraise.Fundraise) (int, error) {
+func (_m *Repository) Update(_a0 fundraise.Fundraise) error {
 	ret := _m.Called(_a0)
 
-	var r0 int
-	var r1 error
-	if rf, ok := ret.Get(0).(func(fundraise.Fundraise) (int, error)); ok {
-		return rf(_a0)
-	}
-	if rf, ok := ret.Get(0).(func(fundraise.Fundraise) int); ok {
+	var r0 error
+	if rf, ok := ret.Get(0).(func(fundraise.Fundraise) error); ok {
 		r0 = rf(_a0)
 	} else {
-		r0 = ret.Get(0).(int)
+		r0 = ret.Error(0)
 	}
 
-	if rf, ok := ret.Get(1).(func(fundraise.Fundraise) error); ok {
-		r1 = rf(_a0)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
-// UploadFile provides a mock function with given fields: file, objectName
-func (_m *Repository) UploadFile(file multipart.File, objectName string) (string, error) {
-	ret := _m.Called(file, objectName)
+// UploadFile provides a mock function with given fields: file
+func (_m *Repository) UploadFile(file multipart.File) (string, error) {
+	ret := _m.Called(file)
 
 	var r0 string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(multipart.File, string) (string, error)); ok {
-		return rf(file, objectName)
+	if rf, ok := ret.Get(0).(func(multipart.File) (string, error)); ok {
+		return rf(file)
 	}
-	if rf, ok := ret.Get(0).(func(multipart.File, string) string); ok {
-		r0 = rf(file, objectName)
+	if rf, ok := ret.Get(0).(func(multipart.File) string); ok {
+		r0 = rf(file)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(multipart.File, string) error); ok {
-		r1 = rf(file, objectName)
+	if rf, ok := ret.Get(1).(func(multipart.File) error); ok {
+		r1 = rf(file)
 	} else {
 		r1 = ret.Error(1)
 	}

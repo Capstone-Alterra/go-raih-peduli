@@ -11,6 +11,7 @@ import (
 	"github.com/labstack/gommon/log"
 	"github.com/mashingan/smapping"
 	"github.com/midtrans/midtrans-go/coreapi"
+	"github.com/sirupsen/logrus"
 )
 
 type service struct {
@@ -19,15 +20,22 @@ type service struct {
 	mtRequest     helpers.MidtransInterface
 	coreAPIClient coreapi.Client
 	validation    helpers.ValidationInterface
+	nsRequest     helpers.NotificationInterface
 }
 
-func New(model transaction.Repository, generator helpers.GeneratorInterface, mtRequest helpers.MidtransInterface, coreAPIClient coreapi.Client, validation helpers.ValidationInterface) transaction.Usecase {
+func New(model transaction.Repository,
+	generator helpers.GeneratorInterface,
+	mtRequest helpers.MidtransInterface,
+	coreAPIClient coreapi.Client,
+	validation helpers.ValidationInterface,
+	nsResquest helpers.NotificationInterface) transaction.Usecase {
 	return &service{
 		model:         model,
 		generator:     generator,
 		mtRequest:     mtRequest,
 		coreAPIClient: coreAPIClient,
 		validation:    validation,
+		nsRequest:     nsResquest,
 	}
 }
 
@@ -53,7 +61,9 @@ func (svc *service) FindAll(page, size, roleID, userID int, keyword string) ([]d
 		data.Fullname = transaction.User.Fullname
 		data.Address = transaction.User.Address
 		data.PhoneNumber = transaction.User.PhoneNumber
-		data.ProfilePicture = transaction.User.ProfilePicture
+		data.Photo = transaction.Fundraise.Photo
+		data.Email = transaction.User.Email
+		data.FundraiseName = transaction.Fundraise.Title
 
 		switch transaction.Status {
 		case "2":
@@ -69,6 +79,10 @@ func (svc *service) FindAll(page, size, roleID, userID int, keyword string) ([]d
 		}
 
 		switch transaction.PaymentType {
+		case "4":
+			data.PaymentType = "Bank Permata"
+		case "5":
+			data.PaymentType = "Bank CIMB"
 		case "6":
 			data.PaymentType = "Bank BCA"
 		case "7":
@@ -77,6 +91,8 @@ func (svc *service) FindAll(page, size, roleID, userID int, keyword string) ([]d
 			data.PaymentType = "Bank BNI"
 		case "10":
 			data.PaymentType = "Gopay"
+		case "11":
+			data.PaymentType = "Qris"
 		default:
 			data.PaymentType = "Other"
 		}
@@ -108,6 +124,10 @@ func (svc *service) FindByID(transactionID int) *dtos.ResTransaction {
 	}
 
 	switch transaction.PaymentType {
+	case "4":
+		transaction.PaymentType = "Bank Permata"
+	case "5":
+		transaction.PaymentType = "Bank CIMB"
 	case "6":
 		transaction.PaymentType = "Bank BCA"
 	case "7":
@@ -116,6 +136,8 @@ func (svc *service) FindByID(transactionID int) *dtos.ResTransaction {
 		transaction.PaymentType = "Bank BNI"
 	case "10":
 		transaction.PaymentType = "Gopay"
+	case "11":
+		transaction.PaymentType = "Qris"
 	default:
 		transaction.PaymentType = "Other"
 	}
@@ -123,7 +145,9 @@ func (svc *service) FindByID(transactionID int) *dtos.ResTransaction {
 	res.Fullname = transaction.User.Fullname
 	res.Address = transaction.User.Address
 	res.PhoneNumber = transaction.User.PhoneNumber
-	res.ProfilePicture = transaction.User.ProfilePicture
+	res.Photo = transaction.Fundraise.Photo
+	res.Email = transaction.User.Email
+	res.FundraiseName = transaction.Fundraise.Title
 
 	err := smapping.FillStruct(&res, smapping.MapFields(transaction))
 	if err != nil {
@@ -142,7 +166,7 @@ func (svc *service) Create(userID int, newTransaction dtos.InputTransaction) (*d
 	resTransaction := dtos.ResTransaction{}
 
 	if newTransaction.Amount < 10000 {
-		return nil, errors.New("Minimum domation ammount is Rp. 10.000"), nil
+		return nil, errors.New("Minimum donation ammount is Rp. 10.000"), nil
 	}
 
 	err := smapping.FillStruct(&transaction, smapping.MapFields(newTransaction))
@@ -168,11 +192,14 @@ func (svc *service) Create(userID int, newTransaction dtos.InputTransaction) (*d
 
 	switch transaction.PaymentType {
 	case "4", "5", "6", "7", "8", "9":
-		req, err := svc.mtRequest.CreateTransactionBank(strconv.Itoa(transaction.ID), transaction.PaymentType, int64(transaction.Amount))
+		req, validUntil, err := svc.mtRequest.CreateTransactionBank(strconv.Itoa(transaction.ID), transaction.PaymentType, int64(transaction.Amount))
+
 		if err != nil {
 			log.Error(err.Error())
 			return nil, err, nil
 		}
+		transaction.ValidUntil = validUntil
+
 		transactionID := svc.model.Insert(transaction)
 		if transactionID == -1 {
 			return nil, err, nil
@@ -188,18 +215,20 @@ func (svc *service) Create(userID int, newTransaction dtos.InputTransaction) (*d
 		resTransaction.ID = transaction.ID
 		resTransaction.Amount = int(transaction.Amount)
 		resTransaction.Status = "Created"
+		resTransaction.ValidUntil = validUntil
 		resTransaction.UserID = userID
 		resTransaction.Fullname = user.Fullname
 		resTransaction.Address = user.Address
 		resTransaction.PhoneNumber = user.PhoneNumber
-		resTransaction.ProfilePicture = user.ProfilePicture
+		resTransaction.Photo = transaction.Fundraise.Photo
 		resTransaction.FundraiseID = transaction.FundraiseID
 	case "10":
-		req, err := svc.mtRequest.CreateTransactionGopay(strconv.Itoa(transaction.ID), transaction.PaymentType, int64(transaction.Amount))
+		req, validUntil, err := svc.mtRequest.CreateTransactionGopay(strconv.Itoa(transaction.ID), transaction.PaymentType, int64(transaction.Amount))
 		if err != nil {
 			log.Error(err.Error())
 			return nil, err, nil
 		}
+		transaction.ValidUntil = validUntil
 		transactionID := svc.model.Insert(transaction)
 		if transactionID == -1 {
 			return nil, err, nil
@@ -210,22 +239,24 @@ func (svc *service) Create(userID int, newTransaction dtos.InputTransaction) (*d
 			return nil, err, nil
 		}
 		resTransaction.PaymentType = "Gopay"
-		resTransaction.VirtualAccount = req
+		resTransaction.UrlCallback = req
 		resTransaction.ID = transaction.ID
 		resTransaction.Amount = int(transaction.Amount)
 		resTransaction.Status = "Created"
+		resTransaction.ValidUntil = validUntil
 		resTransaction.UserID = userID
 		resTransaction.Fullname = user.Fullname
 		resTransaction.Address = user.Address
 		resTransaction.PhoneNumber = user.PhoneNumber
-		resTransaction.ProfilePicture = user.ProfilePicture
+		resTransaction.Photo = transaction.Fundraise.Photo
 		resTransaction.FundraiseID = transaction.FundraiseID
 	case "11":
-		req, err := svc.mtRequest.CreateTransactionQris(strconv.Itoa(transaction.ID), transaction.PaymentType, int64(transaction.Amount))
+		req, validUntil, err := svc.mtRequest.CreateTransactionQris(strconv.Itoa(transaction.ID), transaction.PaymentType, int64(transaction.Amount))
 		if err != nil {
 			log.Error(err.Error())
 			return nil, err, nil
 		}
+		transaction.ValidUntil = validUntil
 		transactionID := svc.model.Insert(transaction)
 		if transactionID == -1 {
 			return nil, err, nil
@@ -236,21 +267,23 @@ func (svc *service) Create(userID int, newTransaction dtos.InputTransaction) (*d
 			return nil, err, nil
 		}
 		resTransaction.PaymentType = "Qris"
-		resTransaction.VirtualAccount = req
+		resTransaction.UrlCallback = req
 		resTransaction.ID = transaction.ID
 		resTransaction.Amount = int(transaction.Amount)
 		resTransaction.Status = "Created"
+		resTransaction.ValidUntil = validUntil
 		resTransaction.UserID = userID
 		resTransaction.Fullname = user.Fullname
 		resTransaction.Address = user.Address
 		resTransaction.PhoneNumber = user.PhoneNumber
-		resTransaction.ProfilePicture = user.ProfilePicture
+		resTransaction.Photo = transaction.Fundraise.Photo
 		resTransaction.FundraiseID = transaction.FundraiseID
 	default:
-		req, err := svc.mtRequest.CreateTransactionBank(strconv.Itoa(transaction.ID), transaction.PaymentType, int64(transaction.Amount))
+		req, validUntil, err := svc.mtRequest.CreateTransactionBank(strconv.Itoa(transaction.ID), transaction.PaymentType, int64(transaction.Amount))
 		if err != nil {
 			return nil, err, nil
 		}
+		transaction.ValidUntil = validUntil
 		transactionID := svc.model.Insert(transaction)
 		if transactionID == -1 {
 			return nil, err, nil
@@ -264,11 +297,12 @@ func (svc *service) Create(userID int, newTransaction dtos.InputTransaction) (*d
 		resTransaction.ID = transaction.ID
 		resTransaction.Amount = int(transaction.Amount)
 		resTransaction.Status = "Created"
+		resTransaction.ValidUntil = validUntil
 		resTransaction.UserID = userID
 		resTransaction.Fullname = user.Fullname
 		resTransaction.Address = user.Address
 		resTransaction.PhoneNumber = user.PhoneNumber
-		resTransaction.ProfilePicture = user.ProfilePicture
+		resTransaction.Photo = transaction.Fundraise.Photo
 		resTransaction.FundraiseID = transaction.FundraiseID
 	}
 
@@ -311,34 +345,57 @@ func (svc *service) Notifications(notificationPayload map[string]any) error {
 	if !exist {
 		return errors.New("invalid notification payload")
 	}
+	transactionIDInt, err := strconv.Atoi(transactionID)
+	if err != nil {
+		return errors.New("Failed Parse TRX ID")
+	}
+	transaction := svc.model.SelectByID(transactionIDInt)
 
-	transactionStatusResp, err := svc.coreAPIClient.CheckTransaction(transactionID)
+	paymentConfirm, err := svc.mtRequest.CheckTransactionStatus(transactionID)
 	if err != nil {
 		return err
-	} else {
-		if transactionStatusResp != nil {
-			var status = svc.mtRequest.TransactionStatus(transactionStatusResp)
-			transactionIDInt, err := strconv.Atoi(transactionID)
-			if err != nil {
-				return err
-			}
-			transaction := svc.model.SelectByID(transactionIDInt)
-			transaction.Status = status.Order
+	}
 
-			if transaction.Status == "5" {
-				transaction.PaidAt = time.Now().Format("2006-01-02 15:04:05")
-				update := svc.model.Update(*transaction)
-				if update == -1 {
-					return nil
-				}
-			} else {
-				update := svc.model.Update(*transaction)
-				if update == -1 {
-					return nil
-				}
-			}
+	transaction.Status = paymentConfirm
+	paymentName := svc.mtRequest.MappingPaymentName(transaction.PaymentType)
+	if paymentConfirm == "5" {
+		logrus.Info(transaction.UserID)
+		deviceToken := svc.model.GetDeviceToken(transaction.UserID)
 
+		if deviceToken != "" {
+			strAmount := strconv.Itoa(transaction.Amount)
+			message := "Terimakasih orang baik, donasi sebesar Rp. " + strAmount + "akan sangat membantu " + transaction.Fundraise.Title
+			svc.nsRequest.SendNotifications(deviceToken, "Pembayaran Berhasil", message)
 		}
+
+		logrus.Info(deviceToken)
+
+		if err := svc.model.SendPaymentConfirmation(transaction.User.Email, transaction.Amount, transaction.FundraiseID, paymentName); err != nil {
+			logrus.Println(err.Error())
+		}
+
+		currentTimeUTC := time.Now()
+		wibLocation, _ := time.LoadLocation("Asia/Jakarta")
+		currentTimeWIB := currentTimeUTC.In(wibLocation)
+
+		transaction.PaidAt = currentTimeWIB.Format("2006-01-02 15:04:05")
+
+		if update := svc.model.Update(*transaction); update == -1 {
+			return nil
+		}
+	} else if update := svc.model.Update(*transaction); update == -1 {
+		return nil
+	}
+
+	return nil
+}
+
+func (svc *service) SendPaymentConfirmation() error {
+	message := "Terimakasih orang baik, donasimu membantu palestina"
+	err := svc.nsRequest.SendNotifications("ebjJJrr9Qp2CZZYk-e84al:APA91bH0p_NruKDYWOTbGBaLe_MI8Z5Q1r7oo2ui9L6AK7_KgkTkhdakrRznj4ww64ZKzX9dFMU2tTevbbZgoXrhO2bpWwVs-a2WyfUFfVEnvuM9KHBpU80LZsbThfrh40EvxvgKFxun", "Donasi sebesar Rp. 10.000 Berhasil", message)
+	if err != nil {
+		logrus.Print("Notif Send Status Error: ", err)
+		return err
 	}
 
 	return nil
